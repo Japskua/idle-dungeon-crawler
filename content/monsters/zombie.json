@@ -1,0 +1,51 @@
+{
+  "id": "zombie",
+  "name": "Zombie",
+  "tier": "normal",
+  "disposition": "hostile",
+  "base": {
+    "hp": 24,
+    "dmg": 5,
+    "armor": 1,
+    "attackTicks": 16,
+    "moveTicks": 8,
+    "range": 1,
+    "aggroRadius": 5
+  },
+  "spawn": [
+    { "depths": [4, 12], "weight": 8 },
+    { "depths": [13, 99], "weight": 4 }
+  ],
+  "level": { "offset": 0, "spread": 2 },
+  "xpBase": 7,
+  "gold": [1, 4],
+  "skills": [],
+  "drops": [
+    { "item": "bone", "chance": 0.25 },
+    { "item": "cloth_tunic", "chance": 0.06 },
+    { "item": "hp_potion_s", "chance": 0.05 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        ".....00000......",
+        "....0GGGGG0.....",
+        "....0G0G0G0.....",
+        "....0GGGGG0.....",
+        ".....00000......",
+        "....0111110GG0..",
+        "....0111110GG0..",
+        "....0111110.....",
+        "....0110110.....",
+        "....0110110.....",
+        "....0110110.....",
+        "...00G00G00.....",
+        "................"
+      ]
+    ]
+  }
+}

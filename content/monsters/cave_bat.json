@@ -1,0 +1,47 @@
+{
+  "id": "cave_bat",
+  "name": "Cave Bat",
+  "tier": "minion",
+  "disposition": "hostile",
+  "base": {
+    "hp": 6,
+    "dmg": 2,
+    "armor": 0,
+    "attackTicks": 8,
+    "moveTicks": 3,
+    "range": 1,
+    "aggroRadius": 7
+  },
+  "spawn": [
+    { "depths": [1, 6], "weight": 8 },
+    { "depths": [7, 99], "weight": 4 }
+  ],
+  "level": { "offset": 0, "spread": 1 },
+  "xpBase": 3,
+  "gold": [0, 2],
+  "skills": [],
+  "drops": [{ "item": "bat_wing", "chance": 0.3 }],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..0.........0...",
+        ".0K0.......0K0..",
+        ".0KKK0...0KKK0..",
+        "..0KKK000KKK0...",
+        "...0KKkkkKK0....",
+        "....0kr0rk0.....",
+        "....0kkkkk0.....",
+        ".....00000......",
+        "................",
+        "................",
+        "................"
+      ]
+    ]
+  }
+}

@@ -52,16 +52,26 @@ import { applyCommand } from '../commands';
 import { RECOVERY_HP_FRACTION_PER_SEC } from '../balance';
 
 // ---------- derived caches (recomputed, never saved — keyed by object identity) ----------
-const flowFieldCache = new WeakMap<object, Int32Array>();
+const flowFieldCache = new WeakMap<object, { doorsKey: number; field: Int32Array }>();
 const exploreOrderCache = new WeakMap<object, number[]>();
 
-function entranceField(run: DungeonRun): Int32Array {
-  let field = flowFieldCache.get(run.floor);
-  if (!field) {
-    field = bfsDistances(run.floor, run.floor.entrance);
-    flowFieldCache.set(run.floor, field);
+function doorsKeyOf(run: DungeonRun): number {
+  if (!run.floor.bossDoors) return 0;
+  let key = 0;
+  for (const d of run.floor.bossDoors) {
+    key = key * 2 + (run.floor.tiles[d.y * run.floor.w + d.x] === TILE.DOOR_CLOSED ? 1 : 0);
   }
-  return field;
+  return key;
+}
+
+function entranceField(run: DungeonRun): Int32Array {
+  const doorsKey = doorsKeyOf(run);
+  let entry = flowFieldCache.get(run.floor);
+  if (!entry || entry.doorsKey !== doorsKey) {
+    entry = { doorsKey, field: bfsDistances(run.floor, run.floor.entrance) };
+    flowFieldCache.set(run.floor, entry);
+  }
+  return entry.field;
 }
 
 function roomOrder(run: DungeonRun): number[] {
@@ -577,6 +587,30 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
     if (!targetId) continue;
     m.targetId = targetId;
 
+    // skills (bosses & casters): first ready skill with a target in reach
+    let casted = false;
+    for (const skillId of def.skills) {
+      const skill = SKILLS[skillId];
+      if (!skill || (m.cooldowns[skillId] ?? 0) > 0) continue;
+      if (skill.target === 'enemiesInRadius') {
+        const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+        if (standing.some((hid) => euclid2(m.pos, heroPos(hid)) <= r2)) {
+          m.cooldowns[skillId] = skill.cooldown + skill.castTicks;
+          m.action = { kind: 'cast', skillId, ticksLeft: skill.castTicks, total: skill.castTicks };
+          casted = true;
+          break;
+        }
+      } else if (skill.target === 'enemy') {
+        if (euclid2(m.pos, heroPos(targetId)) <= skill.range * skill.range) {
+          m.cooldowns[skillId] = skill.cooldown + skill.castTicks;
+          m.action = { kind: 'cast', skillId, targetId, ticksLeft: skill.castTicks, total: skill.castTicks };
+          casted = true;
+          break;
+        }
+      }
+    }
+    if (casted) continue;
+
     const tPos = heroPos(targetId);
     if (manhattan(m.pos, tPos) <= def.base.range) {
       m.action = { kind: 'attack', targetId, ticksLeft: def.base.attackTicks, total: def.base.attackTicks };
@@ -794,7 +828,58 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
   }
 }
 
+function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstance, power: number, heroId: Id, events: GameEvent[]) {
+  const hero = state.roster[heroId];
+  if (!hero || heroId in run.party.downed) return;
+  const d = derive(hero);
+  const defending = run.party.action[heroId]?.kind === 'defend';
+  const armor = d.armor + (defending ? DEFEND_ARMOR_BONUS : 0);
+  const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+  const raw = power * Math.pow(1.12, m.level - 1) * variance;
+  const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
+  hero.hp -= dmg;
+  const pos = run.party.pos[heroId]!;
+  events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos } });
+}
+
+function resolveMonsterCast(state: GameState, run: DungeonRun, m: MonsterInstance, action: EntityAction, events: GameEvent[]) {
+  const skill = action.skillId ? SKILLS[action.skillId] : undefined;
+  if (!skill) return;
+  const applyStatuses = (heroId: Id) => {
+    const hero = state.roster[heroId];
+    if (!hero) return;
+    for (const ap of skill.applies ?? []) {
+      if (chance(state.rng.combat, ap.chance)) {
+        hero.statuses.push({ statusId: ap.statusId, ticksLeft: ap.duration, sourceId: m.id });
+      }
+    }
+  };
+  if (skill.target === 'enemiesInRadius') {
+    const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+    for (const hid of standingIds(run)) {
+      if (euclid2(m.pos, run.party.pos[hid]!) <= r2) {
+        if (skill.power > 0) monsterSkillDamage(state, run, m, skill.power, hid, events);
+        applyStatuses(hid);
+      }
+    }
+    return;
+  }
+  if (skill.target === 'enemy' && action.targetId) {
+    if (!(action.targetId in run.party.downed) && run.party.memberIds.includes(action.targetId)) {
+      const hPos = run.party.pos[action.targetId]!;
+      if (euclid2(m.pos, hPos) <= Math.max(4, skill.range * skill.range + 2)) {
+        if (skill.power > 0) monsterSkillDamage(state, run, m, skill.power, action.targetId, events);
+        applyStatuses(action.targetId);
+      }
+    }
+  }
+}
+
 function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInstance, action: EntityAction, events: GameEvent[]) {
+  if (action.kind === 'cast') {
+    resolveMonsterCast(state, run, m, action, events);
+    return;
+  }
   if (action.kind !== 'attack' || !action.targetId) return;
   if (action.targetId in run.party.downed) return;
   if (!run.party.memberIds.includes(action.targetId)) return;
@@ -928,6 +1013,25 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
           chronicle(state, nowMs, sightingText(def.name), run.depth);
         }
       }
+    }
+  }
+
+  // boss arena doors: slam shut while the boss lives and the party stands inside
+  if (run.floor.isBossFloor && run.floor.bossDoors) {
+    const arena = run.floor.rooms[1];
+    const boss = run.monsterOrder
+      .map((mid) => run.monsters[mid]!)
+      .find((m) => m.hp > 0 && creatureDef(m.defId).tier === 'boss');
+    const inArena = (p: Vec2) =>
+      !!arena && p.x >= arena.x && p.x < arena.x + arena.w && p.y >= arena.y && p.y < arena.y + arena.h;
+    const shouldClose =
+      !!boss &&
+      boss.aggro &&
+      run.intent !== 'withdraw' &&
+      standing.length > 0 &&
+      standing.every((hid) => inArena(run.party.pos[hid]!));
+    for (const door of run.floor.bossDoors) {
+      run.floor.tiles[door.y * run.floor.w + door.x] = shouldClose ? TILE.DOOR_CLOSED : TILE.DOOR;
     }
   }
 

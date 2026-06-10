@@ -1,0 +1,48 @@
+{
+  "id": "slime_king",
+  "name": "The Slime King",
+  "tier": "boss",
+  "disposition": "hostile",
+  "base": {
+    "hp": 30,
+    "dmg": 5,
+    "armor": 3,
+    "attackTicks": 16,
+    "moveTicks": 7,
+    "range": 1,
+    "aggroRadius": 7
+  },
+  "spawn": [{ "depths": [5, 99], "weight": 1 }],
+  "level": { "offset": 2, "spread": 0 },
+  "xpBase": 40,
+  "gold": [20, 40],
+  "skills": ["slam"],
+  "drops": [
+    { "item": "iron_shield", "chance": 0.5 },
+    { "item": "slime_goo", "chance": 1, "qty": [3, 6] },
+    { "item": "hp_potion_s", "chance": 1, "qty": [1, 2] }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "....0y0y0y0.....",
+        "....0yyyyy0.....",
+        "...00ggggg00....",
+        "..0gglgggggg0...",
+        ".0gglggggggggg0.",
+        ".0g0gg0ggggggg0.",
+        ".0ggggggggggGg0.",
+        "0gggggggggggGgg0",
+        "0gggg000ggggGgg0",
+        "0ggggggggggggGg0",
+        "0gGgggggggggGgg0",
+        ".0GGgggggggGGg0.",
+        "..0GGGgggGGGG0..",
+        "...00000000000.."
+      ]
+    ]
+  }
+}

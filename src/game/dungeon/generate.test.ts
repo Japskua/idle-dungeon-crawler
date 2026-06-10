@@ -13,8 +13,18 @@ describe('procgen invariants', () => {
       for (const depth of DEPTHS) {
         const { floor, monsters } = generateFloor(seed, depth);
 
-        // at least 5 rooms, entrance != stairs
-        expect(floor.rooms.length).toBeGreaterThanOrEqual(5);
+        // boss floors are bespoke 3-room gauntlets; normal floors scatter 5+
+        if (depth % 5 === 0) {
+          expect(floor.isBossFloor).toBe(true);
+          expect(floor.rooms.length).toBe(3);
+          expect(monsters.filter((m) => creatureDef(m.defId).tier === 'boss').length).toBe(1);
+          expect(floor.bossDoors?.length).toBe(2);
+          expect(floor.chests.length).toBe(2);
+        } else {
+          expect(floor.isBossFloor).toBe(false);
+          expect(floor.rooms.length).toBeGreaterThanOrEqual(5);
+          expect(monsters.every((m) => creatureDef(m.defId).tier !== 'boss')).toBe(true);
+        }
         expect(floor.entrance).not.toEqual(floor.stairs);
 
         // all walkable tiles are one flood-fill component (reachable from entrance)
@@ -65,20 +75,21 @@ describe('procgen invariants', () => {
   });
 
   test('monster levels follow the depth-centered distribution', () => {
+    const depth = 9; // not a boss floor
     const levels: number[] = [];
     for (const seed of SEEDS) {
-      const { monsters } = generateFloor(seed, 10);
+      const { monsters } = generateFloor(seed, depth);
       for (const m of monsters) {
         const def = creatureDef(m.defId);
         if (def.disposition !== 'hostile' || m.elite) continue;
         const spread = def.level.spread;
-        expect(m.level).toBeGreaterThanOrEqual(10 + def.level.offset - spread);
-        expect(m.level).toBeLessThanOrEqual(10 + def.level.offset + spread);
+        expect(m.level).toBeGreaterThanOrEqual(depth + def.level.offset - spread);
+        expect(m.level).toBeLessThanOrEqual(depth + def.level.offset + spread);
         levels.push(m.level);
       }
     }
     const avg = levels.reduce((a, b) => a + b, 0) / levels.length;
-    expect(Math.abs(avg - 10)).toBeLessThan(0.5);
+    expect(Math.abs(avg - depth)).toBeLessThan(0.5);
   });
 
   test('the same monster spawns at very different levels by depth', () => {

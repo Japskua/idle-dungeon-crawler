@@ -1,0 +1,51 @@
+{
+  "id": "cultist",
+  "name": "Gloom Cultist",
+  "tier": "normal",
+  "disposition": "hostile",
+  "base": {
+    "hp": 14,
+    "dmg": 3,
+    "armor": 1,
+    "attackTicks": 12,
+    "moveTicks": 5,
+    "range": 4,
+    "aggroRadius": 7
+  },
+  "spawn": [
+    { "depths": [6, 14], "weight": 7 },
+    { "depths": [15, 99], "weight": 5 }
+  ],
+  "level": { "offset": 0, "spread": 2 },
+  "xpBase": 8,
+  "gold": [2, 6],
+  "skills": [],
+  "drops": [
+    { "item": "oak_staff", "chance": 0.06 },
+    { "item": "mp_potion_s", "chance": 0.12 },
+    { "item": "lucky_ring", "chance": 0.02 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        ".....00000......",
+        "....0vvvvv0.....",
+        "....0vVVVv0.....",
+        "....0VrVrV0.....",
+        ".....00000......",
+        "....0vvvvv0.....",
+        "....0vvvvv0.....",
+        "....0vVvVv0.....",
+        "....0vvvvv0.....",
+        "....0vvvvv0.....",
+        "....0vvvvv0.....",
+        "....0000000.....",
+        "................"
+      ]
+    ]
+  }
+}

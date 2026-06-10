@@ -1,0 +1,47 @@
+{
+  "id": "the_landlord",
+  "name": "The Landlord",
+  "tier": "boss",
+  "disposition": "hostile",
+  "base": {
+    "hp": 26,
+    "dmg": 7,
+    "armor": 5,
+    "attackTicks": 13,
+    "moveTicks": 5,
+    "range": 1,
+    "aggroRadius": 8
+  },
+  "spawn": [{ "depths": [5, 99], "weight": 1 }],
+  "level": { "offset": 2, "spread": 0 },
+  "xpBase": 52,
+  "gold": [60, 120],
+  "skills": ["shriek"],
+  "drops": [
+    { "item": "lucky_ring", "chance": 0.6 },
+    { "item": "iron_sword", "chance": 0.4 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "....000000......",
+        "....011110......",
+        "....011110......",
+        "..0000000000....",
+        "....0ssss0......",
+        "....0s0sy0......",
+        "....0ssss0......",
+        ".....0000.0y0...",
+        "...0111111000...",
+        "..0111111110y0..",
+        "..0117777110yy0.",
+        "..011r77110yy0..",
+        "..0111111110y0..",
+        "...0110.0110....",
+        "...0110.0110....",
+        "...0000.0000...."
+      ]
+    ]
+  }
+}

@@ -104,8 +104,129 @@ export function insideAnyRoom(rooms: Room[], x: number, y: number): number | -1 
   return -1;
 }
 
+/**
+ * Boss floors are bespoke: entrance room -> corridor -> arena (doors slam shut
+ * during the fight) -> treasure room with the stairs. The boss cycles through
+ * the boss roster by depth and rolls level = depth + 2.
+ */
+function generateBossFloor(rng: Rng, runSeed: number, depth: number): GeneratedFloor {
+  void runSeed;
+  const w = FLOOR_W;
+  const h = FLOOR_H;
+  const tiles = new Uint8Array(w * h).fill(TILE.WALL);
+
+  const entranceRoom: Room = { x: 3, y: 20, w: 7, h: 8 };
+  const arena: Room = { x: 18, y: 17, w: 14, h: 14 };
+  const treasure: Room = { x: 36, y: 21, w: 7, h: 6 };
+  const rooms = [entranceRoom, arena, treasure];
+  for (const room of rooms) carveRoom(tiles, w, room);
+  // corridors (2 tiles tall) entrance->arena and arena->treasure
+  for (let x = entranceRoom.x + entranceRoom.w; x < arena.x; x++) {
+    tiles[23 * w + x] = TILE.FLOOR;
+    tiles[24 * w + x] = TILE.FLOOR;
+  }
+  for (let x = arena.x + arena.w; x < treasure.x; x++) {
+    tiles[23 * w + x] = TILE.FLOOR;
+    tiles[24 * w + x] = TILE.FLOOR;
+  }
+  // arena doors: the last corridor cells before the arena
+  const bossDoors = [
+    { x: arena.x - 1, y: 23 },
+    { x: arena.x - 1, y: 24 },
+  ];
+  for (const d of bossDoors) tiles[d.y * w + d.x] = TILE.DOOR;
+
+  const entrance = roomCenter(entranceRoom);
+  const stairs = roomCenter(treasure);
+  tiles[entrance.y * w + entrance.x] = TILE.ENTRANCE;
+  tiles[stairs.y * w + stairs.x] = TILE.STAIRS_DOWN;
+
+  const chests: Chest[] = [
+    { id: `d${depth}c0`, pos: { x: treasure.x + 1, y: treasure.y + 1 }, opened: false },
+    { id: `d${depth}c1`, pos: { x: treasure.x + treasure.w - 2, y: treasure.y + treasure.h - 2 }, opened: false },
+  ];
+
+  const floor: Floor = {
+    depth,
+    w,
+    h,
+    tiles,
+    rooms,
+    roomGraph: [[1], [0, 2], [1]],
+    entrance,
+    stairs,
+    chests,
+    explored: new Uint8Array(w * h),
+    isBossFloor: true,
+    bossDoors,
+  };
+
+  // the boss + a small honor guard
+  const monsters: MonsterInstance[] = [];
+  const bossDefs = Object.values(MONSTERS)
+    .filter((m) => m.tier === 'boss')
+    .sort((a, b) => a.id.localeCompare(b.id));
+  let n = 0;
+  if (bossDefs.length > 0) {
+    const def = bossDefs[(Math.floor(depth / BOSS_EVERY) - 1) % bossDefs.length]!;
+    const level = depth + 2;
+    const center = roomCenter(arena);
+    monsters.push({
+      id: `d${depth}m${n++}`,
+      defId: def.id,
+      level,
+      elite: false,
+      hp: monsterMaxHp(def.base.hp, level, false, true),
+      pos: center,
+      move: null,
+      targetId: null,
+      aggro: false,
+      packId: 1,
+      action: null,
+      statuses: [],
+      cooldowns: {},
+    });
+    // guards: weighted picks from the regular depth table
+    const table = Object.values(MONSTERS)
+      .filter((m) => m.tier !== 'boss')
+      .map((m) => {
+        const band = m.spawn.find((b) => b.depths[0] <= depth && depth <= b.depths[1]);
+        return band ? { def: m, weight: band.weight } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => a.def.id.localeCompare(b.def.id));
+    if (table.length > 0) {
+      for (let i = 0; i < 3; i++) {
+        const def2 = pickWeighted(rng, table, (e) => e.weight).def;
+        const level2 = triangularInt(rng, depth + def2.level.offset, def2.level.spread);
+        monsters.push({
+          id: `d${depth}m${n++}`,
+          defId: def2.id,
+          level: Math.max(1, level2),
+          elite: false,
+          hp: monsterMaxHp(def2.base.hp, Math.max(1, level2), false, false),
+          pos: { x: arena.x + 2 + i * 4, y: arena.y + 2 + (i % 2) * 9 },
+          move: null,
+          targetId: null,
+          aggro: false,
+          packId: 1,
+          action: null,
+          statuses: [],
+          cooldowns: {},
+        });
+      }
+    }
+  }
+
+  revealRoom(floor, 0);
+  return { floor, monsters };
+}
+
 export function generateFloor(runSeed: number, depth: number): GeneratedFloor {
   const rng = makeRng(hash2(runSeed, depth));
+  if (depth % BOSS_EVERY === 0) {
+    return generateBossFloor(rng, runSeed, depth);
+  }
   const w = FLOOR_W;
   const h = FLOOR_H;
 
@@ -259,6 +380,7 @@ function spawnCreatures(rng: Rng, floor: Floor, depth: number): MonsterInstance[
   let n = 0;
 
   const hostileTable = Object.values(MONSTERS)
+    .filter((def) => def.tier !== 'boss') // bosses only appear in their arenas
     .map((def) => {
       const band = def.spawn.find((b) => b.depths[0] <= depth && depth <= b.depths[1]);
       return band ? { def, weight: band.weight } : null;

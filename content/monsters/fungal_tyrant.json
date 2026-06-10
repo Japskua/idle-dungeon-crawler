@@ -1,0 +1,48 @@
+{
+  "id": "fungal_tyrant",
+  "name": "Fungal Tyrant",
+  "tier": "boss",
+  "disposition": "hostile",
+  "base": {
+    "hp": 28,
+    "dmg": 5,
+    "armor": 4,
+    "attackTicks": 15,
+    "moveTicks": 7,
+    "range": 2,
+    "aggroRadius": 7
+  },
+  "spawn": [{ "depths": [5, 99], "weight": 1 }],
+  "level": { "offset": 2, "spread": 0 },
+  "xpBase": 44,
+  "gold": [22, 45],
+  "skills": ["slam"],
+  "drops": [
+    { "item": "battle_staff", "chance": 0.5 },
+    { "item": "moldy_cheese", "chance": 0.8, "qty": [1, 3] },
+    { "item": "mp_potion_s", "chance": 1, "qty": [1, 2] }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        ".....000000.....",
+        "...00vvvvvv00...",
+        "..0vvpvvvvpvv0..",
+        ".0vvvvvpvvvvvv0.",
+        ".0vpvvvvvvvpvv0.",
+        "0vvvvvpvvvvvvvv0",
+        "0VVVVVVVVVVVVVV0",
+        ".0000wwwwww0000.",
+        "....0wwwwww0....",
+        "....0w0ww0w0....",
+        "....0wwwwww0....",
+        "....0w0000w0....",
+        "....0wwwwww0....",
+        "...0wwwwwwww0...",
+        "...0000000000...",
+        "................"
+      ]
+    ]
+  }
+}

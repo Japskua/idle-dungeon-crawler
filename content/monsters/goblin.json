@@ -1,0 +1,51 @@
+{
+  "id": "goblin",
+  "name": "Goblin",
+  "tier": "minion",
+  "disposition": "hostile",
+  "base": {
+    "hp": 10,
+    "dmg": 3,
+    "armor": 1,
+    "attackTicks": 9,
+    "moveTicks": 4,
+    "range": 1,
+    "aggroRadius": 6
+  },
+  "spawn": [
+    { "depths": [2, 8], "weight": 10 },
+    { "depths": [9, 14], "weight": 5 }
+  ],
+  "level": { "offset": 0, "spread": 1 },
+  "xpBase": 4,
+  "gold": [1, 5],
+  "skills": [],
+  "drops": [
+    { "item": "goblin_ear", "chance": 0.35 },
+    { "item": "rusty_sword", "chance": 0.04 },
+    { "item": "moldy_cheese", "chance": 0.08 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        ".....00000......",
+        "....0lllll0.....",
+        "....0l0l0l0.....",
+        "....0lllll0.....",
+        ".....0lll0..0...",
+        "....0lllll007...",
+        "....0lNNNl0.....",
+        "....0lNNNl0.....",
+        ".....0l0l0......",
+        ".....0l0l0......",
+        "....00..00......",
+        "................"
+      ]
+    ]
+  }
+}

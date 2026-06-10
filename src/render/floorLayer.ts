@@ -48,6 +48,7 @@ export function bakeFloor(atlas: Atlas, floor: Floor): HTMLCanvasElement {
       const variant = FLOOR_VARIANTS[(x * 7 + y * 13) % FLOOR_VARIANTS.length]!;
       atlasDraw(ctx, atlas, variant, 0, dx, dy);
       if (t === TILE.DOOR) atlasDraw(ctx, atlas, 'tile/door', 0, dx, dy);
+      else if (t === TILE.DOOR_CLOSED) atlasDraw(ctx, atlas, 'tile/wall_front', 0, dx, dy);
       else if (t === TILE.STAIRS_DOWN) atlasDraw(ctx, atlas, 'tile/stairs_down', 0, dx, dy);
       else if (t === TILE.ENTRANCE) atlasDraw(ctx, atlas, 'tile/stairs_up', 0, dx, dy);
     }

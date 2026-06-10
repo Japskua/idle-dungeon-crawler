@@ -124,26 +124,29 @@ export function atlasDraw(
   dx: number,
   dy: number,
   flip = false,
+  scale = 1,
 ) {
   const sprite = atlas.sprites.get(key);
   if (!sprite) {
     let h = 0;
     for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
     ctx.fillStyle = fallbackColors[h % fallbackColors.length]!;
-    ctx.fillRect(dx + 3, dy + 3, 10, 10);
+    ctx.fillRect(dx + 3, dy + 3, 10 * scale, 10 * scale);
     ctx.fillStyle = '#0d0a0f';
     ctx.font = '8px monospace';
     ctx.fillText((key.split('/')[1]?.[0] ?? '?').toUpperCase(), dx + 6, dy + 11);
     return;
   }
   const frame = sprite.frames[frameIndex % sprite.frames.length]!;
+  const dw = frame.w * scale;
+  const dh = frame.h * scale;
   if (flip) {
     ctx.save();
-    ctx.translate(dx + frame.w, dy);
+    ctx.translate(dx + dw, dy);
     ctx.scale(-1, 1);
-    ctx.drawImage(atlas.canvas, frame.x, frame.y, frame.w, frame.h, 0, 0, frame.w, frame.h);
+    ctx.drawImage(atlas.canvas, frame.x, frame.y, frame.w, frame.h, 0, 0, dw, dh);
     ctx.restore();
   } else {
-    ctx.drawImage(atlas.canvas, frame.x, frame.y, frame.w, frame.h, dx, dy, frame.w, frame.h);
+    ctx.drawImage(atlas.canvas, frame.x, frame.y, frame.w, frame.h, dx, dy, dw, dh);
   }
 }

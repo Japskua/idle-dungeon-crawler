@@ -326,6 +326,8 @@ export const TILE = {
   DOOR: 2,
   STAIRS_DOWN: 3,
   ENTRANCE: 4,
+  /** boss arena doors slam shut while the boss lives */
+  DOOR_CLOSED: 5,
 } as const;
 export type TileKind = (typeof TILE)[keyof typeof TILE];
 
@@ -355,6 +357,8 @@ export interface Floor {
   chests: Chest[];
   explored: Uint8Array;
   isBossFloor: boolean;
+  /** arena door tiles on boss floors (toggled DOOR <-> DOOR_CLOSED) */
+  bossDoors?: Vec2[];
 }
 
 export interface PartyState {

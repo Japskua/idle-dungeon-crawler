@@ -21,7 +21,9 @@ export function inBounds(floor: Floor, x: number, y: number): boolean {
 }
 
 export function isPassable(floor: Floor, x: number, y: number): boolean {
-  return inBounds(floor, x, y) && floor.tiles[idx(floor, x, y)] !== TILE.WALL;
+  if (!inBounds(floor, x, y)) return false;
+  const t = floor.tiles[idx(floor, x, y)];
+  return t !== TILE.WALL && t !== TILE.DOOR_CLOSED;
 }
 
 export function manhattan(a: Vec2, b: Vec2): number {

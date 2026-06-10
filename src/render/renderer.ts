@@ -4,7 +4,7 @@
  * interpolates entity movement with the loop's accumulator alpha.
  * All animation/FX state lives here, never in GameState.
  */
-import type { GameEvent, GameState, Id, Vec2 } from '../game/types';
+import { TILE, type GameEvent, type GameState, type Id, type Vec2 } from '../game/types';
 import { creatureDef } from '../game/content';
 import { derive } from '../game/hero/derive';
 import { monsterMaxHp } from '../game/balance';
@@ -36,6 +36,7 @@ export class Renderer {
   private floorKey = '';
   private cam: Vec2 = { x: 0, y: 0 };
   private camSnapped = false;
+  private lastFloorId = '';
   private fxTexts: FxText[] = [];
   private fxFlashes: FxFlash[] = [];
   private facing = new Map<Id, number>(); // 1 = right, -1 = left
@@ -154,12 +155,18 @@ export class Renderer {
     const floor = run.floor;
     const atlas = this.atlas;
 
-    // bake floor once per (runSeed, depth)
-    const key = `${run.runSeed}:${run.depth}`;
+    // bake floor once per (runSeed, depth, boss-door state)
+    const doorsClosed =
+      floor.bossDoors?.filter((d) => floor.tiles[d.y * floor.w + d.x] === TILE.DOOR_CLOSED).length ?? 0;
+    const key = `${run.runSeed}:${run.depth}:${doorsClosed}`;
     if (this.floorKey !== key) {
       this.floorCanvas = bakeFloor(atlas, floor);
       this.floorKey = key;
+    }
+    const floorId = `${run.runSeed}:${run.depth}`;
+    if (this.lastFloorId !== floorId) {
       this.camSnapped = false;
+      this.lastFloorId = floorId;
     }
 
     // entity draw positions (pixels), interpolated
@@ -223,6 +230,7 @@ export class Renderer {
       const m = run.monsters[id]!;
       if (m.hp <= 0) continue;
       const def = creatureDef(m.defId);
+      const isBoss = def.tier === 'boss';
       const px = this.entityPx(m.pos, m.move, alpha);
       this.updateFacing(id, m.move ? Math.sign(m.pos.x - m.move.from.x) : 0);
       const flash = this.fxFlashes.some((f) => f.entityId === id);
@@ -230,14 +238,22 @@ export class Renderer {
         y: px.y,
         draw: () => {
           const frame = Math.floor(state.tick / 4 + this.hashId(id)) % 2;
-          atlasDraw(ctx, atlas, `mob/${m.defId}`, frame, ox + px.x, oy + px.y, this.facing.get(id) === -1);
+          if (isBoss) {
+            // bosses render at 2x, bottom-anchored on their tile
+            atlasDraw(ctx, atlas, `mob/${m.defId}`, frame, ox + px.x - 8, oy + px.y - 16, this.facing.get(id) === -1, 2);
+          } else {
+            atlasDraw(ctx, atlas, `mob/${m.defId}`, frame, ox + px.x, oy + px.y, this.facing.get(id) === -1);
+          }
           if (m.elite) {
             ctx.fillStyle = '#f2c94c';
             ctx.fillRect(ox + px.x + 7, oy + px.y - 2, 2, 2);
           }
           if (flash) this.drawFlash(ctx, atlas, `mob/${m.defId}`, ox + px.x, oy + px.y);
           const maxHp = this.monsterMaxHpCache(m.defId, m.level, m.elite);
-          if (m.hp < maxHp) this.drawHpBar(ctx, ox + px.x, oy + px.y - 3, m.hp / maxHp, '#d13b3b');
+          if (m.hp < maxHp) {
+            if (isBoss) this.drawHpBar(ctx, ox + px.x - 8, oy + px.y - 19, m.hp / maxHp, '#d13b3b', 32);
+            else this.drawHpBar(ctx, ox + px.x, oy + px.y - 3, m.hp / maxHp, '#d13b3b');
+          }
         },
       });
     }
@@ -336,6 +352,46 @@ export class Renderer {
     ctx.fillStyle = '#e8e6f0';
     ctx.font = '8px monospace';
     ctx.fillText(`DEPTH ${run.depth}${floor.isBossFloor ? ' (BOSS)' : ''}`, 8, 13);
+
+    this.drawMinimap(ctx, state);
+  }
+
+  /** explored-tiles minimap, top-right corner (2px per tile) */
+  private drawMinimap(ctx: CanvasRenderingContext2D, state: GameState) {
+    const run = state.run!;
+    const floor = run.floor;
+    const s = 2;
+    const mw = floor.w * s;
+    const mh = floor.h * s;
+    const mx = VIEW_W - mw - 4;
+    const my = 4;
+    ctx.fillStyle = 'rgba(13,10,15,0.75)';
+    ctx.fillRect(mx - 1, my - 1, mw + 2, mh + 2);
+    for (let ty = 0; ty < floor.h; ty++) {
+      for (let tx = 0; tx < floor.w; tx++) {
+        const i = ty * floor.w + tx;
+        if (!floor.explored[i]) continue;
+        const t = floor.tiles[i]!;
+        if (t === TILE.WALL) continue;
+        if (t === TILE.STAIRS_DOWN) ctx.fillStyle = '#f2c94c';
+        else if (t === TILE.ENTRANCE) ctx.fillStyle = '#3fbfb4';
+        else if (t === TILE.DOOR_CLOSED) ctx.fillStyle = '#d13b3b';
+        else ctx.fillStyle = '#3e3554';
+        ctx.fillRect(mx + tx * s, my + ty * s, s, s);
+      }
+    }
+    ctx.fillStyle = '#f2c94c';
+    for (const chest of floor.chests) {
+      if (!chest.opened && floor.explored[chest.pos.y * floor.w + chest.pos.x]) {
+        ctx.fillRect(mx + chest.pos.x * s, my + chest.pos.y * s, s, s);
+      }
+    }
+    ctx.fillStyle = '#95d65a';
+    for (const id of run.party.memberIds) {
+      if (id in run.party.downed) continue;
+      const p = run.party.pos[id]!;
+      ctx.fillRect(mx + p.x * s, my + p.y * s, s, s);
+    }
   }
 
   private entityPx(pos: Vec2, move: { from: Vec2; t: number; total: number } | null | undefined, alpha: number): Vec2 {
@@ -357,11 +413,11 @@ export class Renderer {
     return h % 4;
   }
 
-  private drawHpBar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, color: string) {
+  private drawHpBar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, color: string, width = 16) {
     ctx.fillStyle = '#0d0a0f';
-    ctx.fillRect(x, y, 16, 2);
+    ctx.fillRect(x, y, width, 2);
     ctx.fillStyle = color;
-    ctx.fillRect(x, y, Math.max(1, Math.round(16 * Math.max(0, frac))), 2);
+    ctx.fillRect(x, y, Math.max(1, Math.round(width * Math.max(0, frac))), 2);
   }
 
   private flashCache = new Map<string, HTMLCanvasElement>();

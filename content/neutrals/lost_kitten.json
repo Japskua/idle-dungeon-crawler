@@ -1,0 +1,45 @@
+{
+  "id": "lost_kitten",
+  "name": "Lost Kitten",
+  "tier": "minion",
+  "disposition": "neutral",
+  "behavior": "flee",
+  "base": {
+    "hp": 3,
+    "dmg": 0,
+    "armor": 0,
+    "attackTicks": 10,
+    "moveTicks": 3,
+    "range": 1,
+    "aggroRadius": 0
+  },
+  "spawn": [{ "depths": [2, 99], "weight": 3 }],
+  "level": { "offset": 0, "spread": 0 },
+  "xpBase": 1,
+  "gold": [0, 0],
+  "skills": [],
+  "drops": [{ "item": "ball_of_yarn", "chance": 0.7 }],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....00..00......",
+        "...0ww00ww0.0...",
+        "...0w0ww0w00w0..",
+        "...0wwwwww0w0...",
+        "....0ww00ww0....",
+        "....00..00......"
+      ]
+    ]
+  }
+}

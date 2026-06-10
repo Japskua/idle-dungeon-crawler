@@ -1,0 +1,48 @@
+{
+  "id": "bone_colossus",
+  "name": "Bone Colossus",
+  "tier": "boss",
+  "disposition": "hostile",
+  "base": {
+    "hp": 34,
+    "dmg": 6,
+    "armor": 6,
+    "attackTicks": 14,
+    "moveTicks": 6,
+    "range": 1,
+    "aggroRadius": 7
+  },
+  "spawn": [{ "depths": [5, 99], "weight": 1 }],
+  "level": { "offset": 2, "spread": 0 },
+  "xpBase": 48,
+  "gold": [25, 50],
+  "skills": ["slam", "shriek"],
+  "drops": [
+    { "item": "war_axe", "chance": 0.5 },
+    { "item": "bone", "chance": 1, "qty": [4, 8] },
+    { "item": "bone_charm", "chance": 0.35 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        ".00........00...",
+        ".0w0......0w0...",
+        "..0w000000w0....",
+        "...0wwwwww0.....",
+        "...0w0ww0w0.....",
+        "...0wwwwww0.....",
+        "....0w00w0......",
+        "..000wwww000....",
+        ".0ww0wwwwww0ww0.",
+        ".0ww0wwwwww0ww0.",
+        ".0ww0wwwwww0ww0.",
+        "..00.0wwww0.00..",
+        ".....0w00w0.....",
+        "....0ww00ww0....",
+        "....0ww00ww0....",
+        "...0000..0000..."
+      ]
+    ]
+  }
+}
