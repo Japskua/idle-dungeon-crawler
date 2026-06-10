@@ -1,0 +1,9 @@
+{
+  "id": "thick_skull",
+  "name": "Thick Skull",
+  "kind": "modifier",
+  "polarity": "positive",
+  "weight": 8,
+  "mods": [{ "kind": "mult", "what": "maxhp", "mul": 1.08 }],
+  "flavor": "Headbutted a door once. The door is still recovering."
+}

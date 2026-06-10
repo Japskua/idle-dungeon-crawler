@@ -1,0 +1,9 @@
+{
+  "id": "lucky",
+  "name": "Lucky",
+  "kind": "modifier",
+  "polarity": "positive",
+  "weight": 6,
+  "mods": [{ "kind": "mult", "what": "gold", "mul": 1.15 }],
+  "flavor": "Coins just sort of... appear near them."
+}

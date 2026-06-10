@@ -1,0 +1,32 @@
+{
+  "id": "leather_armor",
+  "name": "Leather Armor",
+  "slot": "armor",
+  "kind": "leather",
+  "tier": 1,
+  "base": { "armor": 5 },
+  "value": 30,
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "..000......000..",
+        ".0nnn000000nnn0.",
+        ".0nn0nnnnnn0nn0.",
+        ".0n0nnnnnnnn0n0.",
+        "..00nnnnnnnn00..",
+        "...0nnnnnnnn0...",
+        "...0nnnnnnnn0...",
+        "...0nnnnnnnn0...",
+        "...0nNnnnnNn0...",
+        "...0nnnnnnnn0...",
+        "...0000000000...",
+        "................",
+        "................"
+      ]
+    ]
+  }
+}

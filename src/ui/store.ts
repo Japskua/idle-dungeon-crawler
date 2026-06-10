@@ -1,0 +1,131 @@
+/**
+ * The React-facing store. The sim mutates GameState in place; the loop bumps
+ * `rev` ~10x/s so selectors re-read the mutated tree. Selectors must return
+ * primitives or small fresh objects compared with `useShallow` — never
+ * interior mutable references.
+ */
+import { create } from 'zustand';
+import type { GameEvent, GameState } from '../game/types';
+import { CLASSES, INJURIES, ITEMS, creatureDef } from '../game/content';
+
+export interface LogEntry {
+  id: number;
+  text: string;
+  cls: 'dmg' | 'heal' | 'loot' | 'gold' | 'level' | 'bad' | 'info';
+}
+
+interface UiState {
+  game: GameState | null;
+  rev: number;
+  log: LogEntry[];
+  speed: number;
+}
+
+export const useUi = create<UiState>(() => ({
+  game: null,
+  rev: 0,
+  log: [],
+  speed: 1,
+}));
+
+let logId = 1;
+
+function heroName(game: GameState, id: string): string {
+  return game.roster[id]?.name ?? 'A hero';
+}
+
+function mobName(id: string): string {
+  try {
+    return creatureDef(id).name;
+  } catch {
+    return id;
+  }
+}
+
+function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
+  const entry = (text: string, cls: LogEntry['cls']): LogEntry => ({ id: logId++, text, cls });
+  switch (e.t) {
+    case 'damage': {
+      const srcHero = game.roster[e.src];
+      const dstHero = game.roster[e.dst];
+      if (srcHero) {
+        const target = game.run?.monsters[e.dst];
+        return entry(
+          `${srcHero.name} hits ${target ? `${mobName(target.defId)} (L${target.level})` : 'a foe'} for ${e.amount}${e.crit ? ' (CRIT!)' : ''}`,
+          'dmg',
+        );
+      }
+      if (dstHero) {
+        const src = game.run?.monsters[e.src];
+        return entry(`${src ? mobName(src.defId) : 'Something'} hits ${dstHero.name} for ${e.amount}`, 'dmg');
+      }
+      return null;
+    }
+    case 'potionUsed':
+      return entry(`${heroName(game, e.heroId)} drinks a ${e.potion === 'hp' ? 'healing' : 'mana'} potion (+${e.amount})`, 'heal');
+    case 'heal':
+      return entry(`${heroName(game, e.dst)} is healed for ${e.amount}`, 'heal');
+    case 'monsterDied':
+      return entry(`${mobName(e.defId)} (L${e.level}) dies. +${e.xp} xp, +${e.gold}g`, 'gold');
+    case 'lootPicked':
+      return entry(`${heroName(game, e.by)} picks up ${ITEMS[e.defId]?.name ?? e.defId}`, 'loot');
+    case 'chestOpened':
+      return entry(`Chest opened: +${e.gold}g${e.items.length ? ', ' + e.items.map((i) => ITEMS[i]?.name ?? i).join(', ') : ''}`, 'loot');
+    case 'levelUp':
+      return entry(`${heroName(game, e.heroId)} reaches level ${e.level}!`, 'level');
+    case 'heroDowned':
+      return entry(`${heroName(game, e.heroId)} is DOWN!`, 'bad');
+    case 'heroCarried':
+      return entry(`${heroName(game, e.carrier)} picks up ${heroName(game, e.carried)}`, 'info');
+    case 'heroDied':
+      return entry(`☠ ${e.name} has died at depth ${e.depth}. Permanently.`, 'bad');
+    case 'injury': {
+      const injury = INJURIES[e.injuryId];
+      return entry(`${heroName(game, e.heroId)} suffers: ${injury?.name ?? e.injuryId}`, 'bad');
+    }
+    case 'descend':
+      return entry(`The party descends to depth ${e.depth}.`, 'info');
+    case 'withdrawOrdered':
+      return entry('Withdraw ordered — the party heads for the exit.', 'info');
+    case 'wipe':
+      return entry(`PARTY WIPE. ${e.goldLost} gold lost in the dark.`, 'bad');
+    case 'runEnded':
+      return e.outcome === 'withdrawn'
+        ? entry(`The party returns from depth ${e.depth} with ${e.goldKept} gold.`, 'gold')
+        : null;
+    case 'neutralSighted':
+      return entry(`A wild ${mobName(e.defId)} minds its own business nearby.`, 'info');
+    case 'neutralKilled':
+      return entry(`The ${mobName(e.defId)} did not survive the crossfire. Shame falls on the party.`, 'bad');
+    case 'bossSlain':
+      return entry(`BOSS SLAIN: ${mobName(e.defId)}! A checkpoint is unlocked.`, 'level');
+    case 'embark':
+      return entry(`The party embarks (depth ${e.depth}).`, 'info');
+    case 'hire':
+      return entry(`${e.name} hired${e.cost > 0 ? ` for ${e.cost}g` : ' (free — the village insists)'}.`, 'info');
+    case 'purchase':
+      return entry(`Bought: ${e.what} (−${e.cost}g)`, 'info');
+    default:
+      return null;
+  }
+}
+
+export function publish(game: GameState, events: GameEvent[]) {
+  useUi.setState((s) => {
+    let log = s.log;
+    if (events.length > 0) {
+      const fresh = events
+        .map((e) => formatEvent(game, e))
+        .filter((x): x is LogEntry => x !== null);
+      if (fresh.length > 0) {
+        log = [...log, ...fresh];
+        if (log.length > 200) log = log.slice(log.length - 200);
+      }
+    }
+    return { game, rev: s.rev + 1, log };
+  });
+}
+
+export function setUiSpeed(speed: number) {
+  useUi.setState({ speed });
+}

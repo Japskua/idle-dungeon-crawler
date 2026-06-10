@@ -1,0 +1,45 @@
+{
+  "id": "chicken",
+  "name": "Suspiciously Calm Chicken",
+  "tier": "minion",
+  "disposition": "neutral",
+  "behavior": "wander",
+  "base": {
+    "hp": 4,
+    "dmg": 0,
+    "armor": 0,
+    "attackTicks": 10,
+    "moveTicks": 5,
+    "range": 1,
+    "aggroRadius": 0
+  },
+  "spawn": [{ "depths": [1, 99], "weight": 5 }],
+  "level": { "offset": 0, "spread": 0 },
+  "xpBase": 1,
+  "gold": [0, 0],
+  "skills": [],
+  "drops": [{ "item": "egg", "chance": 0.8 }],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        ".........r......",
+        "........0r0.....",
+        "........0ww0o...",
+        "........0w0w0o..",
+        "....0000www0....",
+        "...0wwwwwwww0...",
+        "..0wwwwwwwww0...",
+        "..0wwwwwwwww0...",
+        "...0wwwwwww0....",
+        "....00000000....",
+        "......o..o......",
+        ".....oo..oo....."
+      ]
+    ]
+  }
+}

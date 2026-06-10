@@ -1,0 +1,29 @@
+{
+  "id": "banks",
+  "firstSyllables": [
+    "Bor", "Gar", "Thro", "Mag", "El", "Fen", "Ulf", "Bram", "Wil", "Hed",
+    "Kor", "Sig", "Ran", "Tor", "Ast", "Bryn", "Dag", "Ed", "Grim", "Hal",
+    "Ing", "Jor", "Kel", "Lod", "Mar", "Nor", "Odd", "Pip", "Quin", "Rag"
+  ],
+  "lastSyllables": [
+    "in", "ric", "mund", "da", "wyn", "gar", "nik", "bert", "ma", "wig",
+    "stein", "rid", "olf", "hild", "bald", "fred", "gunn", "leif", "nar", "thora",
+    "bug", "son", "dottir", "by", "ton", "wick", "ley", "worth", "shaw", "croft"
+  ],
+  "funnyNames": [
+    "Bob", "Susan", "Kevin", "Greg the Third", "Tax Collector Pete",
+    "Grimbeard Souphands", "Salad", "Brunhilde the Brief", "Cheese Lord Andy",
+    "Mildly Threatening Dave", "Doris", "Sir Pancake", "Gerald of the Damp",
+    "Unpaid Intern Tobias", "Beans McGee", "Linda Linda Linda", "Roy",
+    "The Other Kevin", "Aggressively Average Anne", "Bartholomew Crumb"
+  ],
+  "epithets": [
+    "the Unfortunate", "the Brave", "the Damp", "the Unwashed", "the Bold",
+    "the Confused", "Souphands", "the Magnificent", "of the Mild Opinions",
+    "the Snorer", "Two-Socks", "the Probably Fine", "Halfboot", "the Loud",
+    "the Punctual", "Many-Splinters", "the Allergic", "Strongback", "the Lost",
+    "Who Asks Too Many Questions"
+  ],
+  "epithetChance": 0.35,
+  "funnyChance": 0.18
+}

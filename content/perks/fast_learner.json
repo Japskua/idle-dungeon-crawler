@@ -1,0 +1,9 @@
+{
+  "id": "fast_learner",
+  "name": "Fast Learner",
+  "kind": "modifier",
+  "polarity": "positive",
+  "weight": 6,
+  "mods": [{ "kind": "mult", "what": "xp", "mul": 1.15 }],
+  "flavor": "Took notes during the goblin ambush."
+}

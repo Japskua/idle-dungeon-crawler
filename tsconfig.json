@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "types": ["bun"],
+
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    "paths": {
+      "@game/*": ["./src/game/*"],
+      "@render/*": ["./src/render/*"],
+      "@ui/*": ["./src/ui/*"],
+      "@app/*": ["./src/app/*"]
+    }
+  },
+  "include": ["src", "tools", "index.html"]
+}

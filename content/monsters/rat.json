@@ -1,0 +1,50 @@
+{
+  "id": "rat",
+  "name": "Giant Rat",
+  "tier": "minion",
+  "disposition": "hostile",
+  "base": {
+    "hp": 8,
+    "dmg": 2,
+    "armor": 0,
+    "attackTicks": 10,
+    "moveTicks": 4,
+    "range": 1,
+    "aggroRadius": 5
+  },
+  "spawn": [
+    { "depths": [1, 4], "weight": 12 },
+    { "depths": [5, 9], "weight": 4 }
+  ],
+  "level": { "offset": 0, "spread": 1 },
+  "xpBase": 3,
+  "gold": [0, 2],
+  "skills": [],
+  "drops": [
+    { "item": "rat_tail", "chance": 0.3, "qty": [1, 1] },
+    { "item": "hp_potion_s", "chance": 0.04 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..........00....",
+        ".........0m00...",
+        "......0000mm0...",
+        ".....0nnnnnn00..",
+        "0mm0.0nnnnnnnr0.",
+        ".00nnnnnnnnnnn0.",
+        "..0nnnnnnnnnn0..",
+        "...0nnnnnnnn0...",
+        "....00n00n00....",
+        "................"
+      ]
+    ]
+  }
+}

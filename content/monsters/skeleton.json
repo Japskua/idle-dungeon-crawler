@@ -1,0 +1,52 @@
+{
+  "id": "skeleton",
+  "name": "Skeleton",
+  "tier": "normal",
+  "disposition": "hostile",
+  "base": {
+    "hp": 18,
+    "dmg": 4,
+    "armor": 2,
+    "attackTicks": 12,
+    "moveTicks": 5,
+    "range": 1,
+    "aggroRadius": 6
+  },
+  "spawn": [
+    { "depths": [2, 6], "weight": 10 },
+    { "depths": [7, 14], "weight": 6 },
+    { "depths": [15, 99], "weight": 3 }
+  ],
+  "level": { "offset": 0, "spread": 2 },
+  "xpBase": 6,
+  "gold": [1, 4],
+  "skills": [],
+  "drops": [
+    { "item": "bone", "chance": 0.35, "qty": [1, 2] },
+    { "item": "rusty_sword", "chance": 0.05 },
+    { "item": "skull_cap", "chance": 0.02 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "....000000......",
+        "...0wwwwww0.....",
+        "...0w0ww0w0.....",
+        "...0wwwwww0.....",
+        "....0w00w0......",
+        ".....0000.......",
+        "...000ww000.....",
+        "..0w0wwww0w0....",
+        "..0w0wwww0w0....",
+        "....0wwww0......",
+        "....0w00w0......",
+        "....0w00w0......",
+        "...00w00w00.....",
+        "...0ww00ww0.....",
+        "................"
+      ]
+    ]
+  }
+}

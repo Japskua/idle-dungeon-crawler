@@ -1,0 +1,9 @@
+{
+  "id": "collects_spoons",
+  "name": "Collects Spoons",
+  "kind": "flavor",
+  "polarity": "neutral",
+  "weight": 6,
+  "mods": [],
+  "flavor": "Has a spoon from every dungeon they've visited. Do not ask about the spoons."
+}

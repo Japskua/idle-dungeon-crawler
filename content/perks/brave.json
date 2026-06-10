@@ -1,0 +1,9 @@
+{
+  "id": "brave",
+  "name": "Brave",
+  "kind": "modifier",
+  "polarity": "positive",
+  "weight": 10,
+  "mods": [{ "kind": "attr", "attr": "str", "add": 1 }],
+  "flavor": "Charges first, thinks later."
+}

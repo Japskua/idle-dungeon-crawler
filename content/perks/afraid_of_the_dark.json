@@ -1,0 +1,9 @@
+{
+  "id": "afraid_of_the_dark",
+  "name": "Afraid of the Dark",
+  "kind": "modifier",
+  "polarity": "negative",
+  "weight": 8,
+  "mods": [{ "kind": "mult", "what": "dmg", "mul": 0.92 }],
+  "flavor": "Keeps glancing over their shoulder. You are in a dungeon. This is a problem."
+}

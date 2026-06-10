@@ -1,0 +1,9 @@
+{
+  "id": "snores_loudly",
+  "name": "Snores Loudly",
+  "kind": "flavor",
+  "polarity": "negative",
+  "weight": 8,
+  "mods": [],
+  "flavor": "No gameplay effect. The rest of the party simply suffers."
+}

@@ -1,0 +1,10 @@
+{
+  "id": "frying_pan_owner",
+  "name": "Owns a Frying Pan",
+  "kind": "startingItem",
+  "polarity": "positive",
+  "weight": 5,
+  "mods": [],
+  "item": "frying_pan",
+  "flavor": "Refuses to part with it. It was their grandmother's."
+}

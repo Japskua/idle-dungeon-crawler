@@ -1,0 +1,26 @@
+{
+  "id": "door",
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "3333333333333333",
+        "3333333333333333",
+        "333nnnnNnnnnn333",
+        "333nnnnNnnnnn333",
+        "333nnnnNnnnnn333",
+        "333NNNNNNNNNN333",
+        "333nnnnNnnnnn333",
+        "333nnnnNnnnnn333",
+        "333nnnnNnnnyn333",
+        "333nnnnNnnnnn333",
+        "333NNNNNNNNNN333",
+        "333nnnnNnnnnn333",
+        "333nnnnNnnnnn333",
+        "333nnnnNnnnnn333",
+        "3331111111111333",
+        "1111111111111111"
+      ]
+    ]
+  }
+}

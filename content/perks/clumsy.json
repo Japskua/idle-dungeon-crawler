@@ -1,0 +1,9 @@
+{
+  "id": "clumsy",
+  "name": "Clumsy",
+  "kind": "modifier",
+  "polarity": "negative",
+  "weight": 10,
+  "mods": [{ "kind": "attr", "attr": "dex", "add": -1 }],
+  "flavor": "Has tripped over flat floors. Multiple flat floors."
+}

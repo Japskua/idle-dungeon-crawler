@@ -1,0 +1,10 @@
+{
+  "id": "heirloom_ring",
+  "name": "Family Heirloom",
+  "kind": "startingItem",
+  "polarity": "positive",
+  "weight": 3,
+  "mods": [],
+  "item": "lucky_ring",
+  "flavor": "A ring passed down for generations. Pawning it is technically an option."
+}

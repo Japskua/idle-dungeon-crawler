@@ -1,0 +1,45 @@
+{
+  "id": "rollerblading_tortoise",
+  "name": "Rollerblading Tortoise",
+  "tier": "minion",
+  "disposition": "neutral",
+  "behavior": "wander",
+  "base": {
+    "hp": 10,
+    "dmg": 0,
+    "armor": 5,
+    "attackTicks": 10,
+    "moveTicks": 3,
+    "range": 1,
+    "aggroRadius": 0
+  },
+  "spawn": [{ "depths": [1, 99], "weight": 2 }],
+  "level": { "offset": 0, "spread": 0 },
+  "xpBase": 1,
+  "gold": [0, 0],
+  "skills": [],
+  "drops": [{ "item": "tiny_rollerblades", "chance": 0.5 }],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        ".....00000......",
+        "....0GGGGG0.....",
+        "...0GgggGGG0....",
+        "..0GgggggGG0.0s0",
+        "..0GGgggGGG00ss0",
+        "...000000000.0s0",
+        "....0s0..0s0....",
+        "...0cc0..0cc0...",
+        "...0cc0..0cc0...",
+        "...0y0y0.0y0y0..",
+        "................"
+      ]
+    ]
+  }
+}
