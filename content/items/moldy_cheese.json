@@ -5,6 +5,7 @@
   "kind": "potion",
   "tier": 1,
   "potion": { "kind": "hp", "amount": 10 },
+  "weight": 0.4,
   "value": 4,
   "flavor": "Aged beyond reason. Heals the body, troubles the soul.",
   "sprite": {

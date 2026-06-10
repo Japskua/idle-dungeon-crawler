@@ -58,6 +58,18 @@ export function heroMaxMp(classBaseMp: number, int: number): number {
   return Math.round(classBaseMp + int * 4);
 }
 
+/** mana regenerated per tick while in the dungeon (village regen is wall-clock). */
+export function manaRegenPerTick(int: number): number {
+  return 0.04 + int * 0.005;
+}
+
+/** carry capacity in kg: class build plus raw strength. */
+export function carryCapacity(classBaseCarry: number, str: number): number {
+  return Math.round((classBaseCarry + str * 2) * 10) / 10;
+}
+
+export const POTION_WEIGHT = 0.5;
+
 /** XP from a kill is split among living party members (each gets the share). */
 export function xpShare(total: number, partySize: number): number {
   return Math.max(1, Math.ceil(total / partySize));

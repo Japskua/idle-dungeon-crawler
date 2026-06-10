@@ -67,6 +67,8 @@ export interface ItemDef {
     stats?: Partial<Attributes>;
   };
   potion?: { kind: PotionKind; amount: number };
+  /** kg — counts against a hero's carry capacity */
+  weight: number;
   value: number;
   flavor?: string;
   sprite: SpriteData;
@@ -165,6 +167,8 @@ export interface SkillDef {
   physical?: boolean;
   applies?: { statusId: StatusId; duration: number; chance: number }[];
   description: string;
+  /** present = teachable at the Magician's Guild to any hero meeting the bar */
+  guild?: { cost: number; minLevel: number; minInt: number };
 }
 
 export interface StatusDef {
@@ -193,6 +197,8 @@ export interface ClassDef {
   growth: Attributes;
   baseHp: number;
   baseMp: number;
+  /** kg before strength — fighters lug more than wizards */
+  baseCarry: number;
   weaponKinds: string[];
   startingItems: ItemDefId[];
   skillUnlocks: { level: number; skillId: SkillId }[];
@@ -379,6 +385,8 @@ export interface GroundLoot {
   id: Id;
   pos: Vec2;
   item: ItemInstance;
+  /** already reported as too heavy — don't spam the log */
+  heavy?: boolean;
 }
 
 export interface DungeonRun {
@@ -473,6 +481,7 @@ export type GameEvent =
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }
+  | { t: 'lootTooHeavy'; defId: ItemDefId }
   | { t: 'chestOpened'; gold: number; items: ItemDefId[]; pos: Vec2 }
   | { t: 'heroDowned'; heroId: Id; pos: Vec2 }
   | { t: 'heroCarried'; carrier: Id; carried: Id }

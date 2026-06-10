@@ -24,6 +24,7 @@ import {
   DMG_VARIANCE,
   ENGAGE_RADIUS,
   REVEAL_RADIUS,
+  manaRegenPerTick,
   monsterDmg,
   monsterGoldMult,
   monsterXp,
@@ -218,11 +219,17 @@ function tickStatuses(state: GameState, run: DungeonRun) {
   for (const id of run.party.memberIds) {
     const hero = state.roster[id];
     if (!hero || id in run.party.downed) continue;
+    const d = derive(hero);
+    // mana trickles back each tick, faster for clever heads
+    if (hero.mp < d.maxMp) {
+      hero.mp = Math.min(d.maxMp, hero.mp + manaRegenPerTick(d.attrs.int));
+    }
     for (const st of hero.statuses) {
       st.ticksLeft--;
       const def = STATUSES[st.statusId];
       if (def?.hpPerTick) hero.hp += def.hpPerTick;
     }
+    if (hero.hp > d.maxHp) hero.hp = d.maxHp; // regrowth must not overheal
     hero.statuses = hero.statuses.filter((s) => s.ticksLeft > 0);
   }
   for (const id of run.monsterOrder) {
@@ -850,8 +857,29 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       applyStatuses(ally.statuses);
       return;
     }
-    if (skill.target === 'self' || skill.target === 'alliesInRadius') {
+    if (skill.target === 'self') {
+      if (skill.kind === 'heal' && power > 0) {
+        const amount = Math.max(1, Math.round(power));
+        hero.hp = Math.min(d.maxHp, hero.hp + amount);
+        events.push({ t: 'heal', src: hero.id, dst: hero.id, amount, pos: { ...myPos } });
+      }
       applyStatuses(hero.statuses);
+      return;
+    }
+    if (skill.target === 'alliesInRadius') {
+      const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+      for (const hid of standingIds(run)) {
+        const ally = state.roster[hid];
+        if (!ally) continue;
+        if (euclid2(myPos, run.party.pos[hid]!) > r2) continue;
+        if (skill.kind === 'heal' && power > 0) {
+          const ad = hid === hero.id ? d : derive(ally);
+          const amount = Math.max(1, Math.round(power));
+          ally.hp = Math.min(ad.maxHp, ally.hp + amount);
+          events.push({ t: 'heal', src: hero.id, dst: hid, amount, pos: { ...run.party.pos[hid]! } });
+        }
+        applyStatuses(ally.statuses);
+      }
       return;
     }
     return;
@@ -1010,13 +1038,32 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
   }
 }
 
+/** kg the standing party can still haul: Σ(capacity − pack) − loot bag weight */
+export function lootBagWeight(run: DungeonRun): number {
+  let w = 0;
+  for (const item of run.party.lootBag) w += ITEMS[item.defId]?.weight ?? 0;
+  return Math.round(w * 10) / 10;
+}
+
+export function partySpareCapacity(state: GameState, run: DungeonRun): number {
+  let spare = 0;
+  for (const id of standingIds(run)) {
+    const hero = state.roster[id];
+    if (!hero) continue;
+    const d = derive(hero);
+    spare += Math.max(0, d.carryMax - d.carryUsed);
+  }
+  return Math.round((spare - lootBagWeight(run)) * 10) / 10;
+}
+
 // ---------- party logic: loot, chests, rooms, descend, withdraw exit ----------
 function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: GameEvent[]) {
   run.ticksOnFloor++;
   const standing = standingIds(run);
 
-  // loot pickup (same tile)
+  // loot pickup (same tile) — limited by what the party can still carry
   if (run.groundLoot.length > 0) {
+    let spare = partySpareCapacity(state, run);
     const keep: typeof run.groundLoot = [];
     for (const loot of run.groundLoot) {
       const taker = standing.find((hid) => {
@@ -1024,16 +1071,24 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
         return p.x === loot.pos.x && p.y === loot.pos.y;
       });
       if (taker) {
-        run.party.lootBag.push(loot.item);
-        events.push({ t: 'lootPicked', defId: loot.item.defId, by: taker });
-      } else {
-        keep.push(loot);
+        const weight = ITEMS[loot.item.defId]?.weight ?? 0;
+        if (weight <= spare) {
+          spare -= weight;
+          run.party.lootBag.push(loot.item);
+          events.push({ t: 'lootPicked', defId: loot.item.defId, by: taker });
+          continue;
+        }
+        if (!loot.heavy) {
+          loot.heavy = true;
+          events.push({ t: 'lootTooHeavy', defId: loot.item.defId });
+        }
       }
+      keep.push(loot);
     }
     run.groundLoot = keep;
   }
 
-  // chests (adjacent or same tile)
+  // chests (adjacent or same tile) — overweight contents spill onto the floor
   for (const chest of run.floor.chests) {
     if (chest.opened) continue;
     const opener = standing.find((hid) => manhattan(run.party.pos[hid]!, chest.pos) <= 1);
@@ -1041,7 +1096,16 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
     chest.opened = true;
     const loot = rollChestLoot(state, run.depth);
     run.party.goldCarried += loot.gold;
-    run.party.lootBag.push(...loot.items);
+    let spare = partySpareCapacity(state, run);
+    for (const item of loot.items) {
+      const weight = ITEMS[item.defId]?.weight ?? 0;
+      if (weight <= spare) {
+        spare -= weight;
+        run.party.lootBag.push(item);
+      } else {
+        run.groundLoot.push({ id: allocId(state, 'g'), pos: { ...chest.pos }, item, heavy: true });
+      }
+    }
     events.push({ t: 'chestOpened', gold: loot.gold, items: loot.items.map((i) => i.defId), pos: { ...chest.pos } });
   }
 

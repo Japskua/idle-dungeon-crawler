@@ -91,6 +91,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`${mobName(e.defId)} (L${e.level}) dies. +${e.xp} xp, +${e.gold}g`, 'gold');
     case 'lootPicked':
       return entry(`${heroName(game, e.by)} picks up ${ITEMS[e.defId]?.name ?? e.defId}`, 'loot');
+    case 'lootTooHeavy':
+      return entry(`The party's bags are too full for ${ITEMS[e.defId]?.name ?? e.defId} — left behind.`, 'info');
     case 'chestOpened':
       return entry(`Chest opened: +${e.gold}g${e.items.length ? ', ' + e.items.map((i) => ITEMS[i]?.name ?? i).join(', ') : ''}`, 'loot');
     case 'levelUp':

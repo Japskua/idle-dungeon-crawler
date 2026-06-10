@@ -5,7 +5,7 @@
 import type { Command, GameEvent, GameState } from './types';
 import { startRun, chronicle } from './run/lifecycle';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
-import { CHORES, INJURIES, classDef, itemDef } from './content';
+import { CHORES, INJURIES, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
 import { makeItem } from './items/factory';
 import { makeHero } from './hero/create';
@@ -120,8 +120,14 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const i = state.village.inventory.findIndex((it) => it.id === cmd.itemId);
       if (!hero || i === -1) return;
       const item = state.village.inventory[i]!;
-      const slot = itemDef(item.defId).slot;
+      const def = itemDef(item.defId);
+      const slot = def.slot;
       if (slot !== 'weapon' && slot !== 'offhand' && slot !== 'armor' && slot !== 'trinket') return;
+      // carry capacity: swapping counts the replaced item's weight as freed
+      const d = derive(hero);
+      const replaced = hero.equipment[slot];
+      const replacedWeight = replaced ? itemDef(replaced.defId).weight : 0;
+      if (d.carryUsed - replacedWeight + def.weight > d.carryMax + 1e-9) return; // too heavy
       state.village.inventory.splice(i, 1);
       const old = hero.equipment[slot];
       hero.equipment[slot] = item;
@@ -210,15 +216,27 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.mode !== 'village') return;
       const hero = state.roster[cmd.heroId];
       if (!hero || hero.skills.includes(cmd.skillId)) return;
+      const skill = SKILLS[cmd.skillId];
+      if (!skill) return;
       const cls = classDef(hero.classId);
       const unlock = cls.skillUnlocks.find((u) => u.skillId === cmd.skillId);
-      if (!unlock) return; // can only learn skills of your own class
-      const cost = learnSkillCost(unlock.level, unlock.level - hero.level);
+      let cost: number;
+      if (unlock) {
+        // class training: learn your own skill ahead of its level
+        cost = learnSkillCost(unlock.level, unlock.level - hero.level);
+      } else if (skill.guild) {
+        // the open spellbook: anyone smart and seasoned enough may study
+        if (hero.level < skill.guild.minLevel) return;
+        if (derive(hero).attrs.int < skill.guild.minInt) return;
+        cost = skill.guild.cost;
+      } else {
+        return; // monster moves and other classes' techniques are not for sale
+      }
       if (state.village.gold < cost) return;
       state.village.gold -= cost;
       hero.skills.push(cmd.skillId);
-      events.push({ t: 'purchase', what: `${hero.name} learned ${cmd.skillId}`, cost });
-      chronicle(state, nowMs, `${hero.name} studied at the Magician's Guild and learned a new trick.`);
+      events.push({ t: 'purchase', what: `${hero.name} learned ${skill.name}`, cost });
+      chronicle(state, nowMs, `${hero.name} studied at the Magician's Guild and learned ${skill.name}.`);
       return;
     }
     case 'REST_HERO': {

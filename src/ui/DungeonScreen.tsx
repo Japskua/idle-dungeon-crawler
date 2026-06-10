@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { app } from '../app/loop';
 import { CLASSES } from '../game/content';
+import { lootBagWeight, partySpareCapacity } from '../game/run/runtime';
 import type { Hero } from '../game/types';
 import { VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
@@ -117,7 +118,14 @@ export function DungeonScreen() {
             <span>
               Carried gold: <b className="gold">{party.goldCarried}g</b>
             </span>
-            <span className="muted">loot: {party.lootBag.length}</span>
+            <span className="muted">
+              loot: {party.lootBag.length} ({lootBagWeight(run).toFixed(1)}kg
+              {(() => {
+                const spare = partySpareCapacity(app.state, run);
+                return spare <= 2 ? ', bags full!' : `, ${spare.toFixed(0)}kg spare`;
+              })()}
+              )
+            </span>
           </div>
           <button
             className="btn btn-warn wide"

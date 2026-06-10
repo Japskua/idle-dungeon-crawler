@@ -5,6 +5,7 @@
   "kind": "potion",
   "tier": 1,
   "potion": { "kind": "hp", "amount": 5 },
+  "weight": 0.2,
   "value": 3,
   "flavor": "Raw. Restores a surprising amount of morale.",
   "sprite": {

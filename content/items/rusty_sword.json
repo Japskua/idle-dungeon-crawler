@@ -5,6 +5,7 @@
   "kind": "sword",
   "tier": 1,
   "base": { "dmg": 4, "attackTicks": 12 },
+  "weight": 4,
   "value": 8,
   "flavor": "It has seen better centuries.",
   "sprite": {

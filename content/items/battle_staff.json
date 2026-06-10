@@ -5,6 +5,7 @@
   "kind": "staff",
   "tier": 2,
   "base": { "dmg": 6, "attackTicks": 16, "range": 2, "stats": { "int": 2 } },
+  "weight": 3.5,
   "value": 70,
   "sprite": {
     "size": 16,

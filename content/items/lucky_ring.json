@@ -5,6 +5,7 @@
   "kind": "ring",
   "tier": 1,
   "base": { "stats": { "dex": 2 } },
+  "weight": 0.1,
   "value": 40,
   "flavor": "You feel marginally luckier.",
   "sprite": {

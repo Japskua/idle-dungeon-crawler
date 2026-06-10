@@ -5,6 +5,7 @@
   "kind": "mail",
   "tier": 2,
   "base": { "armor": 9 },
+  "weight": 7,
   "value": 75,
   "sprite": {
     "size": 16,

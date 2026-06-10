@@ -5,6 +5,7 @@
   "kind": "trinket",
   "tier": 1,
   "base": { "stats": { "dex": 1 } },
+  "weight": 0.2,
   "value": 20,
   "flavor": "A kitten's most prized possession, freely given. Probably.",
   "sprite": {

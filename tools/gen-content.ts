@@ -95,6 +95,7 @@ for (const { file, data } of itemFiles) {
   need(file, data, 'value', 'number');
   if (!SLOTS.includes(data.slot)) err(file, `slot must be one of ${SLOTS.join('|')} (is '${data.slot}')`);
   if (!Number.isInteger(data.tier) || data.tier < 1) err(file, `tier must be a positive integer`);
+  if (typeof data.weight !== 'number' || data.weight < 0) err(file, `weight (kg, >= 0) is required`);
   if (data.slot === 'potion' && !data.potion) err(file, `potion items need a 'potion' field {kind, amount}`);
   if (data.potion && !['hp', 'mp'].includes(data.potion.kind)) err(file, `potion.kind must be hp|mp`);
   checkSprite(file, data.sprite);

@@ -5,6 +5,7 @@
   "kind": "shield",
   "tier": 1,
   "base": { "armor": 4 },
+  "weight": 4,
   "value": 20,
   "sprite": {
     "size": 16,

@@ -1,6 +1,31 @@
+import { useEffect, useRef } from 'react';
 import type { Hero, ItemInstance } from '../game/types';
 import { ITEMS } from '../game/content';
 import { derive } from '../game/hero/derive';
+import { atlasDraw, getAtlas } from '../render/spriteCompiler';
+
+/** An animated pixel portrait of a class (idle bob, faces right). */
+export function ClassSprite({ classId, scale = 3 }: { classId: string; scale?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = false;
+    let frame = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      atlasDraw(ctx, getAtlas(), `hero/${classId}`, frame, 0, 0, false, scale);
+    };
+    draw();
+    const iv = setInterval(() => {
+      frame = 1 - frame;
+      draw();
+    }, 450);
+    return () => clearInterval(iv);
+  }, [classId, scale]);
+  return <canvas ref={ref} width={16 * scale} height={16 * scale} className="class-sprite" />;
+}
 
 export function Bar({ value, max, color, label }: { value: number; max: number; color: string; label?: string }) {
   const frac = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
@@ -41,6 +66,7 @@ export function ItemName({ item }: { item: ItemInstance }) {
       if (mod.kind === 'attr') stats.push(`+${mod.add} ${mod.attr}`);
     }
   }
+  if (def?.weight) stats.push(`${def.weight}kg`);
   const title = [def?.flavor, stats.join(', ')].filter(Boolean).join(' — ');
   return (
     <span className="item-name" style={{ color: rarityColor[item.rarity] }} title={title}>

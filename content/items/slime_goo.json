@@ -4,6 +4,7 @@
   "slot": "junk",
   "kind": "junk",
   "tier": 1,
+  "weight": 0.3,
   "value": 2,
   "flavor": "Sticky. Vaguely smug about it.",
   "sprite": {

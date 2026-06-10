@@ -4,6 +4,7 @@
   "slot": "junk",
   "kind": "junk",
   "tier": 1,
+  "weight": 0.1,
   "value": 1,
   "flavor": "Still wiggles if you stare at it.",
   "sprite": {

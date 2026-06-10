@@ -4,6 +4,7 @@
   "slot": "junk",
   "kind": "junk",
   "tier": 1,
+  "weight": 0.2,
   "value": 3,
   "flavor": "Stronger than steel, stickier than regret.",
   "sprite": {

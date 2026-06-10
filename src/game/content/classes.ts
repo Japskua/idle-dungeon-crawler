@@ -13,6 +13,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     growth: { str: 1.5, dex: 0.5, int: 0.2, vit: 1.5 },
     baseHp: 40,
     baseMp: 10,
+    baseCarry: 30,
     weaponKinds: ['sword', 'mace'],
     startingItems: ['rusty_sword', 'cloth_tunic'],
     skillUnlocks: [
@@ -53,6 +54,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     growth: { str: 0.4, dex: 0.4, int: 1.6, vit: 1.0 },
     baseHp: 28,
     baseMp: 30,
+    baseCarry: 18,
     weaponKinds: ['mace', 'staff'],
     startingItems: ['oak_staff', 'cloth_tunic'],
     skillUnlocks: [
@@ -93,6 +95,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     growth: { str: 0.6, dex: 1.7, int: 0.4, vit: 0.8 },
     baseHp: 30,
     baseMp: 16,
+    baseCarry: 22,
     weaponKinds: ['bow', 'dagger'],
     startingItems: ['hunting_bow', 'cloth_tunic'],
     skillUnlocks: [{ level: 2, skillId: 'power_shot' }],
@@ -130,6 +133,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     growth: { str: 0.2, dex: 0.5, int: 1.9, vit: 0.6 },
     baseHp: 22,
     baseMp: 36,
+    baseCarry: 12,
     weaponKinds: ['staff', 'dagger'],
     startingItems: ['oak_staff'],
     skillUnlocks: [{ level: 1, skillId: 'fireball' }],

@@ -4,7 +4,7 @@
  */
 import type { Attributes, Hero, StatMod } from '../types';
 import { CLASSES, INJURIES, PERKS, STATUSES, itemDef } from '../content';
-import { HERO_MOVE_TICKS, UNARMED, critChance, heroMaxHp, heroMaxMp } from '../balance';
+import { HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp } from '../balance';
 
 export interface DerivedStats {
   attrs: Attributes;
@@ -19,6 +19,10 @@ export interface DerivedStats {
   goldMult: number;
   critChance: number;
   moveTicks: number;
+  /** kg the hero can carry (class build + strength) */
+  carryMax: number;
+  /** kg currently on their back: equipment + carried potions */
+  carryUsed: number;
 }
 
 const EQUIP_SLOTS = ['weapon', 'offhand', 'armor', 'trinket'] as const;
@@ -33,12 +37,14 @@ export function derive(hero: Hero): DerivedStats {
   let weaponDmg = UNARMED.dmg;
   let attackTicks = UNARMED.attackTicks;
   let attackRange = UNARMED.range;
+  let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT;
 
   for (const slot of EQUIP_SLOTS) {
     const inst = hero.equipment[slot];
     if (!inst) continue;
     const def = itemDef(inst.defId);
     armor += def.base?.armor ?? 0;
+    carryUsed += def.weight ?? 0;
     if (slot === 'weapon') {
       weaponDmg = def.base?.dmg ?? UNARMED.dmg;
       attackTicks = def.base?.attackTicks ?? UNARMED.attackTicks;
@@ -88,5 +94,7 @@ export function derive(hero: Hero): DerivedStats {
     goldMult,
     critChance: critChance(attrs.dex),
     moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult)),
+    carryMax: carryCapacity(cls.baseCarry, attrs.str),
+    carryUsed: Math.round(carryUsed * 10) / 10,
   };
 }

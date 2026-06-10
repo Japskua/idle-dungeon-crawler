@@ -135,7 +135,18 @@ function feasible(
         }
         return best ? { kind: 'cast', skillId, targetId: best.id } : null;
       }
-      // self / alliesInRadius: needs enemies around to be worth it? leave to rules; always castable
+      if (skill.target === 'self' && skill.kind === 'heal') {
+        // no point mending at full health
+        return view.selfHpFrac < 0.999 ? { kind: 'cast', skillId, targetId: null } : null;
+      }
+      if (skill.target === 'alliesInRadius') {
+        if (skill.kind === 'heal') {
+          // someone nearby must actually be hurt
+          return view.allies.some((a) => a.hpFrac < 0.999) ? { kind: 'cast', skillId, targetId: null } : null;
+        }
+        // buffs only matter with a fight on
+        return view.enemies.length > 0 ? { kind: 'cast', skillId, targetId: null } : null;
+      }
       return { kind: 'cast', skillId, targetId: null };
     }
     case 'usePotion': {

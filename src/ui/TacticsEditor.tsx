@@ -75,7 +75,10 @@ function RuleRow({
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
 }) {
-  const classSkills = CLASSES[hero.classId]?.skillUnlocks.map((u) => u.skillId) ?? [];
+  // learned skills (guild spellbook included) plus class unlocks still to come
+  const classSkills = [
+    ...new Set([...hero.skills, ...(CLASSES[hero.classId]?.skillUnlocks.map((u) => u.skillId) ?? [])]),
+  ];
   const skillFallback = classSkills[0] ?? 'heal';
   const trigger = rule.trigger as Record<string, unknown> & Trigger;
   const action = rule.action as Record<string, unknown> & TacticAction;

@@ -49,6 +49,35 @@ describe("magician's guild", () => {
     expect(knight.skills.filter((s) => s === 'shield_bash').length).toBe(1);
   });
 
+  test('spellbook: INT and level requirements gate learning', () => {
+    const state = newGame(14, NOW);
+    state.village.gold = 10_000;
+    const knight = state.roster[state.rosterOrder[0]!]!; // int 2: too dim for spark (int 5)
+    const cleric = state.roster[state.rosterOrder[1]!]!; // int 8: clever enough
+
+    learn(state, knight.id, 'spark');
+    expect(knight.skills).not.toContain('spark');
+
+    learn(state, cleric.id, 'spark');
+    expect(cleric.skills).toContain('spark');
+
+    // level gate: lightning_bolt needs level 5
+    learn(state, cleric.id, 'lightning_bolt');
+    expect(cleric.skills).not.toContain('lightning_bolt');
+    addXp(state, cleric, 5_000, []);
+    expect(cleric.level).toBeGreaterThanOrEqual(5);
+    learn(state, cleric.id, 'lightning_bolt');
+    expect(cleric.skills).toContain('lightning_bolt');
+  });
+
+  test('monster skills are not for sale', () => {
+    const state = newGame(15, NOW);
+    state.village.gold = 10_000;
+    const cleric = state.roster[state.rosterOrder[1]!]!;
+    learn(state, cleric.id, 'slam');
+    expect(cleric.skills).not.toContain('slam');
+  });
+
   test('level-ups keep guild-taught skills (merge, not replace)', () => {
     const state = newGame(13, NOW);
     const knight = state.roster[state.rosterOrder[0]!]!;

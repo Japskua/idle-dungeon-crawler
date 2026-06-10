@@ -5,6 +5,7 @@
   "kind": "cloth",
   "tier": 1,
   "base": { "armor": 2 },
+  "weight": 2,
   "value": 6,
   "sprite": {
     "size": 16,
