@@ -5,6 +5,7 @@
 import type { GameState } from '../types';
 import { SAVE_VERSION } from '../newGame';
 import { ITEMS } from '../content';
+import { defaultTactics } from '../tactics/defaults';
 
 function u8ToBase64(u8: Uint8Array): string {
   let bin = '';
@@ -70,6 +71,10 @@ function reconcileContent(state: GameState) {
     for (const slot of ['weapon', 'offhand', 'armor', 'trinket'] as const) {
       const item = hero.equipment[slot];
       if (item && !ITEMS[item.defId]) delete hero.equipment[slot];
+    }
+    // heroes saved before the tactics system (or with all sets deleted) get class defaults
+    if (!hero.tactics || hero.tactics.sets.length === 0 || hero.tactics.sets.every((s) => s.rules.length === 0)) {
+      hero.tactics = { sets: defaultTactics(hero.classId), activeSetId: 'default' };
     }
   }
   if (state.run) {

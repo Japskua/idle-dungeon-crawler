@@ -1,10 +1,35 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { app } from '../app/loop';
 import { CLASSES } from '../game/content';
+import type { Hero } from '../game/types';
 import { VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
 import { HeroVitals } from './components';
+import { TacticsEditor } from './TacticsEditor';
 import { useUi } from './store';
+
+function TacticSwitch({ hero }: { hero: Hero }) {
+  const [editing, setEditing] = useState(false);
+  return (
+    <span className="row-buttons">
+      <select
+        value={hero.tactics.activeSetId}
+        title="switch tactic set (applies immediately)"
+        onChange={(e) => app.dispatch({ t: 'SWITCH_TACTIC_SET', heroId: hero.id, setId: e.target.value })}
+      >
+        {hero.tactics.sets.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+      <button className="btn btn-tiny" onClick={() => setEditing(true)} title="edit tactics">
+        ⚙
+      </button>
+      {editing && <TacticsEditor hero={hero} onClose={() => setEditing(false)} />}
+    </span>
+  );
+}
 
 function CanvasView() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -67,8 +92,11 @@ export function DungeonScreen() {
                 </div>
                 {!downed && <HeroVitals hero={hero} />}
                 {!downed && (
-                  <div className="muted small">
-                    potions: {hero.potions.hp}hp / {hero.potions.mp}mp
+                  <div className="row">
+                    <span className="muted small">
+                      potions: {hero.potions.hp}hp / {hero.potions.mp}mp
+                    </span>
+                    <TacticSwitch hero={hero} />
                   </div>
                 )}
                 {downed && !carrying && (

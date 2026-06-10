@@ -30,9 +30,11 @@ import {
   physDamage,
   xpShare,
 } from '../balance';
-import { ITEMS, STATUSES, creatureDef } from '../content';
-import { derive } from '../hero/derive';
+import { ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
+import { derive, type DerivedStats } from '../hero/derive';
 import { addXp } from '../hero/leveling';
+import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '../tactics/evaluator';
+import { spellAmount } from '../balance';
 import { rollChestLoot, rollDrops, allocId } from '../items/factory';
 import {
   astar,
@@ -266,6 +268,204 @@ function computeObjective(run: DungeonRun): Vec2 {
   return run.floor.stairs;
 }
 
+function buildBattleView(
+  state: GameState,
+  run: DungeonRun,
+  heroId: Id,
+  d: DerivedStats,
+  engaged: Id[],
+  carriedBy: Map<Id, Id>,
+): BattleView {
+  const myPos = run.party.pos[heroId]!;
+  const hero = state.roster[heroId]!;
+  const enemies = engaged
+    .map((mid) => {
+      const m = run.monsters[mid]!;
+      const def = creatureDef(m.defId);
+      return {
+        id: mid,
+        level: m.level,
+        dist2: euclid2(myPos, m.pos),
+        adjacent: manhattan(myPos, m.pos) <= 1,
+        isBoss: def.tier === 'boss',
+        isElite: m.elite,
+      };
+    })
+    .sort((a, b) => a.dist2 - b.dist2 || (a.id < b.id ? -1 : 1));
+  const allies = standingIds(run)
+    .map((aid) => {
+      const ally = state.roster[aid]!;
+      const ad = aid === heroId ? d : derive(ally);
+      return { id: aid, hpFrac: ally.hp / ad.maxHp, dist2: euclid2(myPos, run.party.pos[aid]!) };
+    })
+    .sort((a, b) => (a.id < b.id ? -1 : 1));
+  const downedAllies = Object.keys(run.party.downed)
+    .filter((did) => !carriedBy.has(did))
+    .sort();
+  return {
+    enemies,
+    allies,
+    downedAllies,
+    selfHpFrac: hero.hp / d.maxHp,
+    selfMpFrac: d.maxMp > 0 ? hero.mp / d.maxMp : 1,
+    carrying: !!run.party.carrying[heroId],
+    withdrawing: run.intent === 'withdraw',
+  };
+}
+
+/** act on an evaluator decision; returns true if the hero's turn is consumed */
+function performResolved(
+  state: GameState,
+  run: DungeonRun,
+  heroId: Id,
+  d: DerivedStats,
+  resolved: ResolvedAction,
+  moveTicks: number,
+  isBlocked: (x: number, y: number) => boolean,
+  carriedBy: Map<Id, Id>,
+  events: GameEvent[],
+): boolean {
+  const hero = state.roster[heroId]!;
+  const myPos = run.party.pos[heroId]!;
+
+  switch (resolved.kind) {
+    case 'attack': {
+      const target = run.monsters[resolved.targetId];
+      if (!target || target.hp <= 0) return false;
+      const melee = d.attackRange <= 1;
+      const inRange = melee
+        ? manhattan(myPos, target.pos) <= 1
+        : euclid2(myPos, target.pos) <= d.attackRange * d.attackRange;
+      if (inRange) {
+        run.party.targetId[heroId] = resolved.targetId;
+        run.party.action[heroId] = {
+          kind: 'attack',
+          targetId: resolved.targetId,
+          ticksLeft: d.attackTicks,
+          total: d.attackTicks,
+        };
+        return true;
+      }
+      if (run.intent === 'withdraw') return false;
+      const path = melee
+        ? astarAdjacent(run.floor, myPos, target.pos, isBlocked)
+        : astar(
+            run.floor,
+            myPos,
+            target.pos,
+            (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange,
+            isBlocked,
+          );
+      if (path && path.length > 0) {
+        startHeroMove(run, heroId, path[0]!, moveTicks);
+        return true;
+      }
+      return false;
+    }
+    case 'cast': {
+      const skill = SKILLS[resolved.skillId];
+      if (!skill) return false;
+      // resolve the cast position: enemy / ally / self
+      let targetPos: Vec2 | null = null;
+      if (resolved.targetId) {
+        if (run.monsters[resolved.targetId]) targetPos = run.monsters[resolved.targetId]!.pos;
+        else if (run.party.pos[resolved.targetId] && !(resolved.targetId in run.party.downed)) {
+          targetPos = run.party.pos[resolved.targetId]!;
+        } else {
+          return false;
+        }
+      }
+      const range = Math.max(0, skill.range);
+      const inRange = !targetPos || range === 0 || euclid2(myPos, targetPos) <= range * range;
+      if (inRange) {
+        hero.mp -= skill.mpCost;
+        hero.cooldowns[skill.id] = skill.cooldown + skill.castTicks;
+        run.party.action[heroId] = {
+          kind: 'cast',
+          skillId: skill.id,
+          targetId: resolved.targetId ?? undefined,
+          ticksLeft: skill.castTicks,
+          total: skill.castTicks,
+        };
+        events.push({ t: 'skillCast', src: heroId, skillId: skill.id });
+        return true;
+      }
+      const path = astar(
+        run.floor,
+        myPos,
+        targetPos!,
+        (x, y) => euclid2({ x, y }, targetPos!) <= range * range,
+        isBlocked,
+      );
+      if (path && path.length > 0) {
+        startHeroMove(run, heroId, path[0]!, moveTicks);
+        return true;
+      }
+      return false;
+    }
+    case 'potion': {
+      run.party.action[heroId] = { kind: 'potion', potion: resolved.potion, ticksLeft: 4, total: 4 };
+      return true;
+    }
+    case 'defend': {
+      run.party.action[heroId] = { kind: 'defend', ticksLeft: 10, total: 10 };
+      return true;
+    }
+    case 'retreat': {
+      // step to the free neighbor farthest from the nearest enemy
+      const engagedNow = engagedMonsterIds(state, run);
+      if (engagedNow.length === 0) return false;
+      const nearest = nearestOf(myPos, engagedNow, (mid) => run.monsters[mid]!.pos)!;
+      const ePos = run.monsters[nearest]!.pos;
+      let best: Vec2 | null = null;
+      let bestD = euclid2(myPos, ePos);
+      for (const dir of [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+      ]) {
+        const nx = myPos.x + dir.x;
+        const ny = myPos.y + dir.y;
+        if (nx < 0 || ny < 0 || nx >= run.floor.w || ny >= run.floor.h) continue;
+        if (run.floor.tiles[ny * run.floor.w + nx] === TILE.WALL) continue;
+        if (isBlocked(nx, ny)) continue;
+        const dd = euclid2({ x: nx, y: ny }, ePos);
+        if (dd > bestD) {
+          bestD = dd;
+          best = { x: nx, y: ny };
+        }
+      }
+      if (best) {
+        startHeroMove(run, heroId, best, moveTicks);
+        return true;
+      }
+      return false;
+    }
+    case 'carry': {
+      const tPos = run.party.downed[resolved.targetId]?.pos;
+      if (!tPos || run.party.carrying[heroId]) return false;
+      if (manhattan(myPos, tPos) <= 1) {
+        run.party.carrying[heroId] = resolved.targetId;
+        carriedBy.set(resolved.targetId, heroId);
+        run.party.downed[resolved.targetId]!.pos = { ...myPos };
+        events.push({ t: 'heroCarried', carrier: heroId, carried: resolved.targetId });
+        return true;
+      }
+      const path = astarTo(run.floor, myPos, tPos, isBlocked);
+      if (path && path.length > 0) {
+        startHeroMove(run, heroId, path[0]!, moveTicks);
+        return true;
+      }
+      return false;
+    }
+    case 'wait': {
+      run.party.action[heroId] = { kind: 'wait', ticksLeft: 5, total: 5 };
+      return true;
+    }
+  }
+}
+
 function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
   const engaged = engagedMonsterIds(state, run);
   const carriedBy = new Map<Id, Id>(); // downedId -> carrierId
@@ -285,14 +485,8 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
     const blocked = monsterOccupancy(run);
     const isBlocked = (x: number, y: number) => blocked.has(`${x},${y}`);
 
-    // 0. self-preservation: drink a healing potion under 35% hp
-    if (hero.hp / d.maxHp < 0.35 && hero.potions.hp > 0) {
-      run.party.action[id] = { kind: 'potion', potion: 'hp', ticksLeft: 4, total: 4 };
-      continue;
-    }
-
-    // 1. rescue: pick up a downed, un-carried ally (always during withdraw; during
-    //    exploration only when no enemies are engaged)
+    // 1. built-in rescue (party cohesion): pick up a downed, un-carried ally —
+    //    always during withdraw, during exploration only when nothing is engaged
     const unCarried = Object.keys(run.party.downed).filter((did) => !carriedBy.has(did));
     if (!carrying && unCarried.length > 0 && (run.intent === 'withdraw' || engaged.length === 0)) {
       const target = nearestOf(myPos, unCarried, (did) => run.party.downed[did]!.pos)!;
@@ -311,41 +505,16 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
       }
     }
 
-    // 2. combat
-    if (!carrying && engaged.length > 0) {
-      const targetId = nearestOf(myPos, engaged, (mid) => run.monsters[mid]!.pos);
-      if (targetId) {
-        const target = run.monsters[targetId]!;
-        const melee = d.attackRange <= 1;
-        const inRange = melee
-          ? manhattan(myPos, target.pos) <= 1
-          : euclid2(myPos, target.pos) <= d.attackRange * d.attackRange;
-        // withdraw mode: never chase — fight only what is in reach
-        if (inRange) {
-          run.party.targetId[id] = targetId;
-          run.party.action[id] = { kind: 'attack', targetId, ticksLeft: d.attackTicks, total: d.attackTicks };
-          continue;
-        }
-        if (run.intent !== 'withdraw') {
-          const path = melee
-            ? astarAdjacent(run.floor, myPos, target.pos, isBlocked)
-            : astar(
-                run.floor,
-                myPos,
-                target.pos,
-                (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange,
-                isBlocked,
-              );
-          if (path && path.length > 0) {
-            startHeroMove(run, id, path[0]!, moveTicks);
-            continue;
-          }
-        }
-      }
+    // 2. tactics: the player's rules decide (default set ships per class)
+    const view = buildBattleView(state, run, id, d, engaged, carriedBy);
+    const activeSet =
+      hero.tactics.sets.find((s) => s.id === hero.tactics.activeSetId) ?? hero.tactics.sets[0];
+    const resolved = (activeSet ? evaluate(hero, d, view, activeSet) : null) ?? defaultAction(view);
+    if (resolved && performResolved(state, run, id, d, resolved, moveTicks, isBlocked, carriedBy, events)) {
+      continue;
     }
 
     // 3. travel toward the party objective (next room / chest / stairs / exit)
-    const objective = run.intent === 'withdraw' ? null : computeObjective(run);
     if (run.intent === 'withdraw') {
       const step = flowStep(run.floor, entranceField(run), myPos);
       if (step && !isBlocked(step.x, step.y)) {
@@ -362,7 +531,8 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
       }
       continue;
     }
-    if (objective && (objective.x !== myPos.x || objective.y !== myPos.y)) {
+    const objective = computeObjective(run);
+    if (objective.x !== myPos.x || objective.y !== myPos.y) {
       const path = astarTo(run.floor, myPos, objective, isBlocked);
       if (path && path.length > 0) {
         startHeroMove(run, id, path[0]!, moveTicks);
@@ -542,6 +712,68 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     target.lastHitBy = hero.id;
     if (def.disposition === 'hostile') aggroPack(run, target.packId);
     events.push({ t: 'damage', src: hero.id, dst: target.id, amount: dmg, crit, pos: { ...target.pos } });
+    return;
+  }
+
+  if (action.kind === 'cast' && action.skillId) {
+    const skill = SKILLS[action.skillId];
+    if (!skill) return;
+    const power = skill.physical
+      ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
+      : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
+
+    const applyStatuses = (targetStatuses: { statusId: string; ticksLeft: number; sourceId: Id }[]) => {
+      for (const ap of skill.applies ?? []) {
+        if (chance(state.rng.combat, ap.chance)) {
+          targetStatuses.push({ statusId: ap.statusId, ticksLeft: ap.duration, sourceId: hero.id });
+        }
+      }
+    };
+
+    const hitMonster = (m: import('../types').MonsterInstance) => {
+      const def = creatureDef(m.defId);
+      if (power > 0) {
+        const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+        const crit = skill.physical ? chance(state.rng.combat, d.critChance) : false;
+        const dmg = Math.max(1, Math.round(mitigate(power * variance * (crit ? CRIT_MULT : 1), def.base.armor)));
+        m.hp -= dmg;
+        m.lastHitBy = hero.id;
+        events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos } });
+      }
+      applyStatuses(m.statuses);
+      if (def.disposition === 'hostile') aggroPack(run, m.packId);
+    };
+
+    if (skill.target === 'enemy' && action.targetId) {
+      const m = run.monsters[action.targetId];
+      if (m && m.hp > 0 && euclid2(myPos, m.pos) <= Math.max(2, skill.range * skill.range + 2)) hitMonster(m);
+      return;
+    }
+    if (skill.target === 'enemiesInRadius') {
+      const center = action.targetId && run.monsters[action.targetId] ? run.monsters[action.targetId]!.pos : myPos;
+      const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+      for (const mid of [...run.monsterOrder]) {
+        const m = run.monsters[mid]!;
+        // AoE is indiscriminate: neutral bystanders are very much in the blast
+        if (m.hp > 0 && euclid2(center, m.pos) <= r2) hitMonster(m);
+      }
+      return;
+    }
+    if (skill.target === 'lowestHpAlly' && action.targetId) {
+      const ally = state.roster[action.targetId];
+      if (!ally || action.targetId in run.party.downed || !run.party.memberIds.includes(action.targetId)) return;
+      const ad = derive(ally);
+      const amount = Math.max(1, Math.round(power));
+      ally.hp = Math.min(ad.maxHp, ally.hp + amount);
+      const pos = run.party.pos[action.targetId]!;
+      events.push({ t: 'heal', src: hero.id, dst: ally.id, amount, pos: { ...pos } });
+      applyStatuses(ally.statuses);
+      return;
+    }
+    if (skill.target === 'self' || skill.target === 'alliesInRadius') {
+      applyStatuses(hero.statuses);
+      return;
+    }
     return;
   }
 

@@ -377,10 +377,60 @@ body {
   color: var(--muted);
 }
 
-select {
+select,
+input[type='number'] {
   background: var(--bg-panel2);
   color: var(--text);
   border: 1px solid var(--border);
   font-family: inherit;
   font-size: 11px;
+}
+
+/* ---------- tactics editor ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  width: min(720px, 94vw);
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
+.rules {
+  margin: 8px 0;
+}
+
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 2px;
+  border-bottom: 1px solid #221a30;
+  flex-wrap: wrap;
+}
+
+.rule-row.rule-disabled {
+  opacity: 0.45;
+}
+
+.rule-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 3px;
+}
+
+.num-input {
+  width: 48px;
 }

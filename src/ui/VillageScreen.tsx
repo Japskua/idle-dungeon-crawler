@@ -7,12 +7,14 @@ import { effectiveHireCost, shopStock, tavernRecruits } from '../game/village/sh
 import type { GameState, Hero, Id } from '../game/types';
 import { CombatLog } from './CombatLog';
 import { HeroVitals, ItemName } from './components';
+import { TacticsEditor } from './TacticsEditor';
 import { useUi } from './store';
 
 function HeroCard({ game, hero }: { game: GameState; hero: Hero }) {
   const d = derive(hero);
   const missing = Math.max(0, d.maxHp - Math.floor(hero.hp));
   const restCost = instantHealCost(missing);
+  const [editingTactics, setEditingTactics] = useState(false);
   return (
     <div className="panel hero-card">
       <div className="panel-title">
@@ -82,15 +84,20 @@ function HeroCard({ game, hero }: { game: GameState; hero: Hero }) {
         </div>
       )}
       <div className="row">
-        {missing > 0 && (
-          <button
-            className="btn btn-small"
-            disabled={game.village.gold < restCost}
-            onClick={() => app.dispatch({ t: 'REST_HERO', heroId: hero.id })}
-          >
-            Patch up ({restCost}g)
+        <span className="row-buttons">
+          {missing > 0 && (
+            <button
+              className="btn btn-small"
+              disabled={game.village.gold < restCost}
+              onClick={() => app.dispatch({ t: 'REST_HERO', heroId: hero.id })}
+            >
+              Patch up ({restCost}g)
+            </button>
+          )}
+          <button className="btn btn-small" onClick={() => setEditingTactics(true)}>
+            Tactics
           </button>
-        )}
+        </span>
         <button
           className="btn btn-tiny btn-danger"
           onClick={() => {
@@ -100,6 +107,7 @@ function HeroCard({ game, hero }: { game: GameState; hero: Hero }) {
           dismiss
         </button>
       </div>
+      {editingTactics && <TacticsEditor hero={hero} onClose={() => setEditingTactics(false)} />}
     </div>
   );
 }

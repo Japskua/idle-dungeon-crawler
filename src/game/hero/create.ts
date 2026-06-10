@@ -4,6 +4,7 @@ import { CLASSES, NAME_BANKS, PERKS, itemDef } from '../content';
 import { allocId, makeItem } from '../items/factory';
 import { chance, pick, pickWeighted, rand, type Rng } from '../core/rng';
 import { heroMaxHp, heroMaxMp } from '../balance';
+import { defaultTactics } from '../tactics/defaults';
 
 export function unlockedSkills(classId: string, level: number): string[] {
   const cls = CLASSES[classId]!;
@@ -36,7 +37,7 @@ export function makeHero(state: GameState, classId: string, name: string, level 
     cooldowns: {},
     activity: 'idle',
     tactics: {
-      sets: [{ id: 'default', name: 'Default', rules: [] }],
+      sets: defaultTactics(classId),
       activeSetId: 'default',
     },
   };
