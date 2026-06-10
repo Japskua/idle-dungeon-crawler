@@ -73,6 +73,34 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     physical: true,
     description: 'A carefully aimed shot for 180% weapon damage.',
   },
+  vanish: {
+    id: 'vanish',
+    name: 'Vanish',
+    kind: 'buff',
+    target: 'self',
+    range: 0,
+    mpCost: 10,
+    cooldown: 150,
+    castTicks: 2,
+    power: 0,
+    applies: [{ statusId: 'stealthed', duration: 40, chance: 1 }],
+    description:
+      'Melt into the shadows for 4 seconds: monsters cannot see, target, or hit you. Your next attack from hiding always crits — and ends the act.',
+  },
+  backstab: {
+    id: 'backstab',
+    name: 'Backstab',
+    kind: 'attack',
+    target: 'enemy',
+    range: 1,
+    mpCost: 6,
+    cooldown: 60,
+    castTicks: 6,
+    power: 2.5,
+    physical: true,
+    description: '250% weapon damage to an adjacent enemy. Devastating from the shadows (guaranteed crit).',
+  },
+
   // ---------- guild spellbook (learnable for gold) ----------
   spark: {
     id: 'spark',

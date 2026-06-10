@@ -43,8 +43,8 @@ function fnv1a(text: string): string {
 
 // Re-baseline deliberately when sim/balance/content changes: bun test --rerun
 // prints the new value in the failure message.
-const GOLDEN_STATE_HASH = '929a3f2d';
-const GOLDEN_EVENT_HASH = 'c211f8e6';
+const GOLDEN_STATE_HASH = '3387bb6c';
+const GOLDEN_EVENT_HASH = '961c517f';
 
 describe('determinism', () => {
   test('golden seed 42: 5000 ticks hash to the committed baseline', () => {

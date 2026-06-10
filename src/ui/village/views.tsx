@@ -8,6 +8,7 @@ import { epitaphFor, loadGraveyard } from '../../app/graveyard';
 import { POTION_PRICES, healInjuryCost, instantHealCost, learnSkillCost, spellAmount } from '../../game/balance';
 import { CHORES, CLASSES, INJURIES, ITEMS, PERKS, SKILLS } from '../../game/content';
 import { derive } from '../../game/hero/derive';
+import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
 import type { GameState, Hero, Id, SkillDef } from '../../game/types';
 import { ClassSprite, HeroVitals, ItemName } from '../components';
@@ -101,13 +102,14 @@ export function ArmorerView({ game }: { game: GameState }) {
                     {heroes.map((h) => {
                       const d = derive(h);
                       const slot = def.slot as 'weapon' | 'offhand' | 'armor' | 'trinket';
+                      const wrongClass = !canEquip(h.classId, def);
                       const replaced = h.equipment[slot];
                       const freed = replaced ? ITEMS[replaced.defId]?.weight ?? 0 : 0;
                       const tooHeavy = d.carryUsed - freed + def.weight > d.carryMax;
                       return (
-                        <option key={h.id} value={h.id} disabled={tooHeavy}>
+                        <option key={h.id} value={h.id} disabled={wrongClass || tooHeavy}>
                           {h.name}
-                          {tooHeavy ? ' (too heavy)' : ''}
+                          {wrongClass ? ` (not for ${CLASSES[h.classId]?.name.toLowerCase()}s)` : tooHeavy ? ' (too heavy)' : ''}
                         </option>
                       );
                     })}
@@ -491,10 +493,11 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
       </div>
       <div className="muted small">
         str {Math.floor(d.attrs.str)} · dex {Math.floor(d.attrs.dex)} · int {Math.floor(d.attrs.int)} · vit{' '}
-        {Math.floor(d.attrs.vit)} · dmg {d.weaponDmg} · armor {d.armor}
+        {Math.floor(d.attrs.vit)} · dmg {d.weaponDmg} · armor {d.armor} · speed {(40 / d.moveTicks).toFixed(1)}
       </div>
       <div className={`small ${d.carryUsed > d.carryMax ? 'req-unmet' : 'muted'}`}>
         carry: {d.carryUsed.toFixed(1)} / {d.carryMax.toFixed(1)} kg
+        {d.moveTicks > 4 ? <span className="muted"> · heavy gear slows movement</span> : null}
       </div>
       {hero.perks.length > 0 && (
         <div className="small">

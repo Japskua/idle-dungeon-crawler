@@ -64,6 +64,8 @@ export interface ItemDef {
     attackTicks?: number;
     range?: number;
     armor?: number;
+    /** extra ticks per tile while worn — heavy armor protects but slows */
+    moveTicks?: number;
     stats?: Partial<Attributes>;
   };
   potion?: { kind: PotionKind; amount: number };
@@ -179,6 +181,8 @@ export interface StatusDef {
   mods?: StatMod[];
   taunt?: boolean;
   stun?: boolean;
+  /** monsters cannot see, target, or hit this hero; broken by attacking */
+  stealth?: boolean;
 }
 
 export interface StatusInstance {
@@ -199,7 +203,10 @@ export interface ClassDef {
   baseMp: number;
   /** kg before strength — fighters lug more than wizards */
   baseCarry: number;
+  /** weapon kinds this class can wield (sword, dagger, bow, wand, ...) */
   weaponKinds: string[];
+  /** armor/offhand kinds this class can wear (cloth, leather, plate, shield, ...) */
+  armorKinds: string[];
   startingItems: ItemDefId[];
   skillUnlocks: { level: number; skillId: SkillId }[];
   hireCostBase: number;
@@ -474,7 +481,7 @@ export type Command =
 
 // ---------- events (sim -> log/fx/tests, transient) ----------
 export type GameEvent =
-  | { t: 'damage'; src: Id; dst: Id; amount: number; crit: boolean; pos: Vec2 }
+  | { t: 'damage'; src: Id; dst: Id; amount: number; crit: boolean; pos: Vec2; srcPos?: Vec2 }
   | { t: 'heal'; src: Id; dst: Id; amount: number; pos: Vec2 }
   | { t: 'skillCast'; src: Id; skillId: SkillId }
   | { t: 'potionUsed'; heroId: Id; potion: PotionKind; amount: number; pos: Vec2 }

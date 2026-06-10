@@ -29,27 +29,27 @@ describe('carry weight', () => {
 
   test('EQUIP refuses loads beyond capacity (swapped item counts as freed)', () => {
     const state = newGame(23, NOW);
-    const mage = makeHero(state, 'mage', 'Twig', 1, []);
-    state.roster[mage.id] = mage;
-    state.rosterOrder.push(mage.id);
-    // mage: baseCarry 12 + str 2*2 = 16; oak staff 3 equipped
-    const mail = makeItem(state, 'chain_mail', 1); // 7 kg
-    const shield = makeItem(state, 'iron_shield', 1); // 5.5 kg -> 15.5 total: fits
-    const ring = makeItem(state, 'lucky_ring', 1); // 0.1 -> 15.6: fits
-    const axe = makeItem(state, 'war_axe', 1); // swaps 3kg staff for 6kg axe -> 18.6: too heavy
-    state.village.inventory.push(mail, shield, ring, axe);
+    const knight = makeHero(state, 'knight', 'Tank', 1, []);
+    state.roster[knight.id] = knight;
+    state.rosterOrder.push(knight.id);
+    // knight: baseCarry 30 + str 7*2 = 44; rusty sword 4 + cloth 2 = 6 used.
+    // a comical potion hoard eats most of the headroom: 60 x 0.5 = 30kg -> 36 used
+    knight.potions = { hp: 60, mp: 0 };
+    const shield = makeItem(state, 'iron_shield', 1); // 5.5 -> 41.5: fits
+    const plate = makeItem(state, 'plate_armor', 1); // swaps cloth 2 for 12 -> 51.5: too heavy
+    const ring = makeItem(state, 'lucky_ring', 1); // 0.1: fits
+    state.village.inventory.push(shield, plate, ring);
 
     const events: GameEvent[] = [];
-    advanceTick(state, [{ t: 'EQUIP', heroId: mage.id, itemId: mail.id }], NOW, events);
-    advanceTick(state, [{ t: 'EQUIP', heroId: mage.id, itemId: shield.id }], NOW, events);
-    advanceTick(state, [{ t: 'EQUIP', heroId: mage.id, itemId: ring.id }], NOW, events);
-    expect(mage.equipment.armor?.id).toBe(mail.id);
-    expect(mage.equipment.offhand?.id).toBe(shield.id);
-    expect(mage.equipment.trinket?.id).toBe(ring.id);
+    advanceTick(state, [{ t: 'EQUIP', heroId: knight.id, itemId: shield.id }], NOW, events);
+    expect(knight.equipment.offhand?.id).toBe(shield.id);
 
-    advanceTick(state, [{ t: 'EQUIP', heroId: mage.id, itemId: axe.id }], NOW, events);
-    expect(mage.equipment.weapon?.defId).toBe('oak_staff'); // refused, staff kept
-    expect(state.village.inventory.some((i) => i.id === axe.id)).toBe(true);
+    advanceTick(state, [{ t: 'EQUIP', heroId: knight.id, itemId: plate.id }], NOW, events);
+    expect(knight.equipment.armor?.defId).toBe('cloth_tunic'); // refused, tunic kept
+    expect(state.village.inventory.some((i) => i.id === plate.id)).toBe(true);
+
+    advanceTick(state, [{ t: 'EQUIP', heroId: knight.id, itemId: ring.id }], NOW, events);
+    expect(knight.equipment.trinket?.id).toBe(ring.id);
   });
 
   test('a full party leaves heavy loot on the floor (and says so once)', () => {

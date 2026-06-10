@@ -7,6 +7,7 @@ import { startRun, chronicle } from './run/lifecycle';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
 import { CHORES, INJURIES, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
+import { canEquip } from './hero/equipment';
 import { makeItem } from './items/factory';
 import { makeHero } from './hero/create';
 import { effectiveHireCost, shopStock, tavernRecruits } from './village/shop';
@@ -123,6 +124,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const def = itemDef(item.defId);
       const slot = def.slot;
       if (slot !== 'weapon' && slot !== 'offhand' && slot !== 'armor' && slot !== 'trinket') return;
+      if (!canEquip(hero.classId, def)) return; // a mage holding a warhammer is a comedy, not a build
       // carry capacity: swapping counts the replaced item's weight as freed
       const d = derive(hero);
       const replaced = hero.equipment[slot];

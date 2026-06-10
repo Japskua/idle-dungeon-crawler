@@ -7,4 +7,5 @@ export const STATUSES: Record<StatusId, StatusDef> = {
   blessed: { id: 'blessed', name: 'Blessed', mods: [{ kind: 'mult', what: 'dmg', mul: 1.15 }] },
   chilled: { id: 'chilled', name: 'Chilled', stun: true },
   regrowth: { id: 'regrowth', name: 'Regrowth', hpPerTick: 0.6 },
+  stealthed: { id: 'stealthed', name: 'In Shadow', stealth: true },
 };

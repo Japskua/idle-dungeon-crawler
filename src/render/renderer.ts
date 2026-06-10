@@ -28,6 +28,15 @@ interface FxFlash {
   ttlMs: number;
 }
 
+interface FxProjectile {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  ttlMs: number;
+  totalMs: number;
+}
+
 export class Renderer {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -39,6 +48,7 @@ export class Renderer {
   private lastFloorId = '';
   private fxTexts: FxText[] = [];
   private fxFlashes: FxFlash[] = [];
+  private fxProjectiles: FxProjectile[] = [];
   private facing = new Map<Id, number>(); // 1 = right, -1 = left
   private lastDrawMs = 0;
 
@@ -70,6 +80,21 @@ export class Renderer {
             big: e.crit,
           });
           this.fxFlashes.push({ entityId: e.dst, ttlMs: 90 });
+          // a hit from afar flies: arrows, bolts, spells
+          if (e.srcPos) {
+            const dx = e.srcPos.x - e.pos.x;
+            const dy = e.srcPos.y - e.pos.y;
+            if (dx * dx + dy * dy > 2) {
+              this.fxProjectiles.push({
+                x1: e.srcPos.x * TILE_PX + 8,
+                y1: e.srcPos.y * TILE_PX + 6,
+                x2: e.pos.x * TILE_PX + 8,
+                y2: e.pos.y * TILE_PX + 8,
+                ttlMs: 130,
+                totalMs: 130,
+              });
+            }
+          }
           break;
         case 'heal':
         case 'potionUsed':
@@ -285,11 +310,14 @@ export class Renderer {
       this.updateFacing(id, mv ? Math.sign(run.party.pos[id]!.x - mv.from.x) : 0);
       const flash = this.fxFlashes.some((f) => f.entityId === id);
       const carriedId = run.party.carrying[id];
+      const stealthed = hero.statuses.some((s) => s.statusId === 'stealthed');
       drawables.push({
         y: px.y + 0.5,
         draw: () => {
           const frame = Math.floor(state.tick / 4 + this.hashId(id)) % 2;
+          if (stealthed) ctx.globalAlpha = 0.45;
           atlasDraw(ctx, atlas, `hero/${hero.classId}`, frame, ox + px.x, oy + px.y, this.facing.get(id) === -1);
+          if (stealthed) ctx.globalAlpha = 1;
           if (flash) this.drawFlash(ctx, atlas, `hero/${hero.classId}`, ox + px.x, oy + px.y);
           if (carriedId) {
             const carriedHero = state.roster[carriedId];
@@ -325,6 +353,22 @@ export class Renderer {
         }
       }
     }
+
+    // projectiles: a bright dot streaking from shooter to victim
+    for (const p of this.fxProjectiles) {
+      p.ttlMs -= dtMs;
+      const t = Math.max(0, Math.min(1, 1 - p.ttlMs / p.totalMs));
+      const x = p.x1 + (p.x2 - p.x1) * t;
+      const y = p.y1 + (p.y2 - p.y1) * t;
+      ctx.strokeStyle = 'rgba(232,230,240,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(ox + p.x1 + (p.x2 - p.x1) * Math.max(0, t - 0.25), oy + p.y1 + (p.y2 - p.y1) * Math.max(0, t - 0.25));
+      ctx.lineTo(ox + x, oy + y);
+      ctx.stroke();
+      ctx.fillStyle = '#e8e6f0';
+      ctx.fillRect(Math.round(ox + x) - 1, Math.round(oy + y) - 1, 2, 2);
+    }
+    this.fxProjectiles = this.fxProjectiles.filter((p) => p.ttlMs > 0);
 
     // floating texts
     ctx.textAlign = 'center';

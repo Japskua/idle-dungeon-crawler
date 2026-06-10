@@ -38,6 +38,7 @@ export function derive(hero: Hero): DerivedStats {
   let attackTicks = UNARMED.attackTicks;
   let attackRange = UNARMED.range;
   let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT;
+  let gearMoveTicks = 0;
 
   for (const slot of EQUIP_SLOTS) {
     const inst = hero.equipment[slot];
@@ -45,6 +46,7 @@ export function derive(hero: Hero): DerivedStats {
     const def = itemDef(inst.defId);
     armor += def.base?.armor ?? 0;
     carryUsed += def.weight ?? 0;
+    gearMoveTicks += def.base?.moveTicks ?? 0; // heavy armor protects but slows
     if (slot === 'weapon') {
       weaponDmg = def.base?.dmg ?? UNARMED.dmg;
       attackTicks = def.base?.attackTicks ?? UNARMED.attackTicks;
@@ -93,7 +95,7 @@ export function derive(hero: Hero): DerivedStats {
     xpMult,
     goldMult,
     critChance: critChance(attrs.dex),
-    moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult)),
+    moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult) + gearMoveTicks),
     carryMax: carryCapacity(cls.baseCarry, attrs.str),
     carryUsed: Math.round(carryUsed * 10) / 10,
   };

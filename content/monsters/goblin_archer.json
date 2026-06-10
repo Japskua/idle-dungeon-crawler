@@ -1,0 +1,50 @@
+{
+  "id": "goblin_archer",
+  "name": "Goblin Archer",
+  "tier": "minion",
+  "disposition": "hostile",
+  "base": {
+    "hp": 8,
+    "dmg": 3,
+    "armor": 0,
+    "attackTicks": 14,
+    "moveTicks": 5,
+    "range": 5,
+    "aggroRadius": 7
+  },
+  "spawn": [
+    { "depths": [3, 10], "weight": 8 },
+    { "depths": [11, 99], "weight": 4 }
+  ],
+  "level": { "offset": 0, "spread": 1 },
+  "xpBase": 5,
+  "gold": [1, 4],
+  "skills": [],
+  "drops": [
+    { "item": "goblin_ear", "chance": 0.3 },
+    { "item": "shortbow", "chance": 0.07 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        ".....00000......",
+        "....0lllll0.....",
+        "....0l0l0l0.....",
+        "....0lllll0.....",
+        ".....0lll0..N...",
+        "....0lllll00N...",
+        "....0lNNNl0.N...",
+        "....0lNNNl0N....",
+        ".....0l0l0......",
+        ".....0l0l0......",
+        "....00..00......",
+        "................"
+      ]
+    ]
+  }
+}

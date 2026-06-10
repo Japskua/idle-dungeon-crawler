@@ -113,8 +113,17 @@ function monsterOccupancy(run: DungeonRun, exceptId?: Id): Set<string> {
   return set;
 }
 
-function hasStatus(statuses: { statusId: string }[], kind: 'taunt' | 'stun'): boolean {
+function hasStatus(statuses: { statusId: string }[], kind: 'taunt' | 'stun' | 'stealth'): boolean {
   return statuses.some((s) => STATUSES[s.statusId]?.[kind]);
+}
+
+function isStealthed(hero: Hero): boolean {
+  return hasStatus(hero.statuses, 'stealth');
+}
+
+/** any hostile action drops the act */
+function breakStealth(hero: Hero) {
+  hero.statuses = hero.statuses.filter((s) => !STATUSES[s.statusId]?.stealth);
 }
 
 function startHeroMove(run: DungeonRun, id: Id, step: Vec2, ticks: number) {
@@ -736,23 +745,29 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
       continue;
     }
 
+    // stealthed heroes are invisible to monsters: no aggro, no targeting
+    const visible = standing.filter((hid) => {
+      const hero = state.roster[hid];
+      return hero && !isStealthed(hero);
+    });
+
     // aggro check
-    if (!m.aggro && standing.length > 0) {
+    if (!m.aggro && visible.length > 0) {
       const r2 = def.base.aggroRadius * def.base.aggroRadius;
-      for (const hid of standing) {
+      for (const hid of visible) {
         if (euclid2(m.pos, heroPos(hid)) <= r2) {
           aggroPack(run, m.packId);
           break;
         }
       }
     }
-    if (!m.aggro || standing.length === 0) continue;
+    if (!m.aggro || visible.length === 0) continue;
 
-    // target: taunt source if valid, else nearest standing hero
+    // target: taunt source if valid (and visible), else nearest visible hero
     let targetId: Id | null = null;
     const taunt = m.statuses.find((s) => STATUSES[s.statusId]?.taunt);
-    if (taunt && standing.includes(taunt.sourceId)) targetId = taunt.sourceId;
-    if (!targetId) targetId = nearestOf(m.pos, standing, heroPos);
+    if (taunt && visible.includes(taunt.sourceId)) targetId = taunt.sourceId;
+    if (!targetId) targetId = nearestOf(m.pos, visible, heroPos);
     if (!targetId) continue;
     m.targetId = targetId;
 
@@ -914,13 +929,16 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     if (!inRange) return; // target moved away mid-swing
     const def = creatureDef(target.defId);
     const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
-    const crit = chance(state.rng.combat, d.critChance);
+    // a strike from the shadows always finds the gap — and ends the act
+    const fromStealth = isStealthed(hero);
+    const crit = fromStealth || chance(state.rng.combat, d.critChance);
+    if (fromStealth) breakStealth(hero);
     let dmg = physDamage(d.weaponDmg, d.attrs.str) * d.dmgMult * variance * (crit ? CRIT_MULT : 1);
     dmg = Math.max(1, Math.round(mitigate(dmg, def.base.armor)));
     target.hp -= dmg;
     target.lastHitBy = hero.id;
     if (def.disposition === 'hostile') aggroPack(run, target.packId);
-    events.push({ t: 'damage', src: hero.id, dst: target.id, amount: dmg, crit, pos: { ...target.pos } });
+    events.push({ t: 'damage', src: hero.id, dst: target.id, amount: dmg, crit, pos: { ...target.pos }, srcPos: { ...myPos } });
     return;
   }
 
@@ -930,6 +948,9 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     const power = skill.physical
       ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
+    const offensive = skill.kind === 'attack' || skill.kind === 'debuff';
+    const fromStealth = offensive && isStealthed(hero);
+    if (fromStealth) breakStealth(hero);
 
     const applyStatuses = (targetStatuses: { statusId: string; ticksLeft: number; sourceId: Id }[]) => {
       for (const ap of skill.applies ?? []) {
@@ -943,11 +964,11 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       const def = creatureDef(m.defId);
       if (power > 0) {
         const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
-        const crit = skill.physical ? chance(state.rng.combat, d.critChance) : false;
+        const crit = skill.physical ? fromStealth || chance(state.rng.combat, d.critChance) : false;
         const dmg = Math.max(1, Math.round(mitigate(power * variance * (crit ? CRIT_MULT : 1), def.base.armor)));
         m.hp -= dmg;
         m.lastHitBy = hero.id;
-        events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos } });
+        events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos }, srcPos: { ...myPos } });
       }
       applyStatuses(m.statuses);
       if (def.disposition === 'hostile') aggroPack(run, m.packId);
@@ -1027,6 +1048,7 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
 function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstance, power: number, heroId: Id, events: GameEvent[]) {
   const hero = state.roster[heroId];
   if (!hero || heroId in run.party.downed) return;
+  if (isStealthed(hero)) return; // can't hit what you can't see
   const d = derive(hero);
   const defending = run.party.action[heroId]?.kind === 'defend';
   const armor = d.armor + (defending ? DEFEND_ARMOR_BONUS : 0);
@@ -1035,7 +1057,7 @@ function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstanc
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
   const pos = run.party.pos[heroId]!;
-  events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos } });
+  events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos }, srcPos: { ...m.pos } });
 }
 
 function resolveMonsterCast(state: GameState, run: DungeonRun, m: MonsterInstance, action: EntityAction, events: GameEvent[]) {
@@ -1081,6 +1103,7 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
   if (!run.party.memberIds.includes(action.targetId)) return;
   const hero = state.roster[action.targetId];
   if (!hero) return;
+  if (isStealthed(hero)) return; // vanished mid-swing: the blade finds only shadow
   const def = creatureDef(m.defId);
   const hPos = run.party.pos[hero.id]!;
   if (manhattan(m.pos, hPos) > def.base.range) return;
@@ -1092,7 +1115,7 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
   const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
-  events.push({ t: 'damage', src: m.id, dst: hero.id, amount: dmg, crit: false, pos: { ...hPos } });
+  events.push({ t: 'damage', src: m.id, dst: hero.id, amount: dmg, crit: false, pos: { ...hPos }, srcPos: { ...m.pos } });
 }
 
 // ---------- deaths ----------

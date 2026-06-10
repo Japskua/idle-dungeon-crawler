@@ -1,0 +1,34 @@
+{
+  "id": "shadow_cloak",
+  "name": "Shadow Cloak",
+  "slot": "armor",
+  "kind": "leather",
+  "tier": 2,
+  "base": { "armor": 4, "stats": { "dex": 2 } },
+  "weight": 2,
+  "value": 75,
+  "flavor": "Woven from held breaths and missed glances.",
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "..000......000..",
+        ".0kkk000000kkk0.",
+        ".0kk0kkkkkk0kk0.",
+        ".0k0kkkkkkkk0k0.",
+        "..00kkkkkkkk00..",
+        "...0kkkkkkkk0...",
+        "...0kKkkkkKk0...",
+        "...0kkkkkkkk0...",
+        "...0kkKkkKkk0...",
+        "...0kkkkkkkk0...",
+        "...0000000000...",
+        "................",
+        "................"
+      ]
+    ]
+  }
+}

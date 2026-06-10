@@ -4,7 +4,7 @@
   "slot": "armor",
   "kind": "mail",
   "tier": 2,
-  "base": { "armor": 9 },
+  "base": { "armor": 9, "moveTicks": 1 },
   "weight": 7,
   "value": 75,
   "sprite": {

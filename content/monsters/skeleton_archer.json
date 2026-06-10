@@ -1,0 +1,51 @@
+{
+  "id": "skeleton_archer",
+  "name": "Skeleton Archer",
+  "tier": "normal",
+  "disposition": "hostile",
+  "base": {
+    "hp": 14,
+    "dmg": 5,
+    "armor": 1,
+    "attackTicks": 14,
+    "moveTicks": 5,
+    "range": 5,
+    "aggroRadius": 7
+  },
+  "spawn": [
+    { "depths": [4, 12], "weight": 7 },
+    { "depths": [13, 99], "weight": 4 }
+  ],
+  "level": { "offset": 0, "spread": 2 },
+  "xpBase": 7,
+  "gold": [1, 4],
+  "skills": [],
+  "drops": [
+    { "item": "bone", "chance": 0.3 },
+    { "item": "longbow", "chance": 0.05 },
+    { "item": "hp_potion_s", "chance": 0.04 }
+  ],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "....000000......",
+        "...0wwwwww0.....",
+        "...0w0ww0w0.....",
+        "...0wwwwww0.....",
+        "....0w00w0......",
+        ".....0000.......",
+        "...000ww000.N...",
+        "..0w0wwww0w0N...",
+        "..0w0wwww0w0N...",
+        "....0wwww0..N...",
+        "....0w00w0......",
+        "....0w00w0......",
+        "...00w00w00.....",
+        "...0ww00ww0.....",
+        "................"
+      ]
+    ]
+  }
+}

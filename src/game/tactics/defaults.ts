@@ -47,6 +47,14 @@ export function defaultTactics(classId: string): TacticSet[] {
           rule({ k: 'selfMpAbove', pct: 25 }, { k: 'castSkill', skillId: 'fireball' }),
           rule({ k: 'always' }, { k: 'attack' }),
         ]);
+      case 'thief':
+        return set('default', 'Cutpurse', [
+          rule({ k: 'selfHpBelow', pct: 40 }, { k: 'castSkill', skillId: 'vanish' }),
+          rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
+          rule({ k: 'skillReady', skillId: 'backstab' }, { k: 'castSkill', skillId: 'backstab' }),
+          rule({ k: 'enemiesAtLeast', n: 3 }, { k: 'castSkill', skillId: 'vanish' }),
+          rule({ k: 'always' }, { k: 'attack' }),
+        ]);
       default:
         return set('default', 'Default', [
           rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),

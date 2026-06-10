@@ -4,6 +4,7 @@ import { CLASSES, NAME_BANKS, PERKS, itemDef } from '../content';
 import { allocId, makeItem } from '../items/factory';
 import { chance, pick, pickWeighted, rand, type Rng } from '../core/rng';
 import { heroMaxHp, heroMaxMp } from '../balance';
+import { canEquip } from './equipment';
 import { defaultTactics } from '../tactics/defaults';
 
 export function unlockedSkills(classId: string, level: number): string[] {
@@ -49,13 +50,19 @@ export function makeHero(state: GameState, classId: string, name: string, level 
       hero.equipment[slot] = inst;
     }
   }
-  // perk starting items go to hero equipment if the slot is free, else village inventory
+  // perk starting items go to hero equipment if the slot is free AND the class
+  // can actually use them, else village inventory (the mage pawns the frying pan)
   for (const pid of perks) {
     const perk = PERKS[pid];
     if (perk?.kind === 'startingItem' && perk.item) {
       const inst = makeItem(state, perk.item, level);
-      const slot = itemDef(perk.item).slot;
-      if ((slot === 'weapon' || slot === 'offhand' || slot === 'armor' || slot === 'trinket') && !hero.equipment[slot]) {
+      const def = itemDef(perk.item);
+      const slot = def.slot;
+      if (
+        (slot === 'weapon' || slot === 'offhand' || slot === 'armor' || slot === 'trinket') &&
+        !hero.equipment[slot] &&
+        canEquip(classId, def)
+      ) {
         hero.equipment[slot] = inst;
       } else {
         state.village.inventory.push(inst);
