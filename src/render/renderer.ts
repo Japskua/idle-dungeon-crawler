@@ -270,11 +270,15 @@ export class Renderer {
             ctx.fillStyle = '#f2c94c';
             ctx.fillRect(ox + px.x + 7, oy + px.y - 2, 2, 2);
           }
+          if (m.summonedBy) {
+            ctx.fillStyle = '#95d65a'; // friendly marker: the party's own conjuration
+            ctx.fillRect(ox + px.x + 7, oy + px.y - 2, 2, 2);
+          }
           if (flash) this.drawFlash(ctx, atlas, `mob/${m.defId}`, ox + px.x, oy + px.y);
           const maxHp = this.monsterMaxHpCache(m.defId, m.level, m.elite);
           if (m.hp < maxHp) {
             if (isBoss) this.drawHpBar(ctx, ox + px.x - 8, oy + px.y - 19, m.hp / maxHp, '#d13b3b', 32);
-            else this.drawHpBar(ctx, ox + px.x, oy + px.y - 3, m.hp / maxHp, '#d13b3b');
+            else this.drawHpBar(ctx, ox + px.x, oy + px.y - 3, m.hp / maxHp, m.summonedBy ? '#4fae4f' : '#d13b3b');
           }
         },
       });

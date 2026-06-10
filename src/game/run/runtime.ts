@@ -27,6 +27,7 @@ import {
   manaRegenPerTick,
   monsterDmg,
   monsterGoldMult,
+  monsterMaxHp,
   monsterXp,
   mitigate,
   physDamage,
@@ -250,6 +251,11 @@ function tickStatuses(state: GameState, run: DungeonRun) {
       if (def?.hpPerTick) m.hp += def.hpPerTick;
     }
     m.statuses = m.statuses.filter((s) => s.ticksLeft > 0);
+    // borrowed time: summons crumble when it runs out
+    if (m.ttlTicks !== undefined && m.hp > 0) {
+      m.ttlTicks--;
+      if (m.ttlTicks <= 0) m.hp = 0;
+    }
   }
 }
 
@@ -403,6 +409,11 @@ function buildBattleView(
   const downedAllies = Object.keys(run.party.downed)
     .filter((did) => !carriedBy.has(did))
     .sort();
+  let myMinions = 0;
+  for (const mid of run.monsterOrder) {
+    const m = run.monsters[mid]!;
+    if (m.hp > 0 && m.summonedBy === heroId) myMinions++;
+  }
   return {
     enemies,
     allies,
@@ -411,6 +422,7 @@ function buildBattleView(
     selfMpFrac: d.maxMp > 0 ? hero.mp / d.maxMp : 1,
     carrying: !!run.party.carrying[heroId],
     withdrawing: run.intent === 'withdraw',
+    myMinions,
   };
 }
 
@@ -734,11 +746,22 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
   const standing = standingIds(run);
   const heroPos = (hid: Id) => run.party.pos[hid]!;
 
+  // living friendly minions are valid targets for hostiles (and shields for heroes)
+  const minionIds = run.monsterOrder.filter((mid) => {
+    const mm = run.monsters[mid]!;
+    return mm.hp > 0 && mm.summonedBy;
+  });
+
   for (const id of run.monsterOrder) {
     const m = run.monsters[id]!;
     if (m.hp <= 0 || m.action || m.move) continue;
     if (hasStatus(m.statuses, 'stun')) continue;
     const def = creatureDef(m.defId);
+
+    if (m.summonedBy) {
+      minionBehavior(state, run, m, def);
+      continue;
+    }
 
     if (def.disposition === 'neutral') {
       neutralBehavior(state, run, m);
@@ -750,24 +773,26 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
       const hero = state.roster[hid];
       return hero && !isStealthed(hero);
     });
+    const targetPosOf = (tid: Id) => (run.monsters[tid] ? run.monsters[tid]!.pos : heroPos(tid));
+    const targetables = [...visible, ...minionIds];
 
-    // aggro check
-    if (!m.aggro && visible.length > 0) {
+    // aggro check (minions provoke just like heroes)
+    if (!m.aggro && targetables.length > 0) {
       const r2 = def.base.aggroRadius * def.base.aggroRadius;
-      for (const hid of visible) {
-        if (euclid2(m.pos, heroPos(hid)) <= r2) {
+      for (const tid of targetables) {
+        if (euclid2(m.pos, targetPosOf(tid)) <= r2) {
           aggroPack(run, m.packId);
           break;
         }
       }
     }
-    if (!m.aggro || visible.length === 0) continue;
+    if (!m.aggro || targetables.length === 0) continue;
 
-    // target: taunt source if valid (and visible), else nearest visible hero
+    // target: taunt source if valid (and visible), else nearest visible hero/minion
     let targetId: Id | null = null;
     const taunt = m.statuses.find((s) => STATUSES[s.statusId]?.taunt);
     if (taunt && visible.includes(taunt.sourceId)) targetId = taunt.sourceId;
-    if (!targetId) targetId = nearestOf(m.pos, visible, heroPos);
+    if (!targetId) targetId = nearestOf(m.pos, targetables, targetPosOf);
     if (!targetId) continue;
     m.targetId = targetId;
 
@@ -795,7 +820,7 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
     }
     if (casted) continue;
 
-    const tPos = heroPos(targetId);
+    const tPos = targetPosOf(targetId);
     if (manhattan(m.pos, tPos) <= def.base.range) {
       m.action = { kind: 'attack', targetId, ticksLeft: def.base.attackTicks, total: def.base.attackTicks };
       continue;
@@ -811,6 +836,42 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
       if (!isBlocked(step.x, step.y)) {
         startMonsterMove(m, step, def.base.moveTicks);
       }
+    }
+  }
+}
+
+/** summoned creatures: fight the party's enemies, heel near the summoner otherwise */
+function minionBehavior(state: GameState, run: DungeonRun, m: MonsterInstance, def: ReturnType<typeof creatureDef>) {
+  const hostiles = run.monsterOrder.filter((mid) => {
+    const mm = run.monsters[mid]!;
+    if (mm.hp <= 0 || mm.summonedBy) return false;
+    if (creatureDef(mm.defId).disposition !== 'hostile') return false;
+    return mm.aggro || euclid2(m.pos, mm.pos) <= 64;
+  });
+  const occupied = monsterOccupancy(run, m.id);
+  const heroCells = heroesByPos(state, run);
+  const isBlocked = (x: number, y: number) => occupied.has(`${x},${y}`) || heroCells.has(`${x},${y}`);
+
+  const targetId = nearestOf(m.pos, hostiles, (mid) => run.monsters[mid]!.pos);
+  if (targetId) {
+    const tPos = run.monsters[targetId]!.pos;
+    if (manhattan(m.pos, tPos) <= def.base.range) {
+      m.targetId = targetId;
+      m.action = { kind: 'attack', targetId, ticksLeft: def.base.attackTicks, total: def.base.attackTicks };
+      return;
+    }
+    const path = astarAdjacent(run.floor, m.pos, tPos, isBlocked);
+    if (path && path.length > 0 && !isBlocked(path[0]!.x, path[0]!.y)) {
+      startMonsterMove(m, path[0]!, def.base.moveTicks);
+    }
+    return;
+  }
+  // nothing to fight: shamble after the summoner
+  const owner = m.summonedBy && !(m.summonedBy in run.party.downed) ? run.party.pos[m.summonedBy] : undefined;
+  if (owner && euclid2(m.pos, owner) > 9) {
+    const path = astarTo(run.floor, m.pos, owner, isBlocked);
+    if (path && path.length > 0 && !isBlocked(path[0]!.x, path[0]!.y)) {
+      startMonsterMove(m, path[0]!, def.base.moveTicks);
     }
   }
 }
@@ -945,6 +1006,61 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
   if (action.kind === 'cast' && action.skillId) {
     const skill = SKILLS[action.skillId];
     if (!skill) return;
+
+    // summons: conjure friendly minions on free cells around the caster
+    if (skill.kind === 'summon' && skill.summon) {
+      const def = creatureDef(skill.summon.defId);
+      const alive = run.monsterOrder.filter((mid) => {
+        const m = run.monsters[mid]!;
+        return m.hp > 0 && m.summonedBy === hero.id;
+      }).length;
+      const want = Math.max(0, skill.summon.count - alive);
+      let spawned = 0;
+      const seen = new Set<string>([`${myPos.x},${myPos.y}`]);
+      const queue: Vec2[] = [myPos];
+      const heroCells = heroesByPos(state, run);
+      const occupied = monsterOccupancy(run);
+      while (queue.length > 0 && spawned < want) {
+        const cur = queue.shift()!;
+        const key = `${cur.x},${cur.y}`;
+        if (cur !== myPos && !heroCells.has(key) && !occupied.has(key)) {
+          const minion: MonsterInstance = {
+            id: allocId(state, 'mn'),
+            defId: def.id,
+            level: hero.level,
+            elite: false,
+            hp: monsterMaxHp(def.base.hp, hero.level, false, false),
+            pos: { ...cur },
+            move: null,
+            targetId: null,
+            aggro: false,
+            packId: 0,
+            action: null,
+            statuses: [],
+            cooldowns: {},
+            summonedBy: hero.id,
+            ttlTicks: skill.summon.durationTicks,
+          };
+          run.monsters[minion.id] = minion;
+          run.monsterOrder.push(minion.id);
+          occupied.add(key);
+          spawned++;
+        }
+        for (const dir of DIRS) {
+          const x = cur.x + dir.x;
+          const y = cur.y + dir.y;
+          const nkey = `${x},${y}`;
+          if (!seen.has(nkey) && isPassable(run.floor, x, y)) {
+            seen.add(nkey);
+            queue.push({ x, y });
+          }
+        }
+      }
+      if (spawned > 0) {
+        events.push({ t: 'summon', heroId: hero.id, defId: def.id, count: spawned });
+      }
+      return;
+    }
     const power = skill.physical
       ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
@@ -984,7 +1100,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
       for (const mid of [...run.monsterOrder]) {
         const m = run.monsters[mid]!;
-        // AoE is indiscriminate: neutral bystanders are very much in the blast
+        if (m.summonedBy) continue; // the party's own summons are spared the blast
+        // AoE is otherwise indiscriminate: neutral bystanders are very much in it
         if (m.hp > 0 && euclid2(center, m.pos) <= r2) hitMonster(m);
       }
       return;
@@ -1099,6 +1216,24 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
     return;
   }
   if (action.kind !== 'attack' || !action.targetId) return;
+
+  // creature-on-creature: minions striking hostiles, hostiles striking minions
+  const creatureTarget = run.monsters[action.targetId];
+  if (creatureTarget) {
+    if (creatureTarget.hp <= 0) return;
+    const def = creatureDef(m.defId);
+    if (manhattan(m.pos, creatureTarget.pos) > def.base.range) return;
+    const targetDef = creatureDef(creatureTarget.defId);
+    const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+    const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
+    const dmg = Math.max(1, Math.round(mitigate(raw, targetDef.base.armor)));
+    creatureTarget.hp -= dmg;
+    creatureTarget.lastHitBy = m.id;
+    if (m.summonedBy && targetDef.disposition === 'hostile') aggroPack(run, creatureTarget.packId);
+    events.push({ t: 'damage', src: m.id, dst: creatureTarget.id, amount: dmg, crit: false, pos: { ...creatureTarget.pos }, srcPos: { ...m.pos } });
+    return;
+  }
+
   if (action.targetId in run.party.downed) return;
   if (!run.party.memberIds.includes(action.targetId)) return;
   const hero = state.roster[action.targetId];
@@ -1126,6 +1261,17 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
     if (m.hp > 0) continue;
     const def = creatureDef(m.defId);
     const standing = standingIds(run);
+
+    if (m.summonedBy) {
+      // summons crumble quietly: no loot, no xp, no mourning
+      events.push({ t: 'minionDied', defId: m.defId, pos: { ...m.pos } });
+      delete run.monsters[id];
+      run.monsterOrder = run.monsterOrder.filter((mid) => mid !== id);
+      for (const hid of run.party.memberIds) {
+        if (run.party.targetId[hid] === id) run.party.targetId[hid] = null;
+      }
+      continue;
+    }
 
     if (def.disposition === 'neutral') {
       events.push({ t: 'neutralKilled', defId: m.defId, pos: { ...m.pos } });
@@ -1263,7 +1409,7 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
       for (const mid of run.monsterOrder) {
         const m = run.monsters[mid]!;
         const def = creatureDef(m.defId);
-        if (def.disposition === 'neutral' && insideAnyRoom(run.floor.rooms, m.pos.x, m.pos.y) === ri) {
+        if (def.disposition === 'neutral' && !m.summonedBy && insideAnyRoom(run.floor.rooms, m.pos.x, m.pos.y) === ri) {
           events.push({ t: 'neutralSighted', defId: m.defId, pos: { ...m.pos } });
           chronicle(state, nowMs, sightingText(def.name), run.depth);
         }

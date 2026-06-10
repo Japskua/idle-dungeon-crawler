@@ -446,6 +446,7 @@ function spawnCreatures(rng: Rng, floor: Floor, depth: number): MonsterInstance[
 
   // --- neutrals: small separate budget, anywhere but the entrance room ---
   const neutralTable = Object.values(NEUTRALS)
+    .filter((def) => !def.summonOnly) // conjured creatures never spawn on their own
     .map((def) => {
       const band = def.spawn.find((b) => b.depths[0] <= depth && depth <= b.depths[1]);
       return band ? { def, weight: band.weight } : null;

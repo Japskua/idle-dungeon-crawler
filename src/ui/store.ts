@@ -117,6 +117,10 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return e.outcome === 'withdrawn'
         ? entry(`The party returns from depth ${e.depth} with ${e.goldKept} gold.`, 'gold')
         : null;
+    case 'summon':
+      return entry(`${heroName(game, e.heroId)} summons ${e.count}x ${mobName(e.defId)}!`, 'level');
+    case 'minionDied':
+      return entry(`A ${mobName(e.defId).toLowerCase()} crumbles away.`, 'info');
     case 'neutralSighted':
       return entry(`A wild ${mobName(e.defId)} minds its own business nearby.`, 'info');
     case 'neutralKilled':

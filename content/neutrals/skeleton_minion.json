@@ -1,0 +1,46 @@
+{
+  "id": "skeleton_minion",
+  "name": "Risen Skeleton",
+  "tier": "minion",
+  "disposition": "neutral",
+  "behavior": "wander",
+  "summonOnly": true,
+  "base": {
+    "hp": 14,
+    "dmg": 4,
+    "armor": 1,
+    "attackTicks": 12,
+    "moveTicks": 4,
+    "range": 1,
+    "aggroRadius": 0
+  },
+  "spawn": [],
+  "level": { "offset": 0, "spread": 0 },
+  "xpBase": 1,
+  "gold": [0, 0],
+  "skills": [],
+  "drops": [],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "....000000......",
+        "...0wwwwww0.....",
+        "...0wlwwlw0.....",
+        "...0wwwwww0.....",
+        "....0w00w0......",
+        ".....0000.......",
+        "...000ww000.....",
+        "..0w0wwww0w0....",
+        "..0w0wwww0w0....",
+        "....0wwww0......",
+        "....0w00w0......",
+        "....0w00w0......",
+        "...00w00w00.....",
+        "...0ww00ww0.....",
+        "................"
+      ]
+    ]
+  }
+}

@@ -115,7 +115,11 @@ function checkCreature(file: string, data: any, neutral: boolean) {
   for (const f of ['hp', 'dmg', 'armor', 'attackTicks', 'moveTicks', 'range', 'aggroRadius']) {
     if (typeof base[f] !== 'number') err(file, `base.${f} must be a number`);
   }
-  if (!Array.isArray(data.spawn) || data.spawn.length === 0) {
+  if (data.summonOnly === true) {
+    if (Array.isArray(data.spawn) && data.spawn.length > 0) {
+      err(file, `summonOnly creatures must not have spawn bands`);
+    }
+  } else if (!Array.isArray(data.spawn) || data.spawn.length === 0) {
     err(file, `spawn must be a non-empty array of {depths:[lo,hi], weight}`);
   } else {
     data.spawn.forEach((b: any, i: number) => {

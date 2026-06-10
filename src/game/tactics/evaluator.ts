@@ -44,6 +44,8 @@ export interface BattleView {
   selfMpFrac: number;
   carrying: boolean;
   withdrawing: boolean;
+  /** living minions this hero has already summoned */
+  myMinions: number;
 }
 
 export type ResolvedAction =
@@ -135,6 +137,13 @@ function feasible(
         }
         return best ? { kind: 'cast', skillId, targetId: best.id } : null;
       }
+      if (skill.kind === 'summon') {
+        // worth conjuring only with a fight on and room in the entourage
+        if (view.withdrawing) return null;
+        if (view.enemies.length === 0) return null;
+        if (view.myMinions >= (skill.summon?.count ?? 1)) return null;
+        return { kind: 'cast', skillId, targetId: null };
+      }
       if (skill.target === 'self' && skill.kind === 'heal') {
         // no point mending at full health
         return view.selfHpFrac < 0.999 ? { kind: 'cast', skillId, targetId: null } : null;
@@ -145,6 +154,10 @@ function feasible(
           return view.allies.some((a) => a.hpFrac < 0.999) ? { kind: 'cast', skillId, targetId: null } : null;
         }
         // buffs only matter with a fight on
+        return view.enemies.length > 0 ? { kind: 'cast', skillId, targetId: null } : null;
+      }
+      if (skill.target === 'self' && skill.kind === 'buff') {
+        // rage/vanish out of combat is just embarrassing
         return view.enemies.length > 0 ? { kind: 'cast', skillId, targetId: null } : null;
       }
       return { kind: 'cast', skillId, targetId: null };

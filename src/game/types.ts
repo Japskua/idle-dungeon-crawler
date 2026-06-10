@@ -110,6 +110,8 @@ export interface MonsterDef {
   disposition: 'hostile' | 'neutral';
   /** neutrals only */
   behavior?: 'wander' | 'flee';
+  /** never spawns naturally — only conjured by summon skills */
+  summonOnly?: boolean;
   base: {
     hp: number;
     dmg: number;
@@ -151,13 +153,17 @@ export interface MonsterInstance {
   statuses: StatusInstance[];
   cooldowns: Record<SkillId, number>;
   lastHitBy?: Id;
+  /** set on friendly minions: the hero who conjured them */
+  summonedBy?: Id;
+  /** minions crumble when this reaches zero */
+  ttlTicks?: number;
 }
 
 // ---------- content: skills & statuses ----------
 export interface SkillDef {
   id: SkillId;
   name: string;
-  kind: 'attack' | 'heal' | 'buff' | 'debuff';
+  kind: 'attack' | 'heal' | 'buff' | 'debuff' | 'summon';
   target: 'enemy' | 'lowestHpAlly' | 'self' | 'enemiesInRadius' | 'alliesInRadius';
   range: number;
   radius?: number;
@@ -171,6 +177,8 @@ export interface SkillDef {
   description: string;
   /** present = teachable at the Magician's Guild to any hero meeting the bar */
   guild?: { cost: number; minLevel: number; minInt: number };
+  /** summon skills conjure friendly minions that fight alongside the party */
+  summon?: { defId: MonsterDefId; count: number; durationTicks: number };
 }
 
 export interface StatusDef {
@@ -207,6 +215,8 @@ export interface ClassDef {
   weaponKinds: string[];
   /** armor/offhand kinds this class can wear (cloth, leather, plate, shield, ...) */
   armorKinds: string[];
+  /** weaponless fighters (monks, mimes): fists that scale with level */
+  unarmed?: { baseDmg: number; dmgPerLevel: number; attackTicks: number };
   startingItems: ItemDefId[];
   skillUnlocks: { level: number; skillId: SkillId }[];
   hireCostBase: number;
@@ -500,6 +510,8 @@ export type GameEvent =
   | { t: 'withdrawOrdered' }
   | { t: 'runEnded'; outcome: 'withdrawn' | 'wiped'; depth: number; goldKept: number; goldLost: number }
   | { t: 'wipe'; depth: number; goldLost: number }
+  | { t: 'summon'; heroId: Id; defId: MonsterDefId; count: number }
+  | { t: 'minionDied'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }

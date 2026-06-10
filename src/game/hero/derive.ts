@@ -34,8 +34,9 @@ export function derive(hero: Hero): DerivedStats {
   const mods: StatMod[] = [];
 
   let armor = 0;
-  let weaponDmg = UNARMED.dmg;
-  let attackTicks = UNARMED.attackTicks;
+  // weaponless classes (monks, mimes) grow their fists with every level
+  let weaponDmg = cls.unarmed ? cls.unarmed.baseDmg + cls.unarmed.dmgPerLevel * hero.level : UNARMED.dmg;
+  let attackTicks = cls.unarmed ? cls.unarmed.attackTicks : UNARMED.attackTicks;
   let attackRange = UNARMED.range;
   let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT;
   let gearMoveTicks = 0;
@@ -87,7 +88,7 @@ export function derive(hero: Hero): DerivedStats {
     attrs,
     maxHp: Math.max(1, Math.round(heroMaxHp(cls.baseHp, attrs.vit) * maxhpMult)),
     maxMp: Math.max(0, heroMaxMp(cls.baseMp, attrs.int)),
-    weaponDmg,
+    weaponDmg: Math.round(weaponDmg * 10) / 10,
     attackTicks,
     attackRange,
     armor,
