@@ -171,12 +171,9 @@ export class Renderer {
 
     // entity draw positions (pixels), interpolated
     const heroPx = new Map<Id, Vec2>();
-    const standingIdx = new Map<Id, number>();
-    let idx = 0;
     for (const id of run.party.memberIds) {
       if (id in run.party.downed) continue;
       heroPx.set(id, this.entityPx(run.party.pos[id]!, run.party.move[id], alpha));
-      standingIdx.set(id, idx++);
     }
 
     // camera: follow standing-party centroid (or entrance after a wipe frame)
@@ -284,7 +281,6 @@ export class Renderer {
       const hero = state.roster[id];
       if (!hero) continue;
       const px = heroPx.get(id)!;
-      const wobble = standingIdx.get(id)! % 2 === 0 ? 0 : 1; // tiny offset when stacked
       const mv = run.party.move[id];
       this.updateFacing(id, mv ? Math.sign(run.party.pos[id]!.x - mv.from.x) : 0);
       const flash = this.fxFlashes.some((f) => f.entityId === id);
@@ -293,14 +289,14 @@ export class Renderer {
         y: px.y + 0.5,
         draw: () => {
           const frame = Math.floor(state.tick / 4 + this.hashId(id)) % 2;
-          atlasDraw(ctx, atlas, `hero/${hero.classId}`, frame, ox + px.x + wobble, oy + px.y, this.facing.get(id) === -1);
-          if (flash) this.drawFlash(ctx, atlas, `hero/${hero.classId}`, ox + px.x + wobble, oy + px.y);
+          atlasDraw(ctx, atlas, `hero/${hero.classId}`, frame, ox + px.x, oy + px.y, this.facing.get(id) === -1);
+          if (flash) this.drawFlash(ctx, atlas, `hero/${hero.classId}`, ox + px.x, oy + px.y);
           if (carriedId) {
             const carriedHero = state.roster[carriedId];
             if (carriedHero) {
               ctx.save();
               ctx.globalAlpha = 0.9;
-              ctx.translate(ox + px.x + wobble + 13, oy + px.y - 3);
+              ctx.translate(ox + px.x + 13, oy + px.y - 3);
               ctx.rotate(Math.PI / 2);
               atlasDraw(ctx, atlas, `hero/${carriedHero.classId}`, 0, -8, -8);
               ctx.restore();
@@ -308,7 +304,7 @@ export class Renderer {
             }
           }
           const d = derive(hero);
-          if (hero.hp < d.maxHp) this.drawHpBar(ctx, ox + px.x + wobble, oy + px.y - 3, hero.hp / d.maxHp, '#4fae4f');
+          if (hero.hp < d.maxHp) this.drawHpBar(ctx, ox + px.x, oy + px.y - 3, hero.hp / d.maxHp, '#4fae4f');
         },
       });
     }

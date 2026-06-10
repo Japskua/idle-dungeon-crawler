@@ -49,8 +49,9 @@ flips), bosses are 16×16 drawn at 2×.
 ## Tuning
 
 Every formula/constant lives in `src/game/balance.ts`. After tuning, run
-`bun run balance` (expect: fresh party → depth ~3, ~5 min at 1×, mostly
-`withdrawn` outcomes) and re-baseline goldens.
+`bun run balance` (expect: fresh party → depth ~4-5, ~10 min at 1×, a healthy
+mix of `withdrawn` and `wiped`, zero `timeout` rows — a timeout means a
+movement deadlock) and re-baseline goldens.
 
 ## Bun specifics
 

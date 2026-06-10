@@ -86,15 +86,25 @@ export function enterFloor(state: GameState, run: DungeonRun, depth: number, eve
   run.visitedRooms = [0];
   run.ticksOnFloor = 0;
 
-  // party spawns on/next to the entrance
-  const spots: { x: number; y: number }[] = [floor.entrance];
-  for (const d of DIRS) {
-    const x = floor.entrance.x + d.x;
-    const y = floor.entrance.y + d.y;
-    if (isPassable(floor, x, y)) spots.push({ x, y });
+  // party spawns around the entrance, one hero per tile (BFS for unique cells)
+  const spots: { x: number; y: number }[] = [];
+  const seen = new Set<string>([`${floor.entrance.x},${floor.entrance.y}`]);
+  const queue = [floor.entrance];
+  while (queue.length > 0 && spots.length < run.party.memberIds.length) {
+    const cur = queue.shift()!;
+    spots.push(cur);
+    for (const d of DIRS) {
+      const x = cur.x + d.x;
+      const y = cur.y + d.y;
+      const key = `${x},${y}`;
+      if (!seen.has(key) && isPassable(floor, x, y)) {
+        seen.add(key);
+        queue.push({ x, y });
+      }
+    }
   }
   run.party.memberIds.forEach((id, i) => {
-    const spot = spots[Math.min(i, spots.length - 1)]!;
+    const spot = spots[Math.min(i, spots.length - 1)] ?? floor.entrance;
     run.party.pos[id] = { ...spot };
     run.party.move[id] = null;
     run.party.action[id] = null;

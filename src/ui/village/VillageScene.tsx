@@ -1,6 +1,8 @@
 /**
  * The animated village: a pixel-art scene with clickable buildings, drifting
  * chimney smoke, and the roster's own heroes (plus a chicken) wandering about.
+ * The canvas sizes itself to fill the viewport at the largest integer pixel
+ * scale and pads the world with more grass — no letterboxing.
  * Pure presentation — all state changes go through the usual command flow.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -10,6 +12,7 @@ import { effectiveHireCost, tavernRecruits } from '../../game/village/shop';
 import type { GameState } from '../../game/types';
 import { setVillageView, useUi, type VillageView } from '../store';
 
+/** design size of the village content; the canvas itself grows to fill */
 const W = 480;
 const H = 288;
 
@@ -74,18 +77,36 @@ function badges(game: GameState): Record<string, boolean> {
   return { hospital: injured, tavern: hireable, gate: canEmbark };
 }
 
+interface SceneDims {
+  scale: number;
+  iw: number;
+  ih: number;
+  ox: number;
+  oy: number;
+}
+
 export function VillageScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [scale, setScale] = useState(2);
+  const [dims, setDims] = useState<SceneDims>({ scale: 2, iw: W, ih: H, ox: 0, oy: 0 });
+  const dimsRef = useRef(dims);
+  dimsRef.current = dims;
   const hoverRef = useRef<string | null>(null);
   const crittersRef = useRef<Critter[]>([]);
 
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const update = () =>
-      setScale(Math.max(1, Math.floor(Math.min(el.clientWidth / W, el.clientHeight / H))));
+    const update = () => {
+      const cw = Math.max(64, el.clientWidth);
+      const ch = Math.max(64, el.clientHeight);
+      // largest integer scale that still fits the village content...
+      const scale = Math.max(1, Math.floor(Math.min(cw / W, ch / H)));
+      // ...then grow the canvas itself to swallow the leftover space with grass
+      const iw = Math.max(W, Math.ceil(cw / scale));
+      const ih = Math.max(H, Math.ceil(ch / scale));
+      setDims({ scale, iw, ih, ox: Math.floor((iw - W) / 2), oy: Math.floor((ih - H) / 2) });
+    };
     update();
     const obs = new ResizeObserver(update);
     obs.observe(el);
@@ -95,39 +116,40 @@ export function VillageScene() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d')!;
-    ctx.imageSmoothingEnabled = false;
     const atlas = getAtlas();
     let raf = 0;
 
     const draw = (nowMs: number) => {
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false;
+      const { iw, ih, ox, oy } = dimsRef.current;
       const game = useUi.getState().game;
       const t = nowMs / 1000;
 
-      // ground
-      for (let y = 0; y < H; y += 16) {
-        for (let x = 0; x < W; x += 16) {
+      // ground fills the whole canvas, village content sits centered at (ox, oy)
+      for (let y = 0; y < ih; y += 16) {
+        for (let x = 0; x < iw; x += 16) {
           atlasDraw(ctx, atlas, 'village/grass', 0, x, y);
         }
       }
-      // path: horizontal main street + stubs to the back-row doors
-      for (let x = 0; x < W; x += 16) {
-        atlasDraw(ctx, atlas, 'village/path', 0, x, 120);
-        atlasDraw(ctx, atlas, 'village/path', 0, x, 136);
+      // path: main street spans the full width; stubs lead to the back-row doors
+      for (let x = 0; x < iw; x += 16) {
+        atlasDraw(ctx, atlas, 'village/path', 0, x, oy + 120);
+        atlasDraw(ctx, atlas, 'village/path', 0, x, oy + 136);
       }
       for (const b of BUILDINGS.slice(0, 4)) {
-        atlasDraw(ctx, atlas, 'village/path', 0, b.x + 24, 88);
-        atlasDraw(ctx, atlas, 'village/path', 0, b.x + 24, 104);
+        atlasDraw(ctx, atlas, 'village/path', 0, ox + b.x + 24, oy + 88);
+        atlasDraw(ctx, atlas, 'village/path', 0, ox + b.x + 24, oy + 104);
       }
-      for (const tree of TREES) atlasDraw(ctx, atlas, 'village/tree', 0, tree.x, tree.y);
+      for (const tree of TREES) atlasDraw(ctx, atlas, 'village/tree', 0, ox + tree.x, oy + tree.y);
 
       // buildings
       const hovered = hoverRef.current;
       for (const b of BUILDINGS) {
-        atlasDraw(ctx, atlas, b.sprite, 0, b.x, b.y, false, 2);
+        atlasDraw(ctx, atlas, b.sprite, 0, ox + b.x, oy + b.y, false, 2);
         if (b.smoke) {
           const frame = Math.floor(t * 1.6) % 2;
-          atlasDraw(ctx, atlas, 'village/smoke', frame, b.smoke.x, b.smoke.y - Math.floor((t * 4) % 3), false, 2);
+          atlasDraw(ctx, atlas, 'village/smoke', frame, ox + b.smoke.x, oy + b.smoke.y - Math.floor((t * 4) % 3), false, 2);
         }
       }
 
@@ -135,26 +157,27 @@ export function VillageScene() {
       const badge = game ? badges(game) : {};
       ctx.textAlign = 'center';
       for (const b of BUILDINGS) {
+        const bx = ox + b.x;
+        const by = oy + b.y;
         const isHover = hovered === b.id;
         if (isHover) {
           ctx.strokeStyle = '#f2c94c';
           ctx.lineWidth = 1;
-          ctx.strokeRect(b.x - 1.5, b.y - 1.5, 67, 67);
+          ctx.strokeRect(bx - 1.5, by - 1.5, 67, 67);
         }
         ctx.font = isHover ? 'bold 9px monospace' : '8px monospace';
-        ctx.fillStyle = isHover ? '#f2c94c' : '#cfcde0';
-        const ly = b.y + 74;
-        ctx.fillStyle = 'rgba(13,10,15,0.65)';
+        const ly = by + 74;
         const tw = ctx.measureText(b.name).width;
-        ctx.fillRect(b.x + 32 - tw / 2 - 3, ly - 8, tw + 6, 11);
+        ctx.fillStyle = 'rgba(13,10,15,0.65)';
+        ctx.fillRect(bx + 32 - tw / 2 - 3, ly - 8, tw + 6, 11);
         ctx.fillStyle = isHover ? '#f2c94c' : '#cfcde0';
-        ctx.fillText(b.name, b.x + 32, ly);
+        ctx.fillText(b.name, bx + 32, ly);
         if (badge[b.id] && Math.floor(t * 2) % 2 === 0) {
           ctx.fillStyle = '#f2c94c';
-          ctx.fillRect(b.x + 56, b.y - 4, 9, 9);
+          ctx.fillRect(bx + 56, by - 4, 9, 9);
           ctx.fillStyle = '#0d0a0f';
           ctx.font = 'bold 8px monospace';
-          ctx.fillText('!', b.x + 60.5, b.y + 3);
+          ctx.fillText('!', bx + 60.5, by + 3);
         }
       }
 
@@ -200,18 +223,18 @@ export function VillageScene() {
           }
         }
         const frame = nowMs > c.pauseUntil ? Math.floor(t * 4) % 2 : 0;
-        atlasDraw(ctx, atlas, c.key, frame, Math.round(c.x), Math.round(c.y), c.flip);
+        atlasDraw(ctx, atlas, c.key, frame, ox + Math.round(c.x), oy + Math.round(c.y), c.flip);
       }
 
-      // chronicle ticker
+      // chronicle ticker pinned to the bottom of the real viewport
       if (game && game.chronicle.length > 0) {
         const last = game.chronicle[game.chronicle.length - 1]!;
         ctx.font = '8px monospace';
-        ctx.fillStyle = 'rgba(13,10,15,0.7)';
         const tw = ctx.measureText(last.text).width;
-        ctx.fillRect(W / 2 - tw / 2 - 4, H - 13, tw + 8, 12);
+        ctx.fillStyle = 'rgba(13,10,15,0.7)';
+        ctx.fillRect(iw / 2 - tw / 2 - 4, ih - 13, tw + 8, 12);
         ctx.fillStyle = '#8a87a8';
-        ctx.fillText(last.text, W / 2, H - 4);
+        ctx.fillText(last.text, iw / 2, ih - 4);
       }
       ctx.textAlign = 'left';
 
@@ -223,7 +246,8 @@ export function VillageScene() {
 
   const toLocal = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    return { x: (e.clientX - rect.left) / scale, y: (e.clientY - rect.top) / scale };
+    const { scale, ox, oy } = dimsRef.current;
+    return { x: (e.clientX - rect.left) / scale - ox, y: (e.clientY - rect.top) / scale - oy };
   };
 
   const hit = (x: number, y: number) =>
@@ -233,10 +257,10 @@ export function VillageScene() {
     <div className="village-scene-wrap" ref={wrapRef}>
       <canvas
         ref={canvasRef}
-        width={W}
-        height={H}
+        width={dims.iw}
+        height={dims.ih}
         className="game-canvas"
-        style={{ width: W * scale, height: H * scale, cursor: hoverRef.current ? 'pointer' : 'default' }}
+        style={{ width: dims.iw * dims.scale, height: dims.ih * dims.scale }}
         onMouseMove={(e) => {
           const { x, y } = toLocal(e);
           const b = hit(x, y);

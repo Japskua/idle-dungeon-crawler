@@ -41,6 +41,7 @@ import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '.
 import { spellAmount } from '../balance';
 import { rollChestLoot, rollDrops, allocId } from '../items/factory';
 import {
+  DIRS,
   astar,
   astarAdjacent,
   astarTo,
@@ -294,6 +295,42 @@ function nearestOf(pos: Vec2, ids: Id[], getPos: (id: Id) => Vec2): Id | null {
   return best;
 }
 
+/**
+ * The first `count` walkable cells around an anchor, BFS order — one per hero.
+ * Spreading the party over distinct cells (instead of everyone wanting the
+ * same tile) is what makes regrouping converge in 1-wide corridors.
+ */
+function regroupCells(run: DungeonRun, anchor: Vec2, count: number): Vec2[] {
+  const cells: Vec2[] = [];
+  const seen = new Set<string>([`${anchor.x},${anchor.y}`]);
+  const queue: Vec2[] = [anchor];
+  while (queue.length > 0 && cells.length < count) {
+    const cur = queue.shift()!;
+    cells.push(cur);
+    for (const dir of DIRS) {
+      const x = cur.x + dir.x;
+      const y = cur.y + dir.y;
+      const key = `${x},${y}`;
+      if (!seen.has(key) && isPassable(run.floor, x, y)) {
+        seen.add(key);
+        queue.push({ x, y });
+      }
+    }
+  }
+  return cells;
+}
+
+/** everyone standing has settled onto one of the party's regroup cells */
+function partyRegrouped(run: DungeonRun, anchor: Vec2): boolean {
+  const standing = standingIds(run);
+  if (standing.length === 0) return false;
+  const cells = regroupCells(run, anchor, standing.length);
+  return standing.every((hid) => {
+    const p = run.party.pos[hid]!;
+    return cells.some((c) => c.x === p.x && c.y === p.y);
+  });
+}
+
 function computeObjective(run: DungeonRun): Vec2 {
   if (run.intent === 'withdraw') return run.floor.entrance;
   const leader = standingIds(run)[0];
@@ -369,21 +406,73 @@ function buildBattleView(
 }
 
 /**
- * Heroes path as if monsters were not there; stepping into a hostile becomes a
- * bump-attack. This is what kills doorway deadlocks: a monster parked in a
- * 1-wide corridor is an obstacle you fight, not a wall you stare at.
+ * Hero pathing prefers routing AROUND allies (they hard-block the first A*
+ * attempt); only when no such route exists do we fall back to a path through
+ * them, which the swap rule in stepOrFight then resolves. Routing-first kills
+ * the priority-inversion dance where an early-order hero keeps swap-yanking a
+ * later one off its course; swap-as-fallback still breaks head-on corridor jams.
+ */
+function heroRoute(
+  run: DungeonRun,
+  heroId: Id,
+  compute: (blocked?: (x: number, y: number) => boolean) => Vec2[] | null,
+): Vec2[] | null {
+  const allyCells = new Set<string>();
+  for (const aid of run.party.memberIds) {
+    if (aid === heroId || aid in run.party.downed) continue;
+    const p = run.party.pos[aid]!;
+    allyCells.add(`${p.x},${p.y}`);
+  }
+  const around = compute((x, y) => allyCells.has(`${x},${y}`));
+  if (around && around.length > 0) return around;
+  return compute(undefined);
+}
+
+/**
+ * Resolve a hero's next step against whoever actually stands on it — strict
+ * one-entity-per-tile:
+ *  - hostile  -> bump-attack (and provoke the pack); no deadlock at doorways
+ *  - neutral  -> shoo it: swap places (the chicken is gently relocated)
+ *  - ally     -> swap places if they're standing still, otherwise hold a beat
+ *  - empty    -> walk
  */
 function stepOrFight(run: DungeonRun, heroId: Id, d: DerivedStats, step: Vec2, moveTicks: number): boolean {
-  const blocker = run.monsterOrder.find((mid) => {
+  const blockerId = run.monsterOrder.find((mid) => {
     const m = run.monsters[mid]!;
-    return m.hp > 0 && m.pos.x === step.x && m.pos.y === step.y && creatureDef(m.defId).disposition === 'hostile';
+    return m.hp > 0 && m.pos.x === step.x && m.pos.y === step.y;
   });
-  if (blocker) {
-    aggroPack(run, run.monsters[blocker]!.packId);
-    run.party.targetId[heroId] = blocker;
-    run.party.action[heroId] = { kind: 'attack', targetId: blocker, ticksLeft: d.attackTicks, total: d.attackTicks };
+  if (blockerId) {
+    const blocker = run.monsters[blockerId]!;
+    if (creatureDef(blocker.defId).disposition === 'hostile') {
+      aggroPack(run, blocker.packId);
+      run.party.targetId[heroId] = blockerId;
+      run.party.action[heroId] = { kind: 'attack', targetId: blockerId, ticksLeft: d.attackTicks, total: d.attackTicks };
+      return true;
+    }
+    // neutral: swap places so a parked chicken can never wall off a corridor
+    const myPos = { ...run.party.pos[heroId]! };
+    blocker.move = { from: { ...blocker.pos }, t: 0, total: Math.max(1, creatureDef(blocker.defId).base.moveTicks) };
+    blocker.pos = myPos;
+    startHeroMove(run, heroId, step, moveTicks);
     return true;
   }
+
+  const allyId = run.party.memberIds.find(
+    (aid) =>
+      aid !== heroId &&
+      !(aid in run.party.downed) &&
+      run.party.pos[aid]!.x === step.x &&
+      run.party.pos[aid]!.y === step.y,
+  );
+  if (allyId) {
+    if (run.party.move[allyId]) return true; // they're vacating or arriving — wait a beat
+    const myPos = { ...run.party.pos[heroId]! };
+    run.party.move[allyId] = { from: { ...run.party.pos[allyId]! }, t: 0, total: Math.max(1, moveTicks) };
+    run.party.pos[allyId] = myPos;
+    startHeroMove(run, heroId, step, moveTicks);
+    return true;
+  }
+
   startHeroMove(run, heroId, step, moveTicks);
   return true;
 }
@@ -424,9 +513,17 @@ function performResolved(
         return true;
       }
       if (run.intent === 'withdraw') return false;
-      const path = melee
-        ? astarAdjacent(run.floor, myPos, target.pos)
-        : astar(run.floor, myPos, target.pos, (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange);
+      const path = heroRoute(run, heroId, (blocked) =>
+        melee
+          ? astarAdjacent(run.floor, myPos, target.pos, blocked)
+          : astar(
+              run.floor,
+              myPos,
+              target.pos,
+              (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange,
+              blocked,
+            ),
+      );
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
@@ -460,7 +557,9 @@ function performResolved(
         events.push({ t: 'skillCast', src: heroId, skillId: skill.id });
         return true;
       }
-      const path = astar(run.floor, myPos, targetPos!, (x, y) => euclid2({ x, y }, targetPos!) <= range * range);
+      const path = heroRoute(run, heroId, (blocked) =>
+        astar(run.floor, myPos, targetPos!, (x, y) => euclid2({ x, y }, targetPos!) <= range * range, blocked),
+      );
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
@@ -481,6 +580,7 @@ function performResolved(
       const nearest = nearestOf(myPos, engagedNow, (mid) => run.monsters[mid]!.pos)!;
       const ePos = run.monsters[nearest]!.pos;
       const occupied = monsterOccupancy(run);
+      const heroCells = heroesByPos(state, run);
       let best: Vec2 | null = null;
       let bestD = euclid2(myPos, ePos);
       for (const dir of [
@@ -492,7 +592,7 @@ function performResolved(
         const nx = myPos.x + dir.x;
         const ny = myPos.y + dir.y;
         if (!isPassable(run.floor, nx, ny)) continue;
-        if (occupied.has(`${nx},${ny}`)) continue;
+        if (occupied.has(`${nx},${ny}`) || heroCells.has(`${nx},${ny}`)) continue;
         const dd = euclid2({ x: nx, y: ny }, ePos);
         if (dd > bestD) {
           bestD = dd;
@@ -515,7 +615,7 @@ function performResolved(
         events.push({ t: 'heroCarried', carrier: heroId, carried: resolved.targetId });
         return true;
       }
-      const path = astarTo(run.floor, myPos, tPos);
+      const path = heroRoute(run, heroId, (blocked) => astarTo(run.floor, myPos, tPos, blocked));
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
@@ -558,7 +658,7 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
         events.push({ t: 'heroCarried', carrier: id, carried: target });
         continue;
       }
-      const path = astarTo(run.floor, myPos, tPos);
+      const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, tPos, blocked));
       if (path && path.length > 0) {
         stepOrFight(run, id, d, path[0]!, moveTicks);
         continue;
@@ -588,15 +688,31 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
       continue;
     }
 
-    // 3. travel toward the party objective (next room / chest / stairs / exit)
+    // 3. travel toward the party objective (next room / chest / stairs / exit).
+    //    Near the goal each hero claims their OWN regroup cell — one per tile,
+    //    so four people never fight over the same flagstone.
+    const standing = standingIds(run);
+    const myIndex = Math.max(0, standing.indexOf(id));
     if (run.intent === 'withdraw') {
-      const step = flowStep(run.floor, entranceField(run), myPos);
-      if (step) stepOrFight(run, id, d, step, moveTicks);
+      const entrance = run.floor.entrance;
+      if (chebyshev(myPos, entrance) <= 4) {
+        const cells = regroupCells(run, entrance, standing.length);
+        const myCell = cells[Math.min(myIndex, cells.length - 1)] ?? entrance;
+        if (myPos.x !== myCell.x || myPos.y !== myCell.y) {
+          const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, myCell, blocked));
+          if (path && path.length > 0) stepOrFight(run, id, d, path[0]!, moveTicks);
+        }
+      } else {
+        const step = flowStep(run.floor, entranceField(run), myPos);
+        if (step) stepOrFight(run, id, d, step, moveTicks);
+      }
       continue;
     }
     const objective = computeObjective(run);
-    if (objective.x !== myPos.x || objective.y !== myPos.y) {
-      const path = astarTo(run.floor, myPos, objective);
+    const cells = regroupCells(run, objective, standing.length);
+    const myCell = cells[Math.min(myIndex, cells.length - 1)] ?? objective;
+    if (myPos.x !== myCell.x || myPos.y !== myCell.y) {
+      const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, myCell, blocked));
       if (path && path.length > 0) {
         stepOrFight(run, id, d, path[0]!, moveTicks);
       }
@@ -675,7 +791,11 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
     const isBlocked = (x: number, y: number) => occupied.has(`${x},${y}`) || heroCells.has(`${x},${y}`);
     const path = astarAdjacent(run.floor, m.pos, tPos, isBlocked);
     if (path && path.length > 0) {
-      startMonsterMove(m, path[0]!, def.base.moveTicks);
+      const step = path[0]!;
+      // strict one-per-tile: A* exempts goal cells from blocking, so re-check
+      if (!isBlocked(step.x, step.y)) {
+        startMonsterMove(m, step, def.base.moveTicks);
+      }
     }
   }
 }
@@ -708,10 +828,12 @@ function neutralBehavior(state: GameState, run: DungeonRun, m: MonsterInstance) 
   }
   if (freeNeighbors.length === 0) return;
 
-  if (def.behavior === 'flee' && standing.length > 0) {
+  if (standing.length > 0) {
     const nearest = nearestOf(m.pos, standing, (hid) => run.party.pos[hid]!)!;
     const hp = run.party.pos[nearest]!;
-    if (euclid2(m.pos, hp) <= 25) {
+    // shoo: any neutral steps aside when a hero crowds it (flee-types from further out)
+    const panicR2 = def.behavior === 'flee' ? 25 : 2;
+    if (euclid2(m.pos, hp) <= panicR2) {
       let best = freeNeighbors[0]!;
       let bestD = -1;
       for (const n of freeNeighbors) {
@@ -1088,10 +1210,10 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
     run.groundLoot = keep;
   }
 
-  // chests (adjacent or same tile) — overweight contents spill onto the floor
+  // chests (adjacent incl. diagonals — travel parks heroes at chebyshev 1)
   for (const chest of run.floor.chests) {
     if (chest.opened) continue;
-    const opener = standing.find((hid) => manhattan(run.party.pos[hid]!, chest.pos) <= 1);
+    const opener = standing.find((hid) => chebyshev(run.party.pos[hid]!, chest.pos) <= 1);
     if (!opener) continue;
     chest.opened = true;
     const loot = rollChestLoot(state, run.depth);
@@ -1156,19 +1278,17 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
     (did) => !Object.values(run.party.carrying).includes(did),
   );
 
-  // descend: everyone (carrying included) grouped on the stairs, nobody left behind
+  // descend: everyone (carrying included) settled around the stairs, nobody left behind
   if (run.intent === 'explore' && unCarried.length === 0 && standing.length > 0) {
-    const allAtStairs = standing.every((hid) => chebyshev(run.party.pos[hid]!, run.floor.stairs) <= 1);
-    if (allAtStairs) {
+    if (partyRegrouped(run, run.floor.stairs)) {
       enterFloor(state, run, run.depth + 1, events);
       return;
     }
   }
 
-  // withdraw exit: all standing heroes grouped on the entrance
+  // withdraw exit: all standing heroes settled around the entrance
   if (run.intent === 'withdraw' && standing.length > 0) {
-    const allAtExit = standing.every((hid) => chebyshev(run.party.pos[hid]!, run.floor.entrance) <= 1);
-    if (allAtExit) {
+    if (partyRegrouped(run, run.floor.entrance)) {
       endRunWithdrawn(state, nowMs, events);
     }
   }
