@@ -24,6 +24,7 @@ class GameApp {
   private lastPublish = 0;
   private lastSave = 0;
   private started = false;
+  private halted = false;
 
   boot(state: GameState) {
     this.state = state;
@@ -31,10 +32,18 @@ class GameApp {
     this.started = true;
     requestAnimationFrame(this.frame);
     window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') saveGame(this.state);
+      if (document.visibilityState === 'hidden' && !this.halted) saveGame(this.state);
     });
-    window.addEventListener('pagehide', () => saveGame(this.state));
+    window.addEventListener('pagehide', () => {
+      if (!this.halted) saveGame(this.state);
+    });
     publish(this.state, []);
+  }
+
+  /** another tab owns the save: freeze the sim and never write again */
+  halt() {
+    this.halted = true;
+    this.speed = 0;
   }
 
   dispatch(cmd: Command) {
@@ -53,6 +62,7 @@ class GameApp {
   }
 
   private frame = (ts: number) => {
+    if (this.halted) return;
     const dt = this.lastTs === null ? 16 : Math.min(ts - this.lastTs, 250);
     this.lastTs = ts;
     const events: GameEvent[] = [];

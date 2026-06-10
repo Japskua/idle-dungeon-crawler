@@ -30,7 +30,9 @@ import {
   physDamage,
   xpShare,
 } from '../balance';
-import { ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
+import { CHORES, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
+import { OFFLINE_CAP_MS } from '../balance';
+import { dayIndexFor } from '../village/shop';
 import { derive, type DerivedStats } from '../hero/derive';
 import { addXp } from '../hero/leveling';
 import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '../tactics/evaluator';
@@ -131,7 +133,7 @@ function aggroPack(run: DungeonRun, packId: number) {
 // ---------- main entry ----------
 export function advanceTick(state: GameState, commands: Command[], nowMs: number, events: GameEvent[]) {
   for (const cmd of commands) applyCommand(state, cmd, nowMs, events);
-  villageUpkeep(state, nowMs);
+  villageUpkeep(state, nowMs, events);
 
   const run = state.run;
   if (state.mode !== 'dungeon' || !run) return;
@@ -150,29 +152,63 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   state.tick++;
 }
 
-// ---------- village upkeep (wall-clock, mode-independent) ----------
-export function villageUpkeep(state: GameState, nowMs: number) {
+// ---------- village upkeep (wall-clock, mode-independent, works offline) ----------
+/**
+ * One analytic accrual path for recovery + chores, anchored on wall-clock time.
+ * The same function serves "tab open for 10 minutes" and "tab closed overnight"
+ * (capped at OFFLINE_CAP_MS). Game speed never touches this — no 4x-idle exploit.
+ */
+export function villageUpkeep(state: GameState, nowMs: number, events: GameEvent[]) {
   const last = state.village.lastChoreAccrualMs;
   if (nowMs < last) {
     state.village.lastChoreAccrualMs = nowMs; // clock went backwards: re-anchor
     return;
   }
-  const dtMs = nowMs - last;
+  const dtMs = Math.min(nowMs - last, OFFLINE_CAP_MS);
   if (dtMs < 1000) return;
+  state.village.lastChoreAccrualMs = nowMs;
   const dtSec = dtMs / 1000;
+  const dtHours = dtMs / 3_600_000;
+
+  // daily shop/tavern rotation bookkeeping
+  const day = dayIndexFor(nowMs);
+  if (day !== state.village.dayIndex) {
+    state.village.dayIndex = day;
+    state.village.purchasedToday = [];
+    state.village.hiredToday = [];
+  }
+
+  let goldDelta = state.village.choreGoldCarry ?? 0;
   for (const id of state.rosterOrder) {
     const hero = state.roster[id];
     if (!hero || hero.activity === 'party') continue;
     const d = derive(hero);
+
+    // recovery (temple assistants heal twice as fast)
+    const recoveryMult = hero.choreId === 'temple_assistant' ? 2 : 1;
     if (hero.hp < d.maxHp) {
-      hero.hp = Math.min(d.maxHp, hero.hp + d.maxHp * RECOVERY_HP_FRACTION_PER_SEC * dtSec);
+      hero.hp = Math.min(d.maxHp, hero.hp + d.maxHp * RECOVERY_HP_FRACTION_PER_SEC * recoveryMult * dtSec);
     }
     if (hero.mp < d.maxMp) {
       hero.mp = Math.min(d.maxMp, hero.mp + d.maxMp * RECOVERY_HP_FRACTION_PER_SEC * 2 * dtSec);
     }
     if (hero.activity === 'recovering' && hero.hp >= d.maxHp) hero.activity = 'idle';
+
+    // chores
+    if (hero.activity === 'chore' && hero.choreId) {
+      const chore = CHORES[hero.choreId];
+      if (chore) {
+        goldDelta += chore.goldPerHour * dtHours;
+        const carry = (hero.choreXpCarry ?? 0) + chore.xpPerHour * dtHours;
+        const whole = Math.floor(carry);
+        hero.choreXpCarry = carry - whole;
+        if (whole > 0) addXp(state, hero, whole, events);
+      }
+    }
   }
-  state.village.lastChoreAccrualMs = nowMs;
+  const wholeGold = Math.trunc(goldDelta);
+  state.village.choreGoldCarry = goldDelta - wholeGold;
+  state.village.gold = Math.max(0, state.village.gold + wholeGold);
 }
 
 // ---------- statuses & cooldowns ----------

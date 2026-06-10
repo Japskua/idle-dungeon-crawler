@@ -314,8 +314,8 @@ export interface Hero {
   cooldowns: Record<SkillId, number>;
   activity: HeroActivity;
   choreId?: ChoreId;
-  /** wall-clock ms when recovery completes (village healing). */
-  recoveryUntilMs?: number;
+  /** fractional chore-xp accumulator (whole points are granted as xp). */
+  choreXpCarry?: number;
   tactics: { sets: TacticSet[]; activeSetId: Id };
 }
 
@@ -402,6 +402,8 @@ export interface VillageState {
   /** choreId -> assigned hero ids. */
   chores: Record<ChoreId, Id[]>;
   lastChoreAccrualMs: number;
+  /** fractional chore-gold accumulator. */
+  choreGoldCarry?: number;
   /** stock keys bought today (stock itself is derived, never stored). */
   purchasedToday: string[];
   hiredToday: string[];

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { app } from '../app/loop';
 import { POTION_PRICES, healInjuryCost, instantHealCost } from '../game/balance';
-import { CLASSES, INJURIES, ITEMS, PERKS } from '../game/content';
+import { CHORES, CLASSES, INJURIES, ITEMS, PERKS } from '../game/content';
 import { derive } from '../game/hero/derive';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../game/village/shop';
 import type { GameState, Hero, Id } from '../game/types';
@@ -97,6 +97,20 @@ function HeroCard({ game, hero }: { game: GameState; hero: Hero }) {
           <button className="btn btn-small" onClick={() => setEditingTactics(true)}>
             Tactics
           </button>
+          <select
+            value={hero.choreId ?? ''}
+            title="Assign a village chore: slow gold & xp, even while the tab is closed"
+            onChange={(e) =>
+              app.dispatch({ t: 'ASSIGN_CHORE', heroId: hero.id, choreId: e.target.value || null })
+            }
+          >
+            <option value="">no chore</option>
+            {Object.values(CHORES).map((c) => (
+              <option key={c.id} value={c.id} disabled={hero.level < c.minLevel}>
+                {c.name} ({c.goldPerHour}g/h, {c.xpPerHour}xp/h{hero.level < c.minLevel ? `, lvl ${c.minLevel}+` : ''})
+              </option>
+            ))}
+          </select>
         </span>
         <button
           className="btn btn-tiny btn-danger"
