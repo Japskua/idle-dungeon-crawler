@@ -4,7 +4,7 @@
  */
 import type { Command, GameEvent, GameState } from './types';
 import { startRun, chronicle } from './run/lifecycle';
-import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
+import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
 import { CHORES, INJURIES, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
 import { makeItem } from './items/factory';
@@ -42,7 +42,14 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
         delete state.roster[cmd.heroId];
         state.rosterOrder = state.rosterOrder.filter((id) => id !== cmd.heroId);
         state.progress.totalPermadeaths++;
-        events.push({ t: 'heroDied', heroId: cmd.heroId, name: hero.name, depth: run.depth });
+        events.push({
+          t: 'heroDied',
+          heroId: cmd.heroId,
+          name: hero.name,
+          classId: hero.classId,
+          level: hero.level,
+          depth: run.depth,
+        });
         chronicle(state, nowMs, `${hero.name} was abandoned at depth ${run.depth} and never seen again.`, run.depth);
       } else {
         const pool = Object.values(INJURIES)
@@ -197,6 +204,21 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       state.village.gold -= cost;
       hero.injuries = hero.injuries.filter((i) => i !== cmd.injuryId);
       events.push({ t: 'purchase', what: `Treated: ${injury.name} (${hero.name})`, cost });
+      return;
+    }
+    case 'LEARN_SKILL': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero || hero.skills.includes(cmd.skillId)) return;
+      const cls = classDef(hero.classId);
+      const unlock = cls.skillUnlocks.find((u) => u.skillId === cmd.skillId);
+      if (!unlock) return; // can only learn skills of your own class
+      const cost = learnSkillCost(unlock.level, unlock.level - hero.level);
+      if (state.village.gold < cost) return;
+      state.village.gold -= cost;
+      hero.skills.push(cmd.skillId);
+      events.push({ t: 'purchase', what: `${hero.name} learned ${cmd.skillId}`, cost });
+      chronicle(state, nowMs, `${hero.name} studied at the Magician's Guild and learned a new trick.`);
       return;
     }
     case 'REST_HERO': {

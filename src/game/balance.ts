@@ -155,6 +155,11 @@ export function healInjuryCost(healCostBase: number, severity: number, heroLevel
   return Math.round(healCostBase * severity * (1 + heroLevel * 0.25));
 }
 
+/** Magician's Guild: pay to learn a class skill before its unlock level. */
+export function learnSkillCost(unlockLevel: number, levelsEarly: number): number {
+  return Math.round(30 * unlockLevel * (1 + 0.5 * Math.max(0, levelsEarly)));
+}
+
 export function instantHealCost(missingHp: number): number {
   return Math.max(1, Math.round(missingHp * 0.3));
 }

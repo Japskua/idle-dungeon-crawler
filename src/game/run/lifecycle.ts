@@ -136,7 +136,7 @@ function killHero(state: GameState, hero: Hero, depth: number, nowMs: number, ev
   delete state.roster[hero.id];
   state.rosterOrder = state.rosterOrder.filter((id) => id !== hero.id);
   state.progress.totalPermadeaths++;
-  events.push({ t: 'heroDied', heroId: hero.id, name: hero.name, depth });
+  events.push({ t: 'heroDied', heroId: hero.id, name: hero.name, classId: hero.classId, level: hero.level, depth });
   chronicle(
     state,
     nowMs,

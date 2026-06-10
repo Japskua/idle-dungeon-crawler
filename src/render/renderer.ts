@@ -8,7 +8,7 @@ import { TILE, type GameEvent, type GameState, type Id, type Vec2 } from '../gam
 import { creatureDef } from '../game/content';
 import { derive } from '../game/hero/derive';
 import { monsterMaxHp } from '../game/balance';
-import { compileSprites, atlasDraw, type Atlas } from './spriteCompiler';
+import { getAtlas, atlasDraw, type Atlas } from './spriteCompiler';
 import { bakeFloor, TILE_PX } from './floorLayer';
 
 export const VIEW_W = 480;
@@ -48,7 +48,7 @@ export class Renderer {
     canvas.height = VIEW_H;
     this.ctx = canvas.getContext('2d');
     if (this.ctx) this.ctx.imageSmoothingEnabled = false;
-    if (!this.atlas) this.atlas = compileSprites();
+    if (!this.atlas) this.atlas = getAtlas();
     this.camSnapped = false;
   }
 

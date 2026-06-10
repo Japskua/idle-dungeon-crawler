@@ -5,6 +5,7 @@
  * tinted silhouette at draw time (see atlasDraw) so the game never blocks on art.
  */
 import { CLASSES, ITEMS, MONSTERS, NEUTRALS, PALETTE, TILES } from '../game/content';
+import { VILLAGE_SPRITES } from '../game/content/gen/village.gen';
 import type { SpriteData } from '../game/types';
 
 export interface AtlasFrame {
@@ -33,6 +34,14 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
+let sharedAtlas: Atlas | null = null;
+
+/** lazily-compiled singleton atlas, shared by the dungeon renderer and village scene */
+export function getAtlas(): Atlas {
+  if (!sharedAtlas) sharedAtlas = compileSprites();
+  return sharedAtlas;
+}
+
 export function compileSprites(): Atlas {
   const entries: { key: string; sprite: SpriteData }[] = [];
   for (const [id, t] of Object.entries(TILES)) entries.push({ key: `tile/${id}`, sprite: t.sprite });
@@ -40,6 +49,7 @@ export function compileSprites(): Atlas {
   for (const [id, m] of Object.entries(NEUTRALS)) entries.push({ key: `mob/${id}`, sprite: m.sprite });
   for (const [id, i] of Object.entries(ITEMS)) entries.push({ key: `item/${id}`, sprite: i.sprite });
   for (const [id, c] of Object.entries(CLASSES)) entries.push({ key: `hero/${id}`, sprite: c.sprite });
+  for (const [id, v] of Object.entries(VILLAGE_SPRITES)) entries.push({ key: `village/${id}`, sprite: v.sprite });
 
   // expand: single authored frame -> [frame, 1px-up bob copy]
   const expanded: { key: string; size: number; grids: string[][]; frameTicks: number }[] = [];

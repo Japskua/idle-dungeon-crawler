@@ -20,7 +20,10 @@ export function addXp(state: GameState, hero: Hero, amount: number, events: Game
     hero.attrs.dex += cls.growth.dex;
     hero.attrs.int += cls.growth.int;
     hero.attrs.vit += cls.growth.vit;
-    hero.skills = unlockedSkills(hero.classId, hero.level);
+    // merge, don't replace: skills learned early at the guild must survive level-ups
+    for (const skillId of unlockedSkills(hero.classId, hero.level)) {
+      if (!hero.skills.includes(skillId)) hero.skills.push(skillId);
+    }
     leveled = true;
     events.push({ t: 'levelUp', heroId: hero.id, level: hero.level });
   }

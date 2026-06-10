@@ -9,6 +9,7 @@ import { advanceTick } from '../game/run/runtime';
 import { Renderer } from '../render/renderer';
 import { publish, setUiSpeed } from '../ui/store';
 import { saveGame } from './saveManager';
+import { recordFallen } from './graveyard';
 
 const MAX_STEPS_PER_FRAME = 40;
 const AUTOSAVE_MS = 30_000;
@@ -81,6 +82,7 @@ class GameApp {
       advanceTick(this.state, this.queue.splice(0, this.queue.length), now, events);
     }
 
+    if (events.length > 0) recordFallen(events, now);
     this.renderer.queueEvents(this.state, events);
     this.renderer.draw(this.state, Math.max(0, Math.min(1, this.acc / TICK_MS)));
 

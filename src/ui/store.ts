@@ -15,6 +15,17 @@ export interface LogEntry {
   cls: 'dmg' | 'heal' | 'loot' | 'gold' | 'level' | 'bad' | 'info';
 }
 
+export type VillageView =
+  | 'scene'
+  | 'tavern'
+  | 'armorer'
+  | 'store'
+  | 'guild'
+  | 'hall'
+  | 'hospital'
+  | 'graveyard'
+  | 'gate';
+
 interface UiState {
   game: GameState | null;
   rev: number;
@@ -22,6 +33,7 @@ interface UiState {
   speed: number;
   offlineReport: OfflineReport | null;
   lockedByOtherTab: boolean;
+  villageView: VillageView;
 }
 
 export const useUi = create<UiState>(() => ({
@@ -31,7 +43,12 @@ export const useUi = create<UiState>(() => ({
   speed: 1,
   offlineReport: null,
   lockedByOtherTab: false,
+  villageView: 'scene',
 }));
+
+export function setVillageView(view: VillageView) {
+  useUi.setState({ villageView: view });
+}
 
 let logId = 1;
 
@@ -127,7 +144,9 @@ export function publish(game: GameState, events: GameEvent[]) {
         if (log.length > 200) log = log.slice(log.length - 200);
       }
     }
-    return { game, rev: s.rev + 1, log };
+    // coming home from a run always lands on the village overview
+    const cameHome = events.some((e) => e.t === 'runEnded');
+    return { game, rev: s.rev + 1, log, ...(cameHome ? { villageView: 'scene' as const } : {}) };
   });
 }
 

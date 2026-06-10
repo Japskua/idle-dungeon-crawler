@@ -461,7 +461,8 @@ export type Command =
   | { t: 'DISMISS'; heroId: Id }
   | { t: 'ASSIGN_CHORE'; heroId: Id; choreId: ChoreId | null }
   | { t: 'HEAL_INJURY'; heroId: Id; injuryId: InjuryId }
-  | { t: 'REST_HERO'; heroId: Id };
+  | { t: 'REST_HERO'; heroId: Id }
+  | { t: 'LEARN_SKILL'; heroId: Id; skillId: SkillId };
 
 // ---------- events (sim -> log/fx/tests, transient) ----------
 export type GameEvent =
@@ -475,7 +476,7 @@ export type GameEvent =
   | { t: 'chestOpened'; gold: number; items: ItemDefId[]; pos: Vec2 }
   | { t: 'heroDowned'; heroId: Id; pos: Vec2 }
   | { t: 'heroCarried'; carrier: Id; carried: Id }
-  | { t: 'heroDied'; heroId: Id; name: string; depth: number }
+  | { t: 'heroDied'; heroId: Id; name: string; classId: ClassId; level: number; depth: number }
   | { t: 'injury'; heroId: Id; injuryId: InjuryId }
   | { t: 'levelUp'; heroId: Id; level: number }
   | { t: 'xpGain'; heroId: Id; amount: number }

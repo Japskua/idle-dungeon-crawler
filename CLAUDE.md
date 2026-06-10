@@ -38,8 +38,8 @@ crept in: hunt it, don't re-baseline.
 ## Content pipeline
 
 All extensible content is JSON under `content/` (monsters, neutrals, items, perks,
-names, tiles) — one file per thing, including its pixel-art sprite as palette-char
-rows (`content/palette.json` holds the only palette). `tools/gen-content.ts`
+names, tiles, village scenery) — one file per thing, including its pixel-art sprite
+as palette-char rows (`content/palette.json` holds the only palette). `tools/gen-content.ts`
 validates (grid sizes, palette chars, drop/item refs, spawn coverage) and emits
 committed typed modules into `src/game/content/gen/`. Classes/skills/statuses/
 injuries/chores stay as TS data in `src/game/content/`. Sprite conventions: 16×16,

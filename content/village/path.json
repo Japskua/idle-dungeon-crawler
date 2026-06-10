@@ -1,0 +1,26 @@
+{
+  "id": "path",
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSsSSSSSSSSSS",
+        "SSSSSSSSSSSSsSSS",
+        "SSsSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSsSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSsSS",
+        "SSsSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSsSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SsSSSSSSSSSSSsSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSsSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS"
+      ]
+    ]
+  }
+}
