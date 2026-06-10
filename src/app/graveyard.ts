@@ -10,6 +10,8 @@ export interface GraveRecord {
   level: number;
   depth: number;
   diedAtMs: number;
+  /** how it happened and who did it */
+  cause?: string;
 }
 
 const KEY = 'idc:graveyard';
@@ -32,7 +34,7 @@ export function recordFallen(events: GameEvent[], nowMs: number): boolean {
   const graves = loadGraveyard();
   for (const e of deaths) {
     if (e.t !== 'heroDied') continue;
-    graves.push({ name: e.name, classId: e.classId, level: e.level, depth: e.depth, diedAtMs: nowMs });
+    graves.push({ name: e.name, classId: e.classId, level: e.level, depth: e.depth, diedAtMs: nowMs, cause: e.cause });
   }
   try {
     localStorage.setItem(KEY, JSON.stringify(graves.slice(-MAX_GRAVES)));

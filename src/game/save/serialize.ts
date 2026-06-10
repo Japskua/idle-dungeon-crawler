@@ -6,6 +6,7 @@ import type { GameState } from '../types';
 import { SAVE_VERSION } from '../newGame';
 import { ITEMS } from '../content';
 import { defaultTactics } from '../tactics/defaults';
+import { emptyStats } from '../hero/create';
 
 function u8ToBase64(u8: Uint8Array): string {
   let bin = '';
@@ -76,6 +77,8 @@ function reconcileContent(state: GameState) {
     if (!hero.tactics || hero.tactics.sets.length === 0 || hero.tactics.sets.every((s) => s.rules.length === 0)) {
       hero.tactics = { sets: defaultTactics(hero.classId), activeSetId: 'default' };
     }
+    // heroes saved before lifetime statistics get a blank story arc
+    if (!hero.stats) hero.stats = emptyStats();
   }
   if (state.run) {
     state.run.party.lootBag = state.run.party.lootBag.filter((i) => ITEMS[i.defId]);

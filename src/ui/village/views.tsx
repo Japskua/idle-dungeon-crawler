@@ -5,15 +5,102 @@
 import { useState } from 'react';
 import { app } from '../../app/loop';
 import { epitaphFor, loadGraveyard } from '../../app/graveyard';
-import { POTION_PRICES, healInjuryCost, instantHealCost, learnSkillCost, spellAmount } from '../../game/balance';
+import {
+  POTION_PRICES,
+  healInjuryCost,
+  heroMaxHp,
+  heroMaxMp,
+  instantHealCost,
+  learnSkillCost,
+  spellAmount,
+} from '../../game/balance';
 import { CHORES, CLASSES, INJURIES, ITEMS, PERKS, SKILLS } from '../../game/content';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
-import type { GameState, Hero, Id, SkillDef } from '../../game/types';
-import { ClassSprite, HeroVitals, ItemName } from '../components';
+import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef } from '../../game/types';
+import { ClassSprite, HeroVitals, ItemName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
 import { setVillageView } from '../store';
+
+// ---------------------------------------------------------------- item browsing
+type SortKey = 'new' | 'name' | 'value' | 'weight' | 'power';
+
+function sortItems(items: ItemInstance[], sort: SortKey): ItemInstance[] {
+  const arr = [...items];
+  const def = (i: ItemInstance) => ITEMS[i.defId]!;
+  switch (sort) {
+    case 'new':
+      return arr.reverse();
+    case 'name':
+      return arr.sort((a, b) => def(a).name.localeCompare(def(b).name));
+    case 'value':
+      return arr.sort((a, b) => def(b).value - def(a).value);
+    case 'weight':
+      return arr.sort((a, b) => def(b).weight - def(a).weight);
+    case 'power':
+      return arr.sort(
+        (a, b) =>
+          (def(b).base?.dmg ?? def(b).base?.armor ?? 0) - (def(a).base?.dmg ?? def(a).base?.armor ?? 0),
+      );
+  }
+}
+
+function SortSelect({ sort, setSort }: { sort: SortKey; setSort: (s: SortKey) => void }) {
+  return (
+    <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} title="sort">
+      <option value="new">newest first</option>
+      <option value="power">strongest first</option>
+      <option value="value">priciest first</option>
+      <option value="weight">heaviest first</option>
+      <option value="name">by name</option>
+    </select>
+  );
+}
+
+function Pager({ page, setPage, total, pageSize }: { page: number; setPage: (p: number) => void; total: number; pageSize: number }) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const current = Math.min(page, pages - 1);
+  if (pages <= 1) return null;
+  return (
+    <div className="row pager">
+      <button className="btn btn-tiny" disabled={current === 0} onClick={() => setPage(current - 1)}>
+        ◀ prev
+      </button>
+      <span className="muted small">
+        page {current + 1} / {pages}
+      </span>
+      <button className="btn btn-tiny" disabled={current >= pages - 1} onClick={() => setPage(current + 1)}>
+        next ▶
+      </button>
+    </div>
+  );
+}
+
+function Chips<T extends string>({ options, value, onPick }: { options: { id: T; label: string }[]; value: T; onPick: (v: T) => void }) {
+  return (
+    <div className="chip-row">
+      {options.map((o) => (
+        <button key={o.id} className={`btn btn-tiny ${value === o.id ? 'active' : ''}`} onClick={() => onPick(o.id)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** storage items this hero could actually put on right now */
+function equipCandidates(game: GameState, hero: Hero, slot: EquipSlot): ItemInstance[] {
+  const d = derive(hero);
+  const replaced = hero.equipment[slot];
+  const freed = replaced ? ITEMS[replaced.defId]?.weight ?? 0 : 0;
+  return game.village.inventory.filter((it) => {
+    const def = ITEMS[it.defId];
+    if (!def || def.slot !== slot) return false;
+    if (!canEquip(hero.classId, def)) return false;
+    return d.carryUsed - freed + def.weight <= d.carryMax;
+  });
+}
 
 function BuildingShell({
   icon,
@@ -45,12 +132,55 @@ function BuildingShell({
 }
 
 // ---------------------------------------------------------------- armorer
+const ARMORY_PAGE = 8;
+type ArmoryFilter = 'all' | 'weapon' | 'offhand' | 'armor' | 'trinket';
+
+function EquipSelect({ game, item }: { game: GameState; item: ItemInstance }) {
+  const def = ITEMS[item.defId]!;
+  const heroes = game.rosterOrder.map((id) => game.roster[id]!).filter((h) => h && h.activity !== 'party');
+  return (
+    <select
+      defaultValue=""
+      onChange={(e) => {
+        if (e.target.value) {
+          app.dispatch({ t: 'EQUIP', heroId: e.target.value, itemId: item.id });
+          e.target.value = '';
+        }
+      }}
+    >
+      <option value="">equip…</option>
+      {heroes.map((h) => {
+        const d = derive(h);
+        const slot = def.slot as EquipSlot;
+        const wrongClass = !canEquip(h.classId, def);
+        const replaced = h.equipment[slot];
+        const freed = replaced ? ITEMS[replaced.defId]?.weight ?? 0 : 0;
+        const tooHeavy = d.carryUsed - freed + def.weight > d.carryMax;
+        return (
+          <option key={h.id} value={h.id} disabled={wrongClass || tooHeavy}>
+            {h.name}
+            {wrongClass ? ` (not for ${CLASSES[h.classId]?.name.toLowerCase()}s)` : tooHeavy ? ' (too heavy)' : ''}
+          </option>
+        );
+      })}
+    </select>
+  );
+}
+
 export function ArmorerView({ game }: { game: GameState }) {
   const stock = shopStock(game);
-  const armory = game.village.inventory.filter((i) =>
-    ['weapon', 'offhand', 'armor', 'trinket'].includes(ITEMS[i.defId]?.slot ?? ''),
-  );
-  const heroes = game.rosterOrder.map((id) => game.roster[id]!).filter((h) => h && h.activity !== 'party');
+  const [filter, setFilter] = useState<ArmoryFilter>('all');
+  const [sort, setSort] = useState<SortKey>('new');
+  const [page, setPage] = useState(0);
+
+  const armory = game.village.inventory.filter((i) => {
+    const slot = ITEMS[i.defId]?.slot ?? '';
+    if (!['weapon', 'offhand', 'armor', 'trinket'].includes(slot)) return false;
+    return filter === 'all' || slot === filter;
+  });
+  const sorted = sortItems(armory, sort);
+  const pageItems = sorted.slice(page * ARMORY_PAGE, (page + 1) * ARMORY_PAGE);
+
   return (
     <BuildingShell icon="⚒" title="Armorer" blurb="Weapons and armor. The hammering never stops. Stock rotates daily.">
       <div className="building-cols">
@@ -60,67 +190,58 @@ export function ArmorerView({ game }: { game: GameState }) {
             const def = ITEMS[entry.defId]!;
             const bought = game.village.purchasedToday.includes(entry.key);
             return (
-              <div key={entry.key} className="row">
-                <span title={def.flavor}>
-                  {def.name}{' '}
-                  <span className="muted small">
-                    {def.base?.dmg ? `${def.base.dmg} dmg` : ''}
-                    {def.base?.armor ? `${def.base.armor} armor` : ''}
-                    {def.base?.range && def.base.range > 1 ? `, range ${def.base.range}` : ''}
-                  </span>
-                </span>
-                <button
-                  className="btn btn-small"
-                  disabled={bought || game.village.gold < entry.price}
-                  onClick={() => app.dispatch({ t: 'BUY_STOCK_ITEM', stockKey: entry.key })}
-                >
-                  {bought ? 'sold' : `${entry.price}g`}
-                </button>
+              <div key={entry.key} className="sale-row">
+                <div className="row">
+                  <b>{def.name}</b>
+                  <button
+                    className="btn btn-small"
+                    disabled={bought || game.village.gold < entry.price}
+                    onClick={() => app.dispatch({ t: 'BUY_STOCK_ITEM', stockKey: entry.key })}
+                  >
+                    {bought ? 'sold' : `${entry.price}g`}
+                  </button>
+                </div>
+                <div className="muted small">{describeItem(entry.defId)}</div>
+                {def.flavor && <div className="small flavor">“{def.flavor}”</div>}
               </div>
             );
           })}
         </div>
         <div className="panel">
           <div className="panel-title">Your armory ({armory.length})</div>
+          <div className="row">
+            <Chips
+              options={[
+                { id: 'all', label: 'all' },
+                { id: 'weapon', label: '⚔ weapons' },
+                { id: 'offhand', label: '🛡 offhand' },
+                { id: 'armor', label: '🧥 armor' },
+                { id: 'trinket', label: '💍 trinkets' },
+              ]}
+              value={filter}
+              onPick={(f) => {
+                setFilter(f);
+                setPage(0);
+              }}
+            />
+            <SortSelect sort={sort} setSort={setSort} />
+          </div>
           {armory.length === 0 && <div className="muted small">Empty racks. The dungeon provides.</div>}
-          {armory.slice(0, 40).map((item) => {
-            const def = ITEMS[item.defId]!;
-            return (
-              <div key={item.id} className="row">
+          {pageItems.map((item) => (
+            <div key={item.id} className="sale-row">
+              <div className="row">
                 <ItemName item={item} />
                 <span className="row-buttons">
-                  <select
-                    defaultValue=""
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        app.dispatch({ t: 'EQUIP', heroId: e.target.value, itemId: item.id });
-                        e.target.value = '';
-                      }
-                    }}
-                  >
-                    <option value="">equip…</option>
-                    {heroes.map((h) => {
-                      const d = derive(h);
-                      const slot = def.slot as 'weapon' | 'offhand' | 'armor' | 'trinket';
-                      const wrongClass = !canEquip(h.classId, def);
-                      const replaced = h.equipment[slot];
-                      const freed = replaced ? ITEMS[replaced.defId]?.weight ?? 0 : 0;
-                      const tooHeavy = d.carryUsed - freed + def.weight > d.carryMax;
-                      return (
-                        <option key={h.id} value={h.id} disabled={wrongClass || tooHeavy}>
-                          {h.name}
-                          {wrongClass ? ` (not for ${CLASSES[h.classId]?.name.toLowerCase()}s)` : tooHeavy ? ' (too heavy)' : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <EquipSelect game={game} item={item} />
                   <button className="btn btn-tiny" onClick={() => app.dispatch({ t: 'SELL_ITEM', itemId: item.id })}>
                     sell
                   </button>
                 </span>
               </div>
-            );
-          })}
+              <div className="muted small">{describeItem(item.defId)}</div>
+            </div>
+          ))}
+          <Pager page={page} setPage={setPage} total={armory.length} pageSize={ARMORY_PAGE} />
         </div>
       </div>
     </BuildingShell>
@@ -128,10 +249,26 @@ export function ArmorerView({ game }: { game: GameState }) {
 }
 
 // ---------------------------------------------------------------- store
+const STORE_PAGE = 10;
+type StoreTab = 'all' | 'healing' | 'collectables' | 'gear' | 'magic';
+
+function storeTabOf(item: ItemInstance): Exclude<StoreTab, 'all'> {
+  const def = ITEMS[item.defId];
+  if (!def) return 'collectables';
+  if (def.slot === 'potion') return 'healing';
+  if (def.slot === 'junk') return 'collectables';
+  if (item.rarity !== 'common' || (def.base?.stats && Object.keys(def.base.stats).length > 0)) return 'magic';
+  return 'gear';
+}
+
 export function StoreView({ game }: { game: GameState }) {
-  const sellables = game.village.inventory.filter(
-    (i) => !['weapon', 'offhand', 'armor', 'trinket'].includes(ITEMS[i.defId]?.slot ?? ''),
-  );
+  const [tab, setTab] = useState<StoreTab>('all');
+  const [page, setPage] = useState(0);
+  const sellables = game.village.inventory.filter((i) => tab === 'all' || storeTabOf(i) === tab);
+  const pageItems = sellables.slice(page * STORE_PAGE, (page + 1) * STORE_PAGE);
+  const junk = game.village.inventory.filter((i) => ITEMS[i.defId]?.slot === 'junk');
+  const junkGold = junk.reduce((sum, i) => sum + Math.max(1, Math.round((ITEMS[i.defId]?.value ?? 0) * 0.4)), 0);
+
   return (
     <BuildingShell icon="🧺" title="General Store" blurb="Potions, sundries, and a shopkeeper who buys absolutely anything.">
       <div className="building-cols">
@@ -160,18 +297,47 @@ export function StoreView({ game }: { game: GameState }) {
           <div className="muted small" style={{ marginTop: 8 }}>
             Heroes pack 3 healing / 2 mana potions automatically when embarking.
           </div>
+          <div className="row" style={{ marginTop: 10 }}>
+            <span className="muted small">Rat tails, goo, bones piling up?</span>
+            <button
+              className="btn btn-small"
+              disabled={junk.length === 0}
+              title="sells every collectable in storage"
+              onClick={() => app.dispatch({ t: 'SELL_ALL_JUNK' })}
+            >
+              Sell all oddities ({junk.length} → {junkGold}g)
+            </button>
+          </div>
         </div>
         <div className="panel">
           <div className="panel-title">Sell goods ({sellables.length})</div>
-          {sellables.length === 0 && <div className="muted small">Nothing to sell. Yet. The rats are out there.</div>}
-          {sellables.slice(0, 40).map((item) => (
-            <div key={item.id} className="row">
-              <ItemName item={item} />
-              <button className="btn btn-tiny" onClick={() => app.dispatch({ t: 'SELL_ITEM', itemId: item.id })}>
-                sell {Math.max(1, Math.round((ITEMS[item.defId]?.value ?? 0) * 0.4))}g
-              </button>
+          <Chips
+            options={[
+              { id: 'all', label: 'all' },
+              { id: 'healing', label: '🧪 healing' },
+              { id: 'magic', label: '✨ magic' },
+              { id: 'gear', label: '⚔ gear' },
+              { id: 'collectables', label: '🗝 collectables' },
+            ]}
+            value={tab}
+            onPick={(t) => {
+              setTab(t);
+              setPage(0);
+            }}
+          />
+          {sellables.length === 0 && <div className="muted small">Nothing here. Yet. The rats are out there.</div>}
+          {pageItems.map((item) => (
+            <div key={item.id} className="sale-row">
+              <div className="row">
+                <ItemName item={item} />
+                <button className="btn btn-tiny" onClick={() => app.dispatch({ t: 'SELL_ITEM', itemId: item.id })}>
+                  sell {Math.max(1, Math.round((ITEMS[item.defId]?.value ?? 0) * 0.4))}g
+                </button>
+              </div>
+              <div className="muted small">{describeItem(item.defId)}</div>
             </div>
           ))}
+          <Pager page={page} setPage={setPage} total={sellables.length} pageSize={STORE_PAGE} />
         </div>
       </div>
     </BuildingShell>
@@ -249,9 +415,17 @@ function SpellCard({ game, hero, skill }: { game: GameState; hero: Hero; skill: 
 export function GuildView({ game }: { game: GameState }) {
   const heroes = game.rosterOrder.map((id) => game.roster[id]!).filter(Boolean);
   const [selectedId, setSelectedId] = useState<Id | null>(null);
+  const [spellKind, setSpellKind] = useState<'all' | SkillDef['kind']>('all');
+  const [query, setQuery] = useState('');
   const hero = heroes.find((h) => h.id === selectedId) ?? heroes[0];
   const spellbook = Object.values(SKILLS)
     .filter((s) => s.guild)
+    .filter((s) => spellKind === 'all' || s.kind === spellKind)
+    .filter(
+      (s) =>
+        query.trim() === '' ||
+        `${s.name} ${s.description}`.toLowerCase().includes(query.trim().toLowerCase()),
+    )
     .sort((a, b) => a.guild!.minLevel - b.guild!.minLevel || a.guild!.cost - b.guild!.cost);
 
   return (
@@ -316,6 +490,30 @@ export function GuildView({ game }: { game: GameState }) {
           <div className="panel-title" style={{ margin: '10px 0 6px' }}>
             📖 The Open Spellbook
           </div>
+          <div className="row">
+            <Chips
+              options={[
+                { id: 'all', label: 'all' },
+                { id: 'attack', label: '🔥 attack' },
+                { id: 'heal', label: '💚 heal' },
+                { id: 'buff', label: '✨ buff' },
+                { id: 'debuff', label: '🌀 debuff' },
+                { id: 'summon', label: '💀 summon' },
+              ]}
+              value={spellKind}
+              onPick={setSpellKind}
+            />
+            <input
+              className="search-input"
+              type="search"
+              placeholder="search spells…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          {spellbook.length === 0 && (
+            <div className="panel muted small">No spells match. The librarian shrugs.</div>
+          )}
           <div className="building-cols">
             {spellbook.map((skill) => (
               <SpellCard key={skill.id} game={game} hero={hero} skill={skill} />
@@ -336,15 +534,26 @@ export function TavernView({ game }: { game: GameState }) {
         {recruits.map((r) => {
           const hired = game.village.hiredToday.includes(r.key);
           const cost = effectiveHireCost(game, r);
+          const cls = CLASSES[r.classId]!;
+          const attrs = {
+            str: Math.floor(cls.base.str + cls.growth.str * (r.level - 1)),
+            dex: Math.floor(cls.base.dex + cls.growth.dex * (r.level - 1)),
+            int: Math.floor(cls.base.int + cls.growth.int * (r.level - 1)),
+            vit: Math.floor(cls.base.vit + cls.growth.vit * (r.level - 1)),
+          };
           return (
             <div key={r.key} className="panel">
               <div className="portrait-row">
                 <ClassSprite classId={r.classId} scale={3} />
                 <div>
                   <div className="panel-title">
-                    {r.name} <span className="muted">L{r.level} {CLASSES[r.classId]?.name}</span>
+                    {r.name} <span className="muted">L{r.level} {cls.name}</span>
                   </div>
-                  <div className="muted small">{CLASSES[r.classId]?.description}</div>
+                  <div className="muted small">{cls.description}</div>
+                  <div className="small recruit-stats">
+                    STR {attrs.str} · DEX {attrs.dex} · INT {attrs.int} · VIT {attrs.vit} ·{' '}
+                    {heroMaxHp(cls.baseHp, attrs.vit)} HP · {heroMaxMp(cls.baseMp, attrs.int)} MP
+                  </div>
                 </div>
               </div>
               <div className="small" style={{ margin: '6px 0' }}>
@@ -465,6 +674,7 @@ export function GraveyardView({ game }: { game: GameState }) {
               <div className="muted small">
                 L{grave.level} {CLASSES[grave.classId]?.name ?? grave.classId} — fell at depth {grave.depth}
               </div>
+              <div className="small">{grave.cause ?? 'the dungeon keeps its secrets'}</div>
               <div className="small epitaph">“{epitaphFor(grave)}”</div>
               <div className="muted small">{new Date(grave.diedAtMs).toLocaleDateString()}</div>
             </div>
@@ -476,6 +686,40 @@ export function GraveyardView({ game }: { game: GameState }) {
 }
 
 // ---------------------------------------------------------------- guild hall (roster)
+/** the story arc that comes to everyone */
+function StoryBlock({ hero }: { hero: Hero }) {
+  const s = hero.stats;
+  if (!s || s.runs === 0) {
+    return <div className="muted small story">📖 No story yet. The dungeon awaits.</div>;
+  }
+  return (
+    <div className="small story">
+      <div>
+        ⚔ {s.runs} crawl{s.runs > 1 ? 's' : ''} · {s.kills} kill{s.kills === 1 ? '' : 's'} ·{' '}
+        {Math.round(s.dmgDealt)} dmg dealt
+        {s.bestRunDmg > 0 ? ` (best crawl: ${Math.round(s.bestRunDmg)})` : ''}
+      </div>
+      {s.biggestHitTaken > 0 && (
+        <div className="muted">
+          💥 worst hit taken: {s.biggestHitTaken} from {s.biggestHitFrom}
+        </div>
+      )}
+      {s.downs > 0 && (
+        <div className="muted">
+          🩸 incapacitated {s.downs}×{s.lastDownedHow ? ` — last ${s.lastDownedHow}` : ''}
+        </div>
+      )}
+      {(s.carriedOut > 0 || s.rescues > 0) && (
+        <div className="muted">
+          🤝 {s.carriedOut > 0 ? `carried to safety ${s.carriedOut}×` : ''}
+          {s.carriedOut > 0 && s.rescues > 0 ? ' · ' : ''}
+          {s.rescues > 0 ? `carried a friend home ${s.rescues}×` : ''}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
   const d = derive(hero);
   const [editingTactics, setEditingTactics] = useState(false);
@@ -514,6 +758,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
       <div className="small">
         {(['weapon', 'offhand', 'armor', 'trinket'] as const).map((slot) => {
           const item = hero.equipment[slot];
+          const candidates = hero.activity === 'party' ? [] : equipCandidates(game, hero, slot);
           return (
             <div key={slot} className="equip-row">
               <span className="muted">{slot}:</span>{' '}
@@ -527,10 +772,30 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
               ) : (
                 <span className="muted">—</span>
               )}
+              {candidates.length > 0 && (
+                <select
+                  defaultValue=""
+                  title="equip from storage"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      app.dispatch({ t: 'EQUIP', heroId: hero.id, itemId: e.target.value });
+                      e.target.value = '';
+                    }
+                  }}
+                >
+                  <option value="">{item ? 'swap…' : 'equip…'}</option>
+                  {candidates.slice(0, 12).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {ITEMS[c.defId]?.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           );
         })}
       </div>
+      <StoryBlock hero={hero} />
       {hero.injuries.length > 0 && (
         <div className="small">
           {hero.injuries.map((iid) => (

@@ -278,6 +278,52 @@ body {
   color: var(--red);
 }
 
+/* ---------- item browsing & story ---------- */
+.chip-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+.pager {
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.sale-row {
+  border-bottom: 1px solid #221a30;
+  padding: 4px 0;
+}
+
+.flavor {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.search-input {
+  background: var(--bg-panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 3px 6px;
+  min-width: 140px;
+}
+
+.story {
+  border-top: 1px dotted var(--border);
+  margin-top: 6px;
+  padding-top: 4px;
+  line-height: 1.5;
+}
+
+.recruit-stats {
+  color: var(--gold);
+  margin-top: 2px;
+}
+
 .hero-card .equip-row {
   margin: 1px 0;
 }

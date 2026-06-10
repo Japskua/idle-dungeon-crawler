@@ -310,6 +310,26 @@ export interface TacticSet {
 // ---------- heroes ----------
 export type HeroActivity = 'idle' | 'party' | 'chore' | 'recovering';
 
+/** the story arc that comes to everyone */
+export interface HeroStats {
+  runs: number;
+  kills: number;
+  dmgDealt: number;
+  /** damage dealt in the current crawl (reset at embark) */
+  runDmg: number;
+  bestRunDmg: number;
+  biggestHitTaken: number;
+  biggestHitFrom?: string;
+  downs: number;
+  lastDownedHow?: string;
+  /** most recent thing that hurt them, e.g. "Lvl 4 Cave Slime" */
+  lastHitByName?: string;
+  /** times they were carried out of the dungeon by a friend */
+  carriedOut: number;
+  /** times they carried a downed friend to safety */
+  rescues: number;
+}
+
 export interface EntityAction {
   kind: 'attack' | 'cast' | 'potion' | 'defend' | 'retreat' | 'wait';
   targetId?: Id;
@@ -340,6 +360,7 @@ export interface Hero {
   /** fractional chore-xp accumulator (whole points are granted as xp). */
   choreXpCarry?: number;
   tactics: { sets: TacticSet[]; activeSetId: Id };
+  stats: HeroStats;
 }
 
 // ---------- dungeon ----------
@@ -479,6 +500,7 @@ export type Command =
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
   | { t: 'BUY_POTION'; potion: PotionKind; qty: number }
   | { t: 'SELL_ITEM'; itemId: Id }
+  | { t: 'SELL_ALL_JUNK' }
   | { t: 'EQUIP'; heroId: Id; itemId: Id }
   | { t: 'UNEQUIP'; heroId: Id; slot: EquipSlot }
   | { t: 'SET_HERO_POTIONS'; heroId: Id; potions: Record<PotionKind, number> }
@@ -502,7 +524,7 @@ export type GameEvent =
   | { t: 'chestOpened'; gold: number; items: ItemDefId[]; pos: Vec2 }
   | { t: 'heroDowned'; heroId: Id; pos: Vec2 }
   | { t: 'heroCarried'; carrier: Id; carried: Id }
-  | { t: 'heroDied'; heroId: Id; name: string; classId: ClassId; level: number; depth: number }
+  | { t: 'heroDied'; heroId: Id; name: string; classId: ClassId; level: number; depth: number; cause: string }
   | { t: 'injury'; heroId: Id; injuryId: InjuryId }
   | { t: 'levelUp'; heroId: Id; level: number }
   | { t: 'xpGain'; heroId: Id; amount: number }
@@ -517,4 +539,5 @@ export type GameEvent =
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }
   | { t: 'embark'; depth: number; memberIds: Id[] }
   | { t: 'purchase'; what: string; cost: number }
+  | { t: 'sold'; what: string; gold: number }
   | { t: 'hire'; heroId: Id; name: string; cost: number };

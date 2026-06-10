@@ -133,6 +133,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`${e.name} hired${e.cost > 0 ? ` for ${e.cost}g` : ' (free — the village insists)'}.`, 'info');
     case 'purchase':
       return entry(`Bought: ${e.what} (−${e.cost}g)`, 'info');
+    case 'sold':
+      return entry(`Sold ${e.what} (+${e.gold}g)`, 'gold');
     default:
       return null;
   }

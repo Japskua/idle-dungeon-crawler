@@ -7,6 +7,20 @@ import { heroMaxHp, heroMaxMp } from '../balance';
 import { canEquip } from './equipment';
 import { defaultTactics } from '../tactics/defaults';
 
+export function emptyStats() {
+  return {
+    runs: 0,
+    kills: 0,
+    dmgDealt: 0,
+    runDmg: 0,
+    bestRunDmg: 0,
+    biggestHitTaken: 0,
+    downs: 0,
+    carriedOut: 0,
+    rescues: 0,
+  };
+}
+
 export function unlockedSkills(classId: string, level: number): string[] {
   const cls = CLASSES[classId]!;
   return cls.skillUnlocks.filter((u) => u.level <= level).map((u) => u.skillId);
@@ -41,6 +55,7 @@ export function makeHero(state: GameState, classId: string, name: string, level 
       sets: defaultTactics(classId),
       activeSetId: 'default',
     },
+    stats: emptyStats(),
   };
   // starting gear (auto-equipped)
   for (const defId of cls.startingItems) {

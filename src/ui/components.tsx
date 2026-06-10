@@ -40,6 +40,24 @@ export function Bar({ value, max, color, label }: { value: number; max: number; 
   );
 }
 
+/** humanized "what does it do" line; the flavor text stays charmingly vague */
+export function describeItem(defId: string): string {
+  const def = ITEMS[defId];
+  if (!def) return '';
+  const bits: string[] = [];
+  if (def.base?.dmg) bits.push(`${def.base.dmg} dmg every ${((def.base.attackTicks ?? 12) / 10).toFixed(1)}s`);
+  if (def.base?.range && def.base.range > 1) bits.push(`range ${def.base.range}`);
+  if (def.base?.armor) bits.push(`${def.base.armor} armor`);
+  if (def.base?.moveTicks) bits.push(`slows you down`);
+  if (def.base?.stats) {
+    for (const [k, v] of Object.entries(def.base.stats)) bits.push(`+${v} ${k}`);
+  }
+  if (def.potion) bits.push(`restores ${def.potion.amount} ${def.potion.kind === 'hp' ? 'health' : 'mana'}`);
+  if (def.slot === 'junk') bits.push('worth a few coins to the right buyer');
+  bits.push(`${def.weight}kg`);
+  return bits.join(' · ');
+}
+
 const rarityColor: Record<string, string> = {
   common: '#b8b6cf',
   magic: '#4f7ad1',

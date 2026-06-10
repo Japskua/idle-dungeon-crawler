@@ -50,6 +50,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
           classId: hero.classId,
           level: hero.level,
           depth: run.depth,
+          cause: 'abandoned by the party, on purpose, by name',
         });
         chronicle(state, nowMs, `${hero.name} was abandoned at depth ${run.depth} and never seen again.`, run.depth);
       } else {
@@ -104,6 +105,18 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       state.village.purchasedToday.push(cmd.stockKey);
       state.village.inventory.push(makeItem(state, entry.defId, Math.max(1, state.progress.maxDepthReached)));
       events.push({ t: 'purchase', what: itemDef(entry.defId).name, cost: entry.price });
+      return;
+    }
+    case 'SELL_ALL_JUNK': {
+      const junk = state.village.inventory.filter((it) => itemDef(it.defId).slot === 'junk');
+      if (junk.length === 0) return;
+      let gold = 0;
+      for (const item of junk) {
+        gold += Math.max(1, Math.round(itemDef(item.defId).value * SELL_VALUE_FRACTION));
+      }
+      state.village.inventory = state.village.inventory.filter((it) => itemDef(it.defId).slot !== 'junk');
+      state.village.gold += gold;
+      events.push({ t: 'sold', what: `${junk.length} oddities`, gold });
       return;
     }
     case 'SELL_ITEM': {

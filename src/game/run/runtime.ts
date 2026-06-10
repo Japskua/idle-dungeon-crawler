@@ -998,6 +998,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     dmg = Math.max(1, Math.round(mitigate(dmg, def.base.armor)));
     target.hp -= dmg;
     target.lastHitBy = hero.id;
+    hero.stats.dmgDealt += dmg;
+    hero.stats.runDmg += dmg;
     if (def.disposition === 'hostile') aggroPack(run, target.packId);
     events.push({ t: 'damage', src: hero.id, dst: target.id, amount: dmg, crit, pos: { ...target.pos }, srcPos: { ...myPos } });
     return;
@@ -1084,6 +1086,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
         const dmg = Math.max(1, Math.round(mitigate(power * variance * (crit ? CRIT_MULT : 1), def.base.armor)));
         m.hp -= dmg;
         m.lastHitBy = hero.id;
+        hero.stats.dmgDealt += dmg;
+        hero.stats.runDmg += dmg;
         events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos }, srcPos: { ...myPos } });
       }
       applyStatuses(m.statuses);
@@ -1173,6 +1177,7 @@ function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstanc
   const raw = power * Math.pow(1.12, m.level - 1) * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
+  recordHitTaken(hero, dmg, m, creatureDef(m.defId).name);
   const pos = run.party.pos[heroId]!;
   events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos }, srcPos: { ...m.pos } });
 }
@@ -1250,7 +1255,18 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
   const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
+  recordHitTaken(hero, dmg, m, def.name);
   events.push({ t: 'damage', src: m.id, dst: hero.id, amount: dmg, crit: false, pos: { ...hPos }, srcPos: { ...m.pos } });
+}
+
+/** the story arc remembers who hurt you, and how badly */
+function recordHitTaken(hero: Hero, dmg: number, m: MonsterInstance, defName: string) {
+  const source = `${m.elite ? 'Elite ' : ''}Lvl ${m.level} ${defName}`;
+  hero.stats.lastHitByName = source;
+  if (dmg > hero.stats.biggestHitTaken) {
+    hero.stats.biggestHitTaken = dmg;
+    hero.stats.biggestHitFrom = source;
+  }
 }
 
 // ---------- deaths ----------
@@ -1282,6 +1298,8 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
       const goldMult = killer ? derive(killer).goldMult : 1;
       const gold = Math.round(goldRoll * monsterGoldMult(m.level, def.tier === 'boss') * goldMult);
       run.party.goldCarried += gold;
+      const killerHero = m.lastHitBy ? state.roster[m.lastHitBy] : undefined;
+      if (killerHero) killerHero.stats.kills++;
       const xp = monsterXp(def.xpBase, m.level, m.elite, def.tier === 'boss');
       const share = xpShare(xp, Math.max(1, standing.length));
       for (const hid of standing) {
@@ -1315,6 +1333,8 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
     const hero = state.roster[id];
     if (!hero || hero.hp > 0) continue;
     hero.hp = 0;
+    hero.stats.downs++;
+    hero.stats.lastDownedHow = `at depth ${run.depth}, struck down by ${hero.stats.lastHitByName ?? 'sheer misadventure'}`;
     run.party.downed[id] = { pos: { ...run.party.pos[id]! } };
     run.party.action[id] = null;
     run.party.move[id] = null;
