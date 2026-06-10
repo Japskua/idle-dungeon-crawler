@@ -17,6 +17,7 @@ import type {
 import { TILE, type Command } from '../types';
 import { chance, pick, rand, randInt, randRange } from '../core/rng';
 import {
+  AUTO_WITHDRAW_ON_DOWNED,
   CARRY_MOVE_PENALTY,
   CRIT_MULT,
   DEFEND_ARMOR_BONUS,
@@ -46,6 +47,7 @@ import {
   chebyshev,
   euclid2,
   flowStep,
+  isPassable,
   manhattan,
 } from '../dungeon/pathfind';
 import { explorationOrder, insideAnyRoom, revealAround } from '../dungeon/generate';
@@ -359,6 +361,26 @@ function buildBattleView(
   };
 }
 
+/**
+ * Heroes path as if monsters were not there; stepping into a hostile becomes a
+ * bump-attack. This is what kills doorway deadlocks: a monster parked in a
+ * 1-wide corridor is an obstacle you fight, not a wall you stare at.
+ */
+function stepOrFight(run: DungeonRun, heroId: Id, d: DerivedStats, step: Vec2, moveTicks: number): boolean {
+  const blocker = run.monsterOrder.find((mid) => {
+    const m = run.monsters[mid]!;
+    return m.hp > 0 && m.pos.x === step.x && m.pos.y === step.y && creatureDef(m.defId).disposition === 'hostile';
+  });
+  if (blocker) {
+    aggroPack(run, run.monsters[blocker]!.packId);
+    run.party.targetId[heroId] = blocker;
+    run.party.action[heroId] = { kind: 'attack', targetId: blocker, ticksLeft: d.attackTicks, total: d.attackTicks };
+    return true;
+  }
+  startHeroMove(run, heroId, step, moveTicks);
+  return true;
+}
+
 /** act on an evaluator decision; returns true if the hero's turn is consumed */
 function performResolved(
   state: GameState,
@@ -367,7 +389,6 @@ function performResolved(
   d: DerivedStats,
   resolved: ResolvedAction,
   moveTicks: number,
-  isBlocked: (x: number, y: number) => boolean,
   carriedBy: Map<Id, Id>,
   events: GameEvent[],
 ): boolean {
@@ -378,12 +399,15 @@ function performResolved(
     case 'attack': {
       const target = run.monsters[resolved.targetId];
       if (!target || target.hp <= 0) return false;
+      // moving against a monster provokes its whole pack — it closes the
+      // distance instead of letting heroes dither at the engagement boundary
+      if (creatureDef(target.defId).disposition === 'hostile') aggroPack(run, target.packId);
+      run.party.targetId[heroId] = resolved.targetId;
       const melee = d.attackRange <= 1;
       const inRange = melee
         ? manhattan(myPos, target.pos) <= 1
         : euclid2(myPos, target.pos) <= d.attackRange * d.attackRange;
       if (inRange) {
-        run.party.targetId[heroId] = resolved.targetId;
         run.party.action[heroId] = {
           kind: 'attack',
           targetId: resolved.targetId,
@@ -394,17 +418,10 @@ function performResolved(
       }
       if (run.intent === 'withdraw') return false;
       const path = melee
-        ? astarAdjacent(run.floor, myPos, target.pos, isBlocked)
-        : astar(
-            run.floor,
-            myPos,
-            target.pos,
-            (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange,
-            isBlocked,
-          );
+        ? astarAdjacent(run.floor, myPos, target.pos)
+        : astar(run.floor, myPos, target.pos, (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange);
       if (path && path.length > 0) {
-        startHeroMove(run, heroId, path[0]!, moveTicks);
-        return true;
+        return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
       return false;
     }
@@ -436,16 +453,9 @@ function performResolved(
         events.push({ t: 'skillCast', src: heroId, skillId: skill.id });
         return true;
       }
-      const path = astar(
-        run.floor,
-        myPos,
-        targetPos!,
-        (x, y) => euclid2({ x, y }, targetPos!) <= range * range,
-        isBlocked,
-      );
+      const path = astar(run.floor, myPos, targetPos!, (x, y) => euclid2({ x, y }, targetPos!) <= range * range);
       if (path && path.length > 0) {
-        startHeroMove(run, heroId, path[0]!, moveTicks);
-        return true;
+        return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
       return false;
     }
@@ -458,11 +468,12 @@ function performResolved(
       return true;
     }
     case 'retreat': {
-      // step to the free neighbor farthest from the nearest enemy
+      // step to the unoccupied neighbor farthest from the nearest enemy
       const engagedNow = engagedMonsterIds(state, run);
       if (engagedNow.length === 0) return false;
       const nearest = nearestOf(myPos, engagedNow, (mid) => run.monsters[mid]!.pos)!;
       const ePos = run.monsters[nearest]!.pos;
+      const occupied = monsterOccupancy(run);
       let best: Vec2 | null = null;
       let bestD = euclid2(myPos, ePos);
       for (const dir of [
@@ -473,9 +484,8 @@ function performResolved(
       ]) {
         const nx = myPos.x + dir.x;
         const ny = myPos.y + dir.y;
-        if (nx < 0 || ny < 0 || nx >= run.floor.w || ny >= run.floor.h) continue;
-        if (run.floor.tiles[ny * run.floor.w + nx] === TILE.WALL) continue;
-        if (isBlocked(nx, ny)) continue;
+        if (!isPassable(run.floor, nx, ny)) continue;
+        if (occupied.has(`${nx},${ny}`)) continue;
         const dd = euclid2({ x: nx, y: ny }, ePos);
         if (dd > bestD) {
           bestD = dd;
@@ -498,10 +508,9 @@ function performResolved(
         events.push({ t: 'heroCarried', carrier: heroId, carried: resolved.targetId });
         return true;
       }
-      const path = astarTo(run.floor, myPos, tPos, isBlocked);
+      const path = astarTo(run.floor, myPos, tPos);
       if (path && path.length > 0) {
-        startHeroMove(run, heroId, path[0]!, moveTicks);
-        return true;
+        return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
       return false;
     }
@@ -528,8 +537,6 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
     const myPos = run.party.pos[id]!;
     const carrying = run.party.carrying[id];
     const moveTicks = d.moveTicks + (carrying ? CARRY_MOVE_PENALTY : 0);
-    const blocked = monsterOccupancy(run);
-    const isBlocked = (x: number, y: number) => blocked.has(`${x},${y}`);
 
     // 1. built-in rescue (party cohesion): pick up a downed, un-carried ally —
     //    always during withdraw, during exploration only when nothing is engaged
@@ -544,9 +551,9 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
         events.push({ t: 'heroCarried', carrier: id, carried: target });
         continue;
       }
-      const path = astarTo(run.floor, myPos, tPos, isBlocked);
+      const path = astarTo(run.floor, myPos, tPos);
       if (path && path.length > 0) {
-        startHeroMove(run, id, path[0]!, moveTicks);
+        stepOrFight(run, id, d, path[0]!, moveTicks);
         continue;
       }
     }
@@ -555,33 +562,36 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
     const view = buildBattleView(state, run, id, d, engaged, carriedBy);
     const activeSet =
       hero.tactics.sets.find((s) => s.id === hero.tactics.activeSetId) ?? hero.tactics.sets[0];
-    const resolved = (activeSet ? evaluate(hero, d, view, activeSet) : null) ?? defaultAction(view);
-    if (resolved && performResolved(state, run, id, d, resolved, moveTicks, isBlocked, carriedBy, events)) {
+    let resolved = (activeSet ? evaluate(hero, d, view, activeSet) : null) ?? defaultAction(view);
+    // target stickiness: keep hammering the same foe while it lives and stays
+    // within leash range — prevents re-targeting flip-flop at radius boundaries
+    if (resolved?.kind === 'attack' && run.intent !== 'withdraw') {
+      const stickyId = run.party.targetId[id];
+      const sticky = stickyId ? run.monsters[stickyId] : undefined;
+      if (
+        sticky &&
+        sticky.hp > 0 &&
+        creatureDef(sticky.defId).disposition === 'hostile' &&
+        euclid2(myPos, sticky.pos) <= 144
+      ) {
+        resolved = { kind: 'attack', targetId: stickyId! };
+      }
+    }
+    if (resolved && performResolved(state, run, id, d, resolved, moveTicks, carriedBy, events)) {
       continue;
     }
 
     // 3. travel toward the party objective (next room / chest / stairs / exit)
     if (run.intent === 'withdraw') {
       const step = flowStep(run.floor, entranceField(run), myPos);
-      if (step && !isBlocked(step.x, step.y)) {
-        startHeroMove(run, id, step, moveTicks);
-      } else if (step) {
-        // monster in the doorway: attack it if adjacent
-        const blocker = run.monsterOrder.find((mid) => {
-          const m = run.monsters[mid]!;
-          return m.hp > 0 && m.pos.x === step.x && m.pos.y === step.y;
-        });
-        if (blocker && manhattan(myPos, step) <= 1 && creatureDef(run.monsters[blocker]!.defId).disposition === 'hostile') {
-          run.party.action[id] = { kind: 'attack', targetId: blocker, ticksLeft: d.attackTicks, total: d.attackTicks };
-        }
-      }
+      if (step) stepOrFight(run, id, d, step, moveTicks);
       continue;
     }
     const objective = computeObjective(run);
     if (objective.x !== myPos.x || objective.y !== myPos.y) {
-      const path = astarTo(run.floor, myPos, objective, isBlocked);
+      const path = astarTo(run.floor, myPos, objective);
       if (path && path.length > 0) {
-        startHeroMove(run, id, path[0]!, moveTicks);
+        stepOrFight(run, id, d, path[0]!, moveTicks);
       }
     }
   }
@@ -1069,6 +1079,13 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
     for (const door of run.floor.bossDoors) {
       run.floor.tiles[door.y * run.floor.w + door.x] = shouldClose ? TILE.DOOR_CLOSED : TILE.DOOR;
     }
+  }
+
+  // a downed friend means the expedition is over: grab them and head home
+  if (AUTO_WITHDRAW_ON_DOWNED && run.intent === 'explore' && Object.keys(run.party.downed).length > 0) {
+    run.intent = 'withdraw';
+    events.push({ t: 'withdrawOrdered' });
+    chronicle(state, nowMs, 'A hero is down — the party falls back toward the surface.', run.depth);
   }
 
   const unCarried = Object.keys(run.party.downed).filter(

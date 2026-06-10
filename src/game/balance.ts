@@ -134,6 +134,9 @@ export const PERMADEATH_ON_ABANDON = 0.5;
 export const INJURIES_ON_WIPE = 2;
 export const INJURIES_ON_CARRIED_OUT = 1;
 
+/** the party automatically falls back when a member goes down (idle-friendly default) */
+export const AUTO_WITHDRAW_ON_DOWNED = true;
+
 /** village HP recovery: fraction of maxHp per second of wall-clock time. */
 export const RECOVERY_HP_FRACTION_PER_SEC = 1 / 60;
 

@@ -1,106 +1,58 @@
+# Idle Dungeon Crawler — agent notes
 
-Default to using Bun instead of Node.js.
+Browser idle game: party of pixel-art heroes auto-crawls a procedural dungeon; the
+player manages roster/economy in the village and programs per-hero **tactics**
+(priority-ordered trigger→action rules). Bun + React 19 + Canvas 2D + Zustand.
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Use `bunx <package> <command>` instead of `npx <package> <command>`
-- Bun automatically loads .env, so don't use dotenv.
+## Commands
 
-## APIs
+- `bun run dev` — gen content + dev server (HMR) on :3000
+- `bun run test` — gen + full suite (49 tests). ALWAYS run via `bun run test`, not bare
+  `bun test` (the gen step keeps `src/game/content/gen/` in sync with `content/`).
+- `bun run typecheck` · `bun run build` · `bun run balance` (headless run simulator)
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+## Architecture — the one rule that matters
 
-## Testing
+`src/game` is a **pure, deterministic, serializable simulation library**:
 
-Use `bun test` to run tests.
+- No `Math.random`, `Date.now`, `performance.now`, DOM, react, or imports from
+  `app/render/ui`. `src/game/purity.test.ts` greps for violations and will fail your PR.
+- All randomness flows through seeded mulberry32 streams in `GameState.rng`
+  (`combat`, `loot`, `village`); floor generation uses an ephemeral rng from
+  `hash2(runSeed, depth)` so floors are pure functions of the seed.
+- Wall-clock time enters only as the `nowMs` parameter (village chores/recovery);
+  the dungeon sim runs on integer ticks (10/s, `TICK_MS`).
+- UI mutates state ONLY by dispatching `Command`s (applied at tick boundaries).
 
-```ts#index.test.ts
-import { test, expect } from "bun:test";
+Layers: `src/game` (sim) ← `src/render` (canvas, read-only) ← `src/app` (loop,
+saves, command queue) ← `src/ui` (React; store + dispatch only).
 
-test("hello world", () => {
-  expect(1).toBe(1);
-});
-```
+## Determinism goldens
 
-## Frontend
+`src/game/determinism.test.ts` pins a golden-seed state/event hash. Any deliberate
+sim/balance/content change breaks it — that's expected: re-run the snippet in that
+file's comment (or the failing test prints the new hash) and re-baseline the two
+constants in the same commit. An UNEXPECTED golden failure means non-determinism
+crept in: hunt it, don't re-baseline.
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+## Content pipeline
 
-Server:
+All extensible content is JSON under `content/` (monsters, neutrals, items, perks,
+names, tiles) — one file per thing, including its pixel-art sprite as palette-char
+rows (`content/palette.json` holds the only palette). `tools/gen-content.ts`
+validates (grid sizes, palette chars, drop/item refs, spawn coverage) and emits
+committed typed modules into `src/game/content/gen/`. Classes/skills/statuses/
+injuries/chores stay as TS data in `src/game/content/`. Sprite conventions: 16×16,
+1px `0` outline, single frame (a bob frame is auto-generated), face RIGHT (renderer
+flips), bosses are 16×16 drawn at 2×.
 
-```ts#index.ts
-import index from "./index.html"
+## Tuning
 
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
-```
+Every formula/constant lives in `src/game/balance.ts`. After tuning, run
+`bun run balance` (expect: fresh party → depth ~3, ~5 min at 1×, mostly
+`withdrawn` outcomes) and re-baseline goldens.
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+## Bun specifics
 
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
-
-```tsx#frontend.tsx
-import React from "react";
-import { createRoot } from "react-dom/client";
-
-// import .css files directly and it works
-import './index.css';
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
-```
-
-Then, run index.ts
-
-```sh
-bun --hot ./index.ts
-```
-
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
+Use `bun` for everything (no node/vite/jest). HTML entrypoint imports TSX/CSS
+directly. Tests colocate as `src/**/*.test.ts` via `bun:test`.
