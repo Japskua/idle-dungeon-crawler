@@ -1,8 +1,10 @@
 /**
- * Canvas 2D renderer. Fixed internal resolution (480x288, 30x18 tiles),
- * integer CSS upscale, reads GameState directly every rAF (bypassing React),
- * interpolates entity movement with the loop's accumulator alpha.
- * All animation/FX state lives here, never in GameState.
+ * Canvas 2D renderer. The internal resolution tracks the window at the
+ * chunkiest integer pixel scale that keeps >= MIN_VIEW tiles visible (no
+ * letterboxing — the canvas always fills its container edge to edge). Reads
+ * GameState directly every rAF (bypassing React) and interpolates entity
+ * movement with the loop's accumulator alpha. All animation/FX state lives
+ * here, never in GameState.
  */
 import { TILE, type GameEvent, type GameState, type Id, type Vec2 } from '../game/types';
 import { creatureDef } from '../game/content';
@@ -11,8 +13,14 @@ import { monsterMaxHp } from '../game/balance';
 import { getAtlas, atlasDraw, type Atlas } from './spriteCompiler';
 import { bakeFloor, TILE_PX } from './floorLayer';
 
+/** initial size before the first measure */
 export const VIEW_W = 480;
 export const VIEW_H = 288;
+/** the smallest playable viewport (20x12 tiles) — the scale picker guarantees this much stays visible */
+export const MIN_VIEW_W = 320;
+export const MIN_VIEW_H = 192;
+/** sprites larger than 4x get comical */
+export const MAX_PIXEL_SCALE = 4;
 
 interface FxText {
   x: number;
@@ -52,14 +60,28 @@ export class Renderer {
   private facing = new Map<Id, number>(); // 1 = right, -1 = left
   private lastDrawMs = 0;
 
+  private viewW = VIEW_W;
+  private viewH = VIEW_H;
+
   attach(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    canvas.width = VIEW_W;
-    canvas.height = VIEW_H;
+    canvas.width = this.viewW;
+    canvas.height = this.viewH;
     this.ctx = canvas.getContext('2d');
     if (this.ctx) this.ctx.imageSmoothingEnabled = false;
     if (!this.atlas) this.atlas = getAtlas();
     this.camSnapped = false;
+  }
+
+  /** internal resolution follows the window so nothing letterboxes */
+  resize(w: number, h: number) {
+    this.viewW = Math.max(MIN_VIEW_W, Math.floor(w));
+    this.viewH = Math.max(MIN_VIEW_H, Math.floor(h));
+    if (this.canvas) {
+      this.canvas.width = this.viewW;
+      this.canvas.height = this.viewH;
+      if (this.ctx) this.ctx.imageSmoothingEnabled = false;
+    }
   }
 
   detach() {
@@ -169,7 +191,7 @@ export class Renderer {
     this.lastDrawMs = nowMs;
 
     ctx.fillStyle = '#0d0a0f';
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillRect(0, 0, this.viewW, this.viewH);
 
     const run = state.run;
     if (!run || !run.floor) {
@@ -215,10 +237,11 @@ export class Renderer {
       cx = floor.entrance.x * TILE_PX + 8;
       cy = floor.entrance.y * TILE_PX + 8;
     }
-    const maxCamX = floor.w * TILE_PX - VIEW_W / 2;
-    const maxCamY = floor.h * TILE_PX - VIEW_H / 2;
-    cx = Math.max(VIEW_W / 2, Math.min(maxCamX, cx));
-    cy = Math.max(VIEW_H / 2, Math.min(maxCamY, cy));
+    const floorPxW = floor.w * TILE_PX;
+    const floorPxH = floor.h * TILE_PX;
+    // floors smaller than the window sit centered; bigger ones clamp the camera
+    cx = floorPxW <= this.viewW ? floorPxW / 2 : Math.max(this.viewW / 2, Math.min(floorPxW - this.viewW / 2, cx));
+    cy = floorPxH <= this.viewH ? floorPxH / 2 : Math.max(this.viewH / 2, Math.min(floorPxH - this.viewH / 2, cy));
     if (!this.camSnapped) {
       this.cam = { x: cx, y: cy };
       this.camSnapped = true;
@@ -227,8 +250,8 @@ export class Renderer {
       this.cam.x += (cx - this.cam.x) * k;
       this.cam.y += (cy - this.cam.y) * k;
     }
-    const ox = Math.round(VIEW_W / 2 - this.cam.x);
-    const oy = Math.round(VIEW_H / 2 - this.cam.y);
+    const ox = Math.round(this.viewW / 2 - this.cam.x);
+    const oy = Math.round(this.viewH / 2 - this.cam.y);
 
     // floor blit
     if (this.floorCanvas) ctx.drawImage(this.floorCanvas, ox, oy);
@@ -347,8 +370,8 @@ export class Renderer {
     // fog: unexplored tiles are blacked out (only the visible window)
     const x0 = Math.max(0, Math.floor(-ox / TILE_PX));
     const y0 = Math.max(0, Math.floor(-oy / TILE_PX));
-    const x1 = Math.min(floor.w - 1, Math.ceil((VIEW_W - ox) / TILE_PX));
-    const y1 = Math.min(floor.h - 1, Math.ceil((VIEW_H - oy) / TILE_PX));
+    const x1 = Math.min(floor.w - 1, Math.ceil((this.viewW - ox) / TILE_PX));
+    const y1 = Math.min(floor.h - 1, Math.ceil((this.viewH - oy) / TILE_PX));
     ctx.fillStyle = '#0d0a0f';
     for (let ty = y0; ty <= y1; ty++) {
       for (let tx = x0; tx <= x1; tx++) {
@@ -407,7 +430,7 @@ export class Renderer {
     const s = 2;
     const mw = floor.w * s;
     const mh = floor.h * s;
-    const mx = VIEW_W - mw - 4;
+    const mx = this.viewW - mw - 4;
     const my = 4;
     ctx.fillStyle = 'rgba(13,10,15,0.75)';
     ctx.fillRect(mx - 1, my - 1, mw + 2, mh + 2);

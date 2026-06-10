@@ -3,7 +3,7 @@ import { app } from '../app/loop';
 import { CLASSES } from '../game/content';
 import { lootBagWeight, partySpareCapacity } from '../game/run/runtime';
 import type { Hero } from '../game/types';
-import { VIEW_H, VIEW_W } from '../render/renderer';
+import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
 import { HeroVitals } from './components';
 import { TacticsEditor } from './TacticsEditor';
@@ -38,13 +38,23 @@ function CanvasView() {
     if (canvas) app.renderer.attach(canvas);
     else app.renderer.detach();
   }, []);
-  const [scale, setScale] = useState(1);
+  const [dims, setDims] = useState({ w: VIEW_W, h: VIEW_H, scale: 1 });
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const update = () => {
-      const s = Math.max(1, Math.floor(Math.min(el.clientWidth / VIEW_W, el.clientHeight / VIEW_H)));
-      setScale(s);
+      const cw = Math.max(64, el.clientWidth);
+      const ch = Math.max(64, el.clientHeight);
+      // chunkiest integer pixel scale that keeps at least ~20x12 tiles on screen...
+      const scale = Math.max(
+        1,
+        Math.min(MAX_PIXEL_SCALE, Math.floor(Math.min(cw / MIN_VIEW_W, ch / MIN_VIEW_H))),
+      );
+      // ...then grow the internal canvas so the window is filled edge to edge
+      const w = Math.ceil(cw / scale);
+      const h = Math.ceil(ch / scale);
+      app.renderer.resize(w, h);
+      setDims({ w: Math.max(MIN_VIEW_W, w), h: Math.max(MIN_VIEW_H, h), scale });
     };
     update();
     const obs = new ResizeObserver(update);
@@ -56,7 +66,7 @@ function CanvasView() {
       <canvas
         ref={canvasRef}
         className="game-canvas"
-        style={{ width: VIEW_W * scale, height: VIEW_H * scale }}
+        style={{ width: dims.w * dims.scale, height: dims.h * dims.scale }}
       />
     </div>
   );
