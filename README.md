@@ -56,6 +56,33 @@ in the same file. Sprites are palette-indexed text grids (see `content/palette.j
 `bun run gen` validates everything (grid sizes, palette characters, dangling item
 references, spawn coverage) with file-and-field error messages.
 
+## Deploying (Cloudflare Pages)
+
+The production build is fully static — no backend, saves live in the player's
+browser. Three ways to ship it:
+
+1. **GitHub Actions (already wired)**: every push to `main` runs typecheck + tests +
+   build, then deploys to Cloudflare Pages *if* two repo secrets exist:
+   - `CLOUDFLARE_API_TOKEN` — create at Cloudflare dashboard → My Profile → API
+     Tokens, using the **"Edit Cloudflare Workers"** template or a custom token with
+     `Account · Cloudflare Pages · Edit` permission
+   - `CLOUDFLARE_ACCOUNT_ID` — shown on the right of any Cloudflare dashboard page
+
+   Add both under GitHub repo → Settings → Secrets and variables → Actions. The
+   first deploy auto-creates the Pages project (`idle-dungeon-crawler`); the game
+   then lives at `https://idle-dungeon-crawler.pages.dev`. Without the secrets the
+   deploy job skips itself harmlessly.
+
+2. **One-liner from your machine**: `bunx wrangler login` once, then `bun run deploy`.
+
+3. **Cloudflare Git integration**: connect the repo in the Pages dashboard with
+   build command `bun run build` and output directory `dist` (their build image has
+   Bun preinstalled). If you choose this, delete the deploy job from
+   `.github/workflows/deploy.yml` so you don't deploy twice.
+
+Heads-up: saves are origin-scoped localStorage, so moving from `*.pages.dev` to a
+custom domain later means players migrate via the in-game export/import strings.
+
 ## Architecture (the short version)
 
 - `src/game` — a **pure, deterministic simulation**: fixed 10 Hz tick, seeded RNG
