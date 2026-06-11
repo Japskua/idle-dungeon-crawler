@@ -778,6 +778,11 @@ input[type='number'] {
   justify-content: flex-end;
 }
 
+/* the tactics editor needs the elbow room of a workbench */
+.modal.tactics-modal {
+  width: min(1000px, 96vw);
+}
+
 .rules {
   margin: 8px 0;
 }
@@ -785,10 +790,17 @@ input[type='number'] {
 .rule-row {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 2px;
+  gap: 6px;
+  padding: 6px 2px;
   border-bottom: 1px solid #221a30;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+/* selects shrink gracefully instead of shoving the row apart */
+.rule-row select {
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 240px;
 }
 
 .rule-row.rule-disabled {
@@ -799,8 +811,16 @@ input[type='number'] {
   margin-left: auto;
   display: flex;
   gap: 3px;
+  flex: 0 0 auto;
 }
 
 .num-input {
   width: 64px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 920px) {
+  .rule-row {
+    flex-wrap: wrap;
+  }
 }

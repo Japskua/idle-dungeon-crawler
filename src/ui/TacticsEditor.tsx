@@ -196,11 +196,9 @@ export function TacticsEditor({ hero, onClose }: { hero: Hero; onClose: () => vo
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal panel" onClick={(e) => e.stopPropagation()}>
-        <div className="panel-title">
-          Tactics — {hero.name}
-          <span className="muted small"> rules are checked top to bottom; first feasible one wins</span>
-        </div>
+      <div className="modal panel tactics-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="panel-title">Tactics — {hero.name}</div>
+        <div className="panel-sub">Rules are checked top to bottom; the first feasible one wins.</div>
         <div className="row">
           <span>
             {sets.map((s) => (
