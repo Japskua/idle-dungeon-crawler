@@ -52,6 +52,7 @@ export type ResolvedAction =
   | { kind: 'attack'; targetId: Id }
   | { kind: 'cast'; skillId: SkillId; targetId: Id | null }
   | { kind: 'potion'; potion: PotionKind }
+  | { kind: 'bomb'; targetId: Id }
   | { kind: 'defend' }
   | { kind: 'retreat' }
   | { kind: 'carry'; targetId: Id }
@@ -112,6 +113,13 @@ function feasible(
       if (view.carrying) return null;
       const target = attackTarget(view);
       return target ? { kind: 'attack', targetId: target } : null;
+    }
+    case 'throwBomb': {
+      // offensive and indiscriminate: never while carrying or fleeing
+      if (view.carrying || view.withdrawing) return null;
+      if (hero.bombs <= 0) return null;
+      const target = nearestEnemy(view.enemies);
+      return target ? { kind: 'bomb', targetId: target.id } : null;
     }
     case 'castSkill': {
       if (view.carrying) return null;

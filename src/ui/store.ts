@@ -81,6 +81,9 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
     case 'damage': {
       const srcHero = game.roster[e.src];
       const dstHero = game.roster[e.dst];
+      if (srcHero && dstHero) {
+        return entry(`${srcHero.name} catches ${dstHero.name} in the blast for ${e.amount}!`, 'bad');
+      }
       if (srcHero) {
         const target = game.run?.monsters[e.dst];
         return entry(
@@ -94,6 +97,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       }
       return null;
     }
+    case 'bombThrown':
+      return entry(`💣 ${heroName(game, e.heroId)} lobs a bomb!`, 'level');
     case 'potionUsed':
       return entry(`${heroName(game, e.heroId)} drinks a ${e.potion === 'hp' ? 'healing' : 'mana'} potion (+${e.amount})`, 'heal');
     case 'heal':

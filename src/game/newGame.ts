@@ -24,6 +24,7 @@ export function newGame(seed: number, nowMs: number): GameState {
       gold: STARTING_GOLD,
       inventory: [],
       potions: { hp: 2, mp: 0 },
+      bombs: 0,
       chores: {},
       lastChoreAccrualMs: nowMs,
       purchasedToday: [],

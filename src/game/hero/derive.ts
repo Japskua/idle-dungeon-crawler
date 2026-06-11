@@ -4,7 +4,7 @@
  */
 import type { Attributes, Hero, StatMod } from '../types';
 import { CLASSES, INJURIES, PERKS, STATUSES, itemDef } from '../content';
-import { HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp } from '../balance';
+import { BOMB_WEIGHT, HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp } from '../balance';
 
 export interface DerivedStats {
   attrs: Attributes;
@@ -38,7 +38,7 @@ export function derive(hero: Hero): DerivedStats {
   let weaponDmg = cls.unarmed ? cls.unarmed.baseDmg + cls.unarmed.dmgPerLevel * hero.level : UNARMED.dmg;
   let attackTicks = cls.unarmed ? cls.unarmed.attackTicks : UNARMED.attackTicks;
   let attackRange = UNARMED.range;
-  let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT;
+  let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT + hero.bombs * BOMB_WEIGHT;
   let gearMoveTicks = 0;
 
   for (const slot of EQUIP_SLOTS) {

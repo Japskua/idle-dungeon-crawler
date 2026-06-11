@@ -42,6 +42,7 @@ const ACTIONS: ActionMeta[] = [
   { k: 'attack', label: 'Attack with weapon' },
   { k: 'castSkill', label: 'Cast skill', param: 'skillId' },
   { k: 'usePotion', label: 'Drink potion', param: 'potion' },
+  { k: 'throwBomb', label: 'Throw bomb' },
   { k: 'defend', label: 'Defend' },
   { k: 'retreat', label: 'Retreat' },
   { k: 'carryAlly', label: 'Carry downed ally' },

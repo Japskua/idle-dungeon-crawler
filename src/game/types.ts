@@ -289,6 +289,7 @@ export type TacticAction =
   | { k: 'attack' }
   | { k: 'castSkill'; skillId: SkillId }
   | { k: 'usePotion'; potion: PotionKind }
+  | { k: 'throwBomb' }
   | { k: 'defend' }
   | { k: 'retreat' }
   | { k: 'carryAlly' }
@@ -331,10 +332,12 @@ export interface HeroStats {
 }
 
 export interface EntityAction {
-  kind: 'attack' | 'cast' | 'potion' | 'defend' | 'retreat' | 'wait';
+  kind: 'attack' | 'cast' | 'potion' | 'defend' | 'retreat' | 'wait' | 'bomb';
   targetId?: Id;
   skillId?: SkillId;
   potion?: PotionKind;
+  /** ground cell captured when the action committed (bombs explode here) */
+  at?: Vec2;
   ticksLeft: number;
   total: number;
 }
@@ -350,6 +353,8 @@ export interface Hero {
   attrs: Attributes;
   equipment: Partial<Record<EquipSlot, ItemInstance>>;
   potions: Record<PotionKind, number>;
+  /** bombs in the pack — thrown via tactics, explosions spare no one */
+  bombs: number;
   skills: SkillId[];
   perks: PerkId[];
   injuries: InjuryId[];
@@ -445,6 +450,8 @@ export interface VillageState {
   gold: number;
   inventory: ItemInstance[];
   potions: Record<PotionKind, number>;
+  /** bomb crate by the store counter */
+  bombs: number;
   /** choreId -> assigned hero ids. */
   chores: Record<ChoreId, Id[]>;
   lastChoreAccrualMs: number;
@@ -499,11 +506,13 @@ export type Command =
   | { t: 'SET_TACTICS'; heroId: Id; sets: TacticSet[]; activeSetId: Id }
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
   | { t: 'BUY_POTION'; potion: PotionKind; qty: number }
+  | { t: 'BUY_BOMB'; qty: number }
   | { t: 'SELL_ITEM'; itemId: Id }
   | { t: 'SELL_ALL_JUNK' }
   | { t: 'EQUIP'; heroId: Id; itemId: Id }
   | { t: 'UNEQUIP'; heroId: Id; slot: EquipSlot }
   | { t: 'SET_HERO_POTIONS'; heroId: Id; potions: Record<PotionKind, number> }
+  | { t: 'SET_HERO_BOMBS'; heroId: Id; bombs: number }
   | { t: 'HIRE'; recruitKey: string }
   | { t: 'DISMISS'; heroId: Id }
   | { t: 'ASSIGN_CHORE'; heroId: Id; choreId: ChoreId | null }
@@ -517,6 +526,7 @@ export type GameEvent =
   | { t: 'heal'; src: Id; dst: Id; amount: number; pos: Vec2 }
   | { t: 'skillCast'; src: Id; skillId: SkillId }
   | { t: 'potionUsed'; heroId: Id; potion: PotionKind; amount: number; pos: Vec2 }
+  | { t: 'bombThrown'; heroId: Id; pos: Vec2 }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }

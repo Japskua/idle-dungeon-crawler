@@ -110,6 +110,7 @@ export function DungeonScreen() {
                   <div className="row">
                     <span className="muted small">
                       potions: {hero.potions.hp}hp / {hero.potions.mp}mp
+                      {hero.bombs > 0 ? ` · 💣 ${hero.bombs}` : ''}
                     </span>
                     <TacticSwitch hero={hero} />
                   </div>

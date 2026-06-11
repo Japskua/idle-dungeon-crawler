@@ -6,6 +6,9 @@ import { useState } from 'react';
 import { app } from '../../app/loop';
 import { epitaphFor, loadGraveyard } from '../../app/graveyard';
 import {
+  BOMB_DAMAGE,
+  BOMB_PRICE,
+  BOMB_RADIUS,
   POTION_PRICES,
   healInjuryCost,
   heroMaxHp,
@@ -297,9 +300,10 @@ export function StoreView({ game }: { game: GameState }) {
     <BuildingShell icon="🧺" title="General Store" blurb="Potions, sundries, and a shopkeeper who buys absolutely anything.">
       <div className="shop-grid">
         <div className="panel">
-          <div className="panel-title">🧪 Buy potions</div>
+          <div className="panel-title">🧪 Buy supplies</div>
           <div className="panel-sub">
-            The village stockpile — heroes top up to 3 healing / 2 mana from here when they descend.
+            The village stockpile — heroes top up to 3 healing / 2 mana from here when they descend. Bombs are
+            packed by hand at the Dungeon Gate.
           </div>
           {(['hp', 'mp'] as const).map((kind) => (
             <div key={kind} className="sale-row">
@@ -328,6 +332,29 @@ export function StoreView({ game }: { game: GameState }) {
               </div>
             </div>
           ))}
+          <div className="sale-row">
+            <div className="row">
+              <span>
+                <b>💣 Bomb</b> <span className="muted small">in stock: {game.village.bombs}</span>
+              </span>
+              <span className="row-buttons">
+                {[1, 5].map((qty) => (
+                  <button
+                    key={qty}
+                    className="btn btn-small"
+                    disabled={game.village.gold < BOMB_PRICE * qty}
+                    onClick={() => app.dispatch({ t: 'BUY_BOMB', qty })}
+                  >
+                    buy ×{qty} ({BOMB_PRICE * qty}g)
+                  </button>
+                ))}
+              </span>
+            </div>
+            <div className="muted small">
+              {BOMB_DAMAGE} blast damage in a {BOMB_RADIUS}-tile radius. The blast does not check name tags —
+              friend, foe and chicken alike.
+            </div>
+          </div>
         </div>
         <div className="panel">
           <div className="panel-title">💰 Sell goods ({sellables.length})</div>
@@ -989,7 +1016,7 @@ function GateHeroCard({
           );
         })}
         <div className="row">
-          <span className="muted">potions packed:</span>
+          <span className="muted">packed:</span>
           <span className="row-buttons">
             {(['hp', 'mp'] as const).map((kind) => (
               <span key={kind} className="potion-stepper">
@@ -1013,6 +1040,26 @@ function GateHeroCard({
                 </button>
               </span>
             ))}
+            <span className="potion-stepper">
+              <span className="muted">💣 bomb</span>
+              <button
+                className="btn btn-tiny"
+                disabled={hero.bombs <= 0}
+                title="put one back in the crate"
+                onClick={() => app.dispatch({ t: 'SET_HERO_BOMBS', heroId: hero.id, bombs: hero.bombs - 1 })}
+              >
+                −
+              </button>
+              <b>{hero.bombs}</b>
+              <button
+                className="btn btn-tiny"
+                disabled={game.village.bombs <= 0}
+                title="pack one from the crate (buy them at the store)"
+                onClick={() => app.dispatch({ t: 'SET_HERO_BOMBS', heroId: hero.id, bombs: hero.bombs + 1 })}
+              >
+                +
+              </button>
+            </span>
           </span>
         </div>
         <div className="row">

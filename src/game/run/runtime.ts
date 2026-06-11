@@ -32,6 +32,10 @@ import {
   mitigate,
   physDamage,
   xpShare,
+  BOMB_DAMAGE,
+  BOMB_RADIUS,
+  BOMB_RANGE,
+  BOMB_THROW_TICKS,
 } from '../balance';
 import { CHORES, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
 import { OFFLINE_CAP_MS } from '../balance';
@@ -487,6 +491,9 @@ function stepOrFight(run: DungeonRun, heroId: Id, d: DerivedStats, step: Vec2, m
   );
   if (allyId) {
     if (run.party.move[allyId]) return true; // they're vacating or arriving — wait a beat
+    // an ally mid-swing/cast/sip is BUSY: yanking them out of position wastes
+    // their action and (in a corridor) sets off an endless swap dance
+    if (run.party.action[allyId]) return true;
     const myPos = { ...run.party.pos[heroId]! };
     run.party.move[allyId] = { from: { ...run.party.pos[allyId]! }, t: 0, total: Math.max(1, moveTicks) };
     run.party.pos[allyId] = myPos;
@@ -496,6 +503,28 @@ function stepOrFight(run: DungeonRun, heroId: Id, d: DerivedStats, step: Vec2, m
 
   startHeroMove(run, heroId, step, moveTicks);
   return true;
+}
+
+/** the nearest living hostile this hero could hit without moving */
+function nearestHostileInRange(run: DungeonRun, myPos: Vec2, d: DerivedStats): Id | null {
+  const melee = d.attackRange <= 1;
+  let best: Id | null = null;
+  let bestD = Infinity;
+  for (const mid of run.monsterOrder) {
+    const m = run.monsters[mid]!;
+    if (m.hp <= 0 || m.summonedBy) continue;
+    if (creatureDef(m.defId).disposition !== 'hostile') continue;
+    const inRange = melee
+      ? manhattan(myPos, m.pos) <= 1
+      : euclid2(myPos, m.pos) <= d.attackRange * d.attackRange;
+    if (!inRange) continue;
+    const dist = euclid2(myPos, m.pos);
+    if (dist < bestD || (dist === bestD && (best === null || mid < best))) {
+      bestD = dist;
+      best = mid;
+    }
+  }
+  return best;
 }
 
 /** act on an evaluator decision; returns true if the hero's turn is consumed */
@@ -533,6 +562,16 @@ function performResolved(
         };
         return true;
       }
+      // the chosen target is out of reach — but if ANYTHING hostile is in
+      // range right now, swing at it instead of shuffling for position
+      // (three melee heroes in a corridor used to dance forever here)
+      const alt = nearestHostileInRange(run, myPos, d);
+      if (alt) {
+        aggroPack(run, run.monsters[alt]!.packId);
+        run.party.targetId[heroId] = alt;
+        run.party.action[heroId] = { kind: 'attack', targetId: alt, ticksLeft: d.attackTicks, total: d.attackTicks };
+        return true;
+      }
       if (run.intent === 'withdraw') return false;
       const path = heroRoute(run, heroId, (blocked) =>
         melee
@@ -565,6 +604,17 @@ function performResolved(
       }
       const range = Math.max(0, skill.range);
       const inRange = !targetPos || range === 0 || euclid2(myPos, targetPos) <= range * range;
+      // explosions hurt friends too now — the AI refuses to light one with
+      // an ally standing in the predicted blast (players can still cause
+      // chaos by moving in during the cast)
+      if (skill.kind === 'attack' && skill.target === 'enemiesInRadius') {
+        const center = targetPos ?? myPos;
+        const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+        for (const hid of run.party.memberIds) {
+          if (hid === heroId || hid in run.party.downed) continue;
+          if (euclid2(center, run.party.pos[hid]!) <= r2) return false;
+        }
+      }
       if (inRange) {
         hero.mp -= skill.mpCost;
         hero.cooldowns[skill.id] = skill.cooldown + skill.castTicks;
@@ -580,6 +630,37 @@ function performResolved(
       }
       const path = heroRoute(run, heroId, (blocked) =>
         astar(run.floor, myPos, targetPos!, (x, y) => euclid2({ x, y }, targetPos!) <= range * range, blocked),
+      );
+      if (path && path.length > 0) {
+        return stepOrFight(run, heroId, d, path[0]!, moveTicks);
+      }
+      return false;
+    }
+    case 'bomb': {
+      if (hero.bombs <= 0) return false;
+      const target = run.monsters[resolved.targetId];
+      if (!target || target.hp <= 0) return false;
+      if (creatureDef(target.defId).disposition === 'hostile') aggroPack(run, target.packId);
+      run.party.targetId[heroId] = resolved.targetId;
+      if (euclid2(myPos, target.pos) <= BOMB_RANGE * BOMB_RANGE) {
+        // never lob explosives onto your own friends
+        const r2 = BOMB_RADIUS * BOMB_RADIUS;
+        for (const hid of run.party.memberIds) {
+          if (hid === heroId || hid in run.party.downed) continue;
+          if (euclid2(target.pos, run.party.pos[hid]!) <= r2) return false;
+        }
+        run.party.action[heroId] = {
+          kind: 'bomb',
+          targetId: resolved.targetId,
+          at: { ...target.pos },
+          ticksLeft: BOMB_THROW_TICKS,
+          total: BOMB_THROW_TICKS,
+        };
+        return true;
+      }
+      if (run.intent === 'withdraw') return false;
+      const path = heroRoute(run, heroId, (blocked) =>
+        astar(run.floor, myPos, target.pos, (x, y) => euclid2({ x, y }, target.pos) <= BOMB_RANGE * BOMB_RANGE, blocked),
       );
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
@@ -1102,11 +1183,31 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     if (skill.target === 'enemiesInRadius') {
       const center = action.targetId && run.monsters[action.targetId] ? run.monsters[action.targetId]!.pos : myPos;
       const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+      const explosive = skill.kind === 'attack';
       for (const mid of [...run.monsterOrder]) {
         const m = run.monsters[mid]!;
-        if (m.summonedBy) continue; // the party's own summons are spared the blast
+        // debuff clouds pick sides; explosions don't — own summons included
+        if (!explosive && m.summonedBy) continue;
         // AoE is otherwise indiscriminate: neutral bystanders are very much in it
         if (m.hp > 0 && euclid2(center, m.pos) <= r2) hitMonster(m);
+      }
+      // friendly fire: an explosion singes everyone in it except the caster
+      // (they are the eye of their own storm — whirlwinds don't cut the spinner)
+      if (explosive && power > 0) {
+        for (const hid of standingIds(run)) {
+          if (hid === hero.id) continue;
+          const ally = state.roster[hid];
+          if (!ally) continue;
+          const aPos = run.party.pos[hid]!;
+          if (euclid2(center, aPos) > r2) continue;
+          const ad = derive(ally);
+          const defending = run.party.action[hid]?.kind === 'defend';
+          const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+          const dmg = Math.max(1, Math.round(mitigate(power * variance, ad.armor + (defending ? DEFEND_ARMOR_BONUS : 0))));
+          ally.hp -= dmg;
+          recordHitTaken(ally, dmg, `${hero.name}'s ${skill.name}`);
+          events.push({ t: 'damage', src: hero.id, dst: hid, amount: dmg, crit: false, pos: { ...aPos }, srcPos: { ...myPos } });
+        }
       }
       return;
     }
@@ -1149,6 +1250,45 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     return;
   }
 
+  if (action.kind === 'bomb') {
+    if (hero.bombs <= 0) return;
+    hero.bombs--;
+    // explode where the target stood when the throw began (bombs don't track)
+    const target = action.targetId ? run.monsters[action.targetId] : undefined;
+    const center = action.at ?? target?.pos ?? myPos;
+    const r2 = BOMB_RADIUS * BOMB_RADIUS;
+    events.push({ t: 'bombThrown', heroId: hero.id, pos: { ...center } });
+    // every creature in the blast — hostile, neutral, summoned, no exceptions
+    for (const mid of [...run.monsterOrder]) {
+      const m = run.monsters[mid]!;
+      if (m.hp <= 0 || euclid2(center, m.pos) > r2) continue;
+      const def = creatureDef(m.defId);
+      const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+      const dmg = Math.max(1, Math.round(mitigate(BOMB_DAMAGE * variance, def.base.armor)));
+      m.hp -= dmg;
+      m.lastHitBy = hero.id;
+      hero.stats.dmgDealt += dmg;
+      hero.stats.runDmg += dmg;
+      if (def.disposition === 'hostile') aggroPack(run, m.packId);
+      events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit: false, pos: { ...m.pos }, srcPos: { ...myPos } });
+    }
+    // ...and every hero, the thrower very much included if they're standing in it
+    for (const hid of standingIds(run)) {
+      const ally = state.roster[hid];
+      if (!ally) continue;
+      const aPos = run.party.pos[hid]!;
+      if (euclid2(center, aPos) > r2) continue;
+      const ad = derive(ally);
+      const defending = run.party.action[hid]?.kind === 'defend';
+      const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+      const dmg = Math.max(1, Math.round(mitigate(BOMB_DAMAGE * variance, ad.armor + (defending ? DEFEND_ARMOR_BONUS : 0))));
+      ally.hp -= dmg;
+      recordHitTaken(ally, dmg, hid === hero.id ? 'their own bomb' : `${hero.name}'s bomb`);
+      events.push({ t: 'damage', src: hero.id, dst: hid, amount: dmg, crit: false, pos: { ...aPos }, srcPos: { ...myPos } });
+    }
+    return;
+  }
+
   if (action.kind === 'potion' && action.potion) {
     let kind = action.potion;
     if (hero.potions[kind] <= 0) return;
@@ -1177,7 +1317,7 @@ function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstanc
   const raw = power * Math.pow(1.12, m.level - 1) * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
-  recordHitTaken(hero, dmg, m, creatureDef(m.defId).name);
+  recordHitTaken(hero, dmg, monsterHitSource(m, creatureDef(m.defId).name));
   const pos = run.party.pos[heroId]!;
   events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos }, srcPos: { ...m.pos } });
 }
@@ -1200,6 +1340,22 @@ function resolveMonsterCast(state: GameState, run: DungeonRun, m: MonsterInstanc
       if (euclid2(m.pos, run.party.pos[hid]!) <= r2) {
         if (skill.power > 0) monsterSkillDamage(state, run, m, skill.power, hid, events);
         applyStatuses(hid);
+      }
+    }
+    // explosions don't pick sides for monsters either: the rest of the pack
+    // (and any unlucky neutral) is in the blast too — debuffs stay targeted
+    if (skill.kind === 'attack' && skill.power > 0) {
+      for (const mid of [...run.monsterOrder]) {
+        if (mid === m.id) continue;
+        const other = run.monsters[mid]!;
+        if (other.hp <= 0 || euclid2(m.pos, other.pos) > r2) continue;
+        const otherDef = creatureDef(other.defId);
+        const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+        const raw = skill.power * Math.pow(1.12, m.level - 1) * variance;
+        const dmg = Math.max(1, Math.round(mitigate(raw, otherDef.base.armor)));
+        other.hp -= dmg;
+        other.lastHitBy = m.id;
+        events.push({ t: 'damage', src: m.id, dst: other.id, amount: dmg, crit: false, pos: { ...other.pos }, srcPos: { ...m.pos } });
       }
     }
     return;
@@ -1255,18 +1411,21 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
   const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
-  recordHitTaken(hero, dmg, m, def.name);
+  recordHitTaken(hero, dmg, monsterHitSource(m, def.name));
   events.push({ t: 'damage', src: m.id, dst: hero.id, amount: dmg, crit: false, pos: { ...hPos }, srcPos: { ...m.pos } });
 }
 
 /** the story arc remembers who hurt you, and how badly */
-function recordHitTaken(hero: Hero, dmg: number, m: MonsterInstance, defName: string) {
-  const source = `${m.elite ? 'Elite ' : ''}Lvl ${m.level} ${defName}`;
+function recordHitTaken(hero: Hero, dmg: number, source: string) {
   hero.stats.lastHitByName = source;
   if (dmg > hero.stats.biggestHitTaken) {
     hero.stats.biggestHitTaken = dmg;
     hero.stats.biggestHitFrom = source;
   }
+}
+
+function monsterHitSource(m: MonsterInstance, defName: string): string {
+  return `${m.elite ? 'Elite ' : ''}Lvl ${m.level} ${defName}`;
 }
 
 // ---------- deaths ----------
