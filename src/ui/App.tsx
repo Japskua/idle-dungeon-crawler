@@ -1,10 +1,53 @@
+import { useState } from 'react';
 import { app } from '../app/loop';
 import { wipeSave } from '../app/saveManager';
+import {
+  dismissTelemetryNotice,
+  setTelemetryEnabled,
+  telemetry,
+  telemetryEnabled,
+  telemetryNoticeSeen,
+} from '../app/telemetry';
 import { exportSave, importSave } from '../game/save/serialize';
 import { newGame } from '../game/newGame';
 import { DungeonScreen } from './DungeonScreen';
 import { VillageScreen } from './VillageScreen';
 import { useUi } from './store';
+
+/** one-time heads-up that anonymous stats are collected (opt-out right there) */
+function TelemetryNotice() {
+  const [seen, setSeen] = useState(telemetryNoticeSeen());
+  if (seen) return null;
+  return (
+    <div className="telemetry-notice">
+      <span>
+        📊 Anonymous gameplay statistics (runs, depths, class picks — never anything personal) are
+        collected to help improve the game.
+      </span>
+      <span className="row-buttons">
+        <button
+          className="btn btn-tiny"
+          onClick={() => {
+            setTelemetryEnabled(false);
+            dismissTelemetryNotice();
+            setSeen(true);
+          }}
+        >
+          turn off
+        </button>
+        <button
+          className="btn btn-tiny btn-primary"
+          onClick={() => {
+            dismissTelemetryNotice();
+            setSeen(true);
+          }}
+        >
+          OK
+        </button>
+      </span>
+    </div>
+  );
+}
 
 function SpeedControls() {
   const speed = useUi((s) => s.speed);
@@ -24,12 +67,14 @@ function SpeedControls() {
 }
 
 function SaveMenu() {
+  const [statsOn, setStatsOn] = useState(telemetryEnabled());
   return (
     <div className="speed-controls">
       <button
         className="btn btn-small"
         title="Copy a save string to share or back up"
         onClick={() => {
+          telemetry.bump('save_exported');
           const text = exportSave(app.state);
           navigator.clipboard?.writeText(text).catch(() => {});
           prompt('Your save string (copied to clipboard):', text);
@@ -44,6 +89,7 @@ function SaveMenu() {
           if (!text) return;
           try {
             app.replaceState(importSave(text));
+            telemetry.bump('save_imported');
           } catch (e) {
             alert(`Import failed: ${(e as Error).message}`);
           }
@@ -52,9 +98,26 @@ function SaveMenu() {
         import
       </button>
       <button
+        className="btn btn-small"
+        title={statsOn ? 'Anonymous gameplay statistics: ON (click to turn off)' : 'Anonymous gameplay statistics: OFF (click to turn on)'}
+        onClick={() => {
+          setTelemetryEnabled(!statsOn);
+          setStatsOn(!statsOn);
+        }}
+      >
+        stats: {statsOn ? 'on' : 'off'}
+      </button>
+      <button
         className="btn btn-small btn-danger"
         onClick={() => {
           if (confirm('Start over? The current save will be erased.')) {
+            telemetry.track('reset', {
+              depth: app.state.progress.maxDepthReached,
+              value: app.state.rosterOrder.length,
+              payload: { wipes: app.state.progress.totalWipes, permadeaths: app.state.progress.totalPermadeaths },
+            });
+            telemetry.markNewGame();
+            telemetry.track('new_game');
             wipeSave();
             app.replaceState(newGame((Math.random() * 4294967296) >>> 0, Date.now()));
           }
@@ -145,6 +208,7 @@ export function App() {
       </header>
       {inDungeon ? <DungeonScreen /> : <VillageScreen />}
       <OfflineModal />
+      <TelemetryNotice />
     </div>
   );
 }

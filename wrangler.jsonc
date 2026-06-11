@@ -3,4 +3,20 @@
   "name": "idle-dungeon-crawler",
   "pages_build_output_dir": "dist",
   "compatibility_date": "2026-06-01"
+
+  // ---- telemetry database (optional) ----
+  // The game works fine without this; /api/track just answers 503 and the
+  // client shrugs. To turn stats on:
+  //   1. bunx wrangler d1 create idc-stats
+  //   2. paste the database_id below and remove the comment markers
+  //   3. bunx wrangler d1 execute idc-stats --remote --file=db/schema.sql
+  // Query examples live in db/queries.sql.
+  //
+  // ,"d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "idc-stats",
+  //     "database_id": "PASTE_DATABASE_ID_HERE"
+  //   }
+  // ]
 }

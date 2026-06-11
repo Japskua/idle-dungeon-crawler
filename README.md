@@ -83,6 +83,33 @@ browser. Three ways to ship it:
 Heads-up: saves are origin-scoped localStorage, so moving from `*.pages.dev` to a
 custom domain later means players migrate via the in-game export/import strings.
 
+## Gameplay telemetry (optional, Cloudflare D1)
+
+The client collects **anonymous** gameplay statistics (random install UUID, no
+accounts, no personal data) — runs with outcomes and party compositions, depth
+milestones, hero deaths with causes, class hires, spells learned, tactics-editor
+engagement, gold sinks, chicken murders, client errors. Players see a one-time
+notice and can switch it off any time ("stats: on/off" in the top bar). Events
+batch every 30s into `POST /api/track` (a Pages Function) which writes to D1.
+On `localhost` nothing is sent — batches log to the browser console instead.
+
+One-time setup (free tier: 5 GB, 100k row-writes/day ≈ thousands of daily players):
+
+```bash
+bunx wrangler d1 create idc-stats          # 1. create the database
+# 2. paste the printed database_id into wrangler.jsonc (uncomment the d1_databases block)
+bunx wrangler d1 execute idc-stats --remote --file=db/schema.sql   # 3. create the table
+```
+
+Until you do this, `/api/track` answers 503 and the game simply doesn't report.
+Query from your terminal — `db/queries.sql` is a starter pack (depth funnel,
+killer leaderboard, class popularity, gold sinks, speed mix, the chicken report):
+
+```bash
+bunx wrangler d1 execute idc-stats --remote --command \
+  "SELECT depth, COUNT(DISTINCT install_id) FROM events WHERE type='depth_milestone' GROUP BY depth"
+```
+
 ## Architecture (the short version)
 
 - `src/game` — a **pure, deterministic simulation**: fixed 10 Hz tick, seeded RNG

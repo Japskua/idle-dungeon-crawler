@@ -538,6 +538,6 @@ export type GameEvent =
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }
   | { t: 'embark'; depth: number; memberIds: Id[] }
-  | { t: 'purchase'; what: string; cost: number }
+  | { t: 'purchase'; what: string; cost: number; category?: 'gear' | 'potion' | 'healing' | 'training'; refId?: string }
   | { t: 'sold'; what: string; gold: number }
   | { t: 'hire'; heroId: Id; name: string; cost: number };

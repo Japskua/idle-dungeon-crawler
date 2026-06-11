@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { app } from '../app/loop';
+import { telemetry } from '../app/telemetry';
 import { CLASSES } from '../game/content';
 import { lootBagWeight, partySpareCapacity } from '../game/run/runtime';
 import type { Hero } from '../game/types';
@@ -16,7 +17,10 @@ function TacticSwitch({ hero }: { hero: Hero }) {
       <select
         value={hero.tactics.activeSetId}
         title="switch tactic set (applies immediately)"
-        onChange={(e) => app.dispatch({ t: 'SWITCH_TACTIC_SET', heroId: hero.id, setId: e.target.value })}
+        onChange={(e) => {
+          telemetry.bump('tactic_set_switched');
+          app.dispatch({ t: 'SWITCH_TACTIC_SET', heroId: hero.id, setId: e.target.value });
+        }}
       >
         {hero.tactics.sets.map((s) => (
           <option key={s.id} value={s.id}>
@@ -113,7 +117,10 @@ export function DungeonScreen() {
                 {downed && !carrying && (
                   <button
                     className="btn btn-danger btn-small"
-                    onClick={() => app.dispatch({ t: 'ABANDON_HERO', heroId: id })}
+                    onClick={() => {
+                      telemetry.bump('abandon_clicked');
+                      app.dispatch({ t: 'ABANDON_HERO', heroId: id });
+                    }}
                     title="Leave them behind. 50% they never come back."
                   >
                     Abandon
@@ -140,7 +147,10 @@ export function DungeonScreen() {
           <button
             className="btn btn-warn wide"
             disabled={run.intent === 'withdraw'}
-            onClick={() => app.dispatch({ t: 'WITHDRAW' })}
+            onClick={() => {
+              telemetry.noteManualWithdraw();
+              app.dispatch({ t: 'WITHDRAW' });
+            }}
             title="The party fights only when forced and carries downed friends to the exit."
           >
             {run.intent === 'withdraw' ? 'Withdrawing…' : '⟲ Withdraw'}

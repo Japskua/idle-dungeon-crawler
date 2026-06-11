@@ -93,7 +93,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (cmd.qty > 0 && state.village.gold >= price) {
         state.village.gold -= price;
         state.village.potions[cmd.potion] += cmd.qty;
-        events.push({ t: 'purchase', what: `${cmd.qty}x ${cmd.potion} potion`, cost: price });
+        events.push({ t: 'purchase', what: `${cmd.qty}x ${cmd.potion} potion`, cost: price, category: 'potion' });
       }
       return;
     }
@@ -104,7 +104,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       state.village.gold -= entry.price;
       state.village.purchasedToday.push(cmd.stockKey);
       state.village.inventory.push(makeItem(state, entry.defId, Math.max(1, state.progress.maxDepthReached)));
-      events.push({ t: 'purchase', what: itemDef(entry.defId).name, cost: entry.price });
+      events.push({ t: 'purchase', what: itemDef(entry.defId).name, cost: entry.price, category: 'gear', refId: entry.defId });
       return;
     }
     case 'SELL_ALL_JUNK': {
@@ -224,7 +224,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.village.gold < cost) return;
       state.village.gold -= cost;
       hero.injuries = hero.injuries.filter((i) => i !== cmd.injuryId);
-      events.push({ t: 'purchase', what: `Treated: ${injury.name} (${hero.name})`, cost });
+      events.push({ t: 'purchase', what: `Treated: ${injury.name} (${hero.name})`, cost, category: 'healing', refId: injury.id });
       return;
     }
     case 'LEARN_SKILL': {
@@ -250,7 +250,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.village.gold < cost) return;
       state.village.gold -= cost;
       hero.skills.push(cmd.skillId);
-      events.push({ t: 'purchase', what: `${hero.name} learned ${skill.name}`, cost });
+      events.push({ t: 'purchase', what: `${hero.name} learned ${skill.name}`, cost, category: 'training', refId: skill.id });
       chronicle(state, nowMs, `${hero.name} studied at the Magician's Guild and learned ${skill.name}.`);
       return;
     }
@@ -265,7 +265,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       hero.hp = d.maxHp;
       hero.mp = d.maxMp;
       if (hero.activity === 'recovering') hero.activity = 'idle';
-      events.push({ t: 'purchase', what: `Patched up ${hero.name}`, cost });
+      events.push({ t: 'purchase', what: `Patched up ${hero.name}`, cost, category: 'healing' });
       return;
     }
   }
