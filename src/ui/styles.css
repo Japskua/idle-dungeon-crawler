@@ -368,6 +368,18 @@ body {
   padding-top: 4px;
 }
 
+/* tavern recruits: uniform cards, hire button on the bottom edge */
+.recruit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recruit-card .btn-primary {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
 /* the spell's category, loud and colored by kind */
 .spell-kind {
   font-size: 13px;

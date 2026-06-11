@@ -570,8 +570,8 @@ export function GuildView({ game }: { game: GameState }) {
 export function TavernView({ game }: { game: GameState }) {
   const recruits = tavernRecruits(game);
   return (
-    <BuildingShell icon="🍺" title="Tavern" blurb="Adventurers for hire. New faces wander in every day. Some of them are even competent.">
-      <div className="building-cols">
+    <BuildingShell icon="🍺" title="Tavern" blurb="Adventurers for hire. The crowd changes after every crawl — and every morning. Some of them are even competent.">
+      <div className="building-cols cols-equal">
         {recruits.map((r) => {
           const hired = game.village.hiredToday.includes(r.key);
           const cost = effectiveHireCost(game, r);
@@ -583,7 +583,7 @@ export function TavernView({ game }: { game: GameState }) {
             vit: Math.floor(cls.base.vit + cls.growth.vit * (r.level - 1)),
           };
           return (
-            <div key={r.key} className="panel">
+            <div key={r.key} className="panel recruit-card">
               <div className="portrait-row">
                 <ClassSprite classId={r.classId} scale={4} />
                 <div>
