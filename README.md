@@ -22,8 +22,11 @@ bun run balance    # headless balance harness (CSV of simulated runs)
 1. **Embark**: pick up to 4 heroes and descend. The party explores, fights, loots and
    descends on its own — bosses await every 5th floor.
 2. **Tactics**: each hero runs a priority list of `IF trigger THEN action` rules
-   ("ally HP below 65% → cast Heal", "enemies ≥ 2 → Taunt"). Edit them per hero, save
-   multiple named sets, and switch sets mid-run.
+   ("ally HP below 65% → cast Heal", "enemies ≥ 2 → Taunt", "enemies ≥ 3 → Throw
+   bomb"). Edit them per hero, save multiple named sets, and switch sets mid-run.
+   Mind the area damage: explosions and storms hurt **everyone** in the blast —
+   heroes included. Buffs and debuffs stay polite and pick sides. Bombs are sold at
+   the General Store and packed per hero at the Dungeon Gate.
 3. **Withdraw**: order the party home any time — they stop chasing, fight only what
    blocks the way, and carry downed friends to the exit.
 4. **Death**: a hero at 0 HP is *Downed*, and the party automatically falls back.

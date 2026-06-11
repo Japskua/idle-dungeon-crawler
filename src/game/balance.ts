@@ -155,6 +155,15 @@ export const RECOVERY_HP_FRACTION_PER_SEC = 1 / 60;
 // ---------- village economy ----------
 export const STARTING_GOLD = 60;
 export const POTION_PRICES: Record<'hp' | 'mp', number> = { hp: 12, mp: 15 };
+
+// ---------- bombs ----------
+export const BOMB_PRICE = 25;
+export const BOMB_WEIGHT = 1.0;
+/** raw blast damage before armor; explosions spare NO ONE in the radius */
+export const BOMB_DAMAGE = 26;
+export const BOMB_RADIUS = 2;
+export const BOMB_RANGE = 4;
+export const BOMB_THROW_TICKS = 8;
 export const SELL_VALUE_FRACTION = 0.4;
 export const SHOP_STOCK_SIZE = 6;
 export const TAVERN_RECRUITS = 6;

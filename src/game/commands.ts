@@ -4,7 +4,8 @@
  */
 import type { Command, GameEvent, GameState } from './types';
 import { startRun, chronicle } from './run/lifecycle';
-import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
+import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE,
+} from './balance';
 import { CHORES, INJURIES, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
 import { canEquip } from './hero/equipment';
@@ -156,6 +157,32 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (!hero || !item) return;
       delete hero.equipment[cmd.slot];
       state.village.inventory.push(item);
+      return;
+    }
+    case 'BUY_BOMB': {
+      if (state.mode !== 'village') return;
+      const qty = Math.max(1, Math.floor(cmd.qty));
+      const cost = BOMB_PRICE * qty;
+      if (state.village.gold < cost) return;
+      state.village.gold -= cost;
+      state.village.bombs += qty;
+      events.push({ t: 'purchase', what: `${qty}x bomb`, cost });
+      return;
+    }
+    case 'SET_HERO_BOMBS': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero) return;
+      const want = Math.max(0, Math.floor(cmd.bombs));
+      const delta = want - hero.bombs;
+      if (delta > 0) {
+        const take = Math.min(delta, state.village.bombs);
+        state.village.bombs -= take;
+        hero.bombs += take;
+      } else if (delta < 0) {
+        state.village.bombs -= delta; // delta negative: back to the crate
+        hero.bombs = want;
+      }
       return;
     }
     case 'SET_HERO_POTIONS': {

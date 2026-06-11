@@ -58,6 +58,7 @@ export function migrate(state: GameState): GameState {
 
 /** drop references to content that no longer exists (JSON files are user-editable) */
 function reconcileContent(state: GameState) {
+  if (typeof (state.village as { bombs?: number }).bombs !== 'number') state.village.bombs = 0;
   const refund = (defId: string) => {
     state.village.gold += Math.round((ITEMS[defId]?.value ?? 0) * 0.4);
   };
@@ -79,6 +80,7 @@ function reconcileContent(state: GameState) {
     }
     // heroes saved before lifetime statistics get a blank story arc
     if (!hero.stats) hero.stats = emptyStats();
+    if (typeof hero.bombs !== 'number') hero.bombs = 0;
   }
   if (state.run) {
     state.run.party.lootBag = state.run.party.lootBag.filter((i) => ITEMS[i.defId]);

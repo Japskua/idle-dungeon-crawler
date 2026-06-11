@@ -45,6 +45,7 @@ export function makeHero(state: GameState, classId: string, name: string, level 
     attrs,
     equipment: {},
     potions: { hp: 0, mp: 0 },
+    bombs: 0,
     skills: unlockedSkills(classId, level),
     perks,
     injuries: [],
