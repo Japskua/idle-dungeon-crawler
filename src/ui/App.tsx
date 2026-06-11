@@ -48,7 +48,7 @@ function DebriefModal() {
 
         {report.heroes.map((h) => (
           <div key={h.heroId} className={`debrief-row ${h.outcome === 'died' ? 'debrief-row-dead' : ''}`}>
-            <ClassSprite classId={h.classId} scale={2} />
+            <ClassSprite classId={h.classId} scale={3} />
             <div className="debrief-row-body">
               <div>
                 <b>{h.name}</b>{' '}
@@ -97,6 +97,54 @@ function DebriefModal() {
             onClick={() => useUi.setState({ debrief: null })}
           >
             {wiped ? 'Mourn and move on' : 'Continue'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** first-steps explainer for brand-new games */
+function WelcomeModal() {
+  const open = useUi((s) => s.welcome);
+  if (!open) return null;
+  return (
+    <div className="modal-overlay">
+      <div className="modal panel welcome">
+        <div className="debrief-title">⚔ Welcome, Guildmaster</div>
+        <p className="muted">
+          Your heroes crawl the dungeon <b>on their own</b> — you run everything above it.
+        </p>
+        <div className="welcome-list">
+          <p>
+            🍺 <b>Tavern</b> — hire heroes. Up to <b>4</b> enter the dungeon together; the rest
+            rest, recover, or do chores for slow gold.
+          </p>
+          <p>
+            🚪 <b>Dungeon Gate</b> — send the party down. They explore, fight and descend by
+            themselves, guided by each hero's <b>tactics</b>: IF→THEN rules you can edit (drink a
+            potion below 35% HP, flee from bosses…).
+          </p>
+          <p>
+            ⟲ <b>Withdraw</b> — order a retreat any time. Standing heroes carry fallen friends
+            home; the fallen come back <b>injured</b>. Abandoned heroes — or a full party wipe —
+            risk <b>permanent death</b>.
+          </p>
+          <p>
+            ⛀ A wipe loses the gold the party carried. <b>XP, items and equipment are never
+            lost.</b>
+          </p>
+          <p>
+            🛠 <b>Armorer / Store / Magician's Guild</b> sell gear, supplies and spells. The{' '}
+            <b>Hospital</b> patches everyone up. The <b>Graveyard</b> remembers.
+          </p>
+        </div>
+        <p className="muted small">
+          The ⏸/1×/2×/4× buttons control time — and the village keeps working while you're away.
+        </p>
+        <div className="row modal-footer">
+          <button className="btn btn-primary" onClick={() => useUi.setState({ welcome: false })}>
+            To the village!
           </button>
         </div>
       </div>
@@ -210,6 +258,7 @@ function SaveMenu() {
             telemetry.track('new_game');
             wipeSave();
             app.replaceState(newGame((Math.random() * 4294967296) >>> 0, Date.now()));
+            useUi.setState({ welcome: true });
           }
         }}
       >
@@ -299,6 +348,7 @@ export function App() {
       {inDungeon ? <DungeonScreen /> : <VillageScreen />}
       <OfflineModal />
       <DebriefModal />
+      <WelcomeModal />
       <TelemetryNotice />
     </div>
   );

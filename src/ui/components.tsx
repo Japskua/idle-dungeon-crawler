@@ -5,7 +5,7 @@ import { derive } from '../game/hero/derive';
 import { atlasDraw, getAtlas } from '../render/spriteCompiler';
 
 /** An animated pixel portrait of a class (idle bob, faces right). */
-export function ClassSprite({ classId, scale = 3 }: { classId: string; scale?: number }) {
+export function ClassSprite({ classId, scale = 4 }: { classId: string; scale?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;

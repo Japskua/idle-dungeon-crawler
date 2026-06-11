@@ -37,6 +37,8 @@ interface UiState {
   villageView: VillageView;
   /** post-run debrief; stays up until the player acknowledges it */
   debrief: DebriefReport | null;
+  /** first-steps explainer, shown when a brand-new game starts */
+  welcome: boolean;
 }
 
 export const useUi = create<UiState>(() => ({
@@ -48,6 +50,7 @@ export const useUi = create<UiState>(() => ({
   lockedByOtherTab: false,
   villageView: 'scene',
   debrief: null,
+  welcome: false,
 }));
 
 export function showDebrief(report: DebriefReport) {
