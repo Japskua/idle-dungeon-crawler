@@ -7,8 +7,9 @@ import type { Command, GameEvent, GameState } from '../game/types';
 import { TICK_MS } from '../game/balance';
 import { advanceTick } from '../game/run/runtime';
 import { Renderer } from '../render/renderer';
-import { publish, setUiSpeed } from '../ui/store';
+import { publish, setUiSpeed, showDebrief } from '../ui/store';
 import { saveGame } from './saveManager';
+import { RunChronicler } from './debrief';
 import { recordFallen } from './graveyard';
 import { telemetry } from './telemetry';
 
@@ -18,6 +19,7 @@ const AUTOSAVE_MS = 30_000;
 class GameApp {
   state!: GameState;
   renderer = new Renderer();
+  private chronicler = new RunChronicler();
   speed = 1;
   private acc = 0;
   private lastTs: number | null = null;
@@ -93,6 +95,8 @@ class GameApp {
     if (events.length > 0) {
       recordFallen(events, now);
       telemetry.consume(this.state, events);
+      const debrief = this.chronicler.consume(this.state, events);
+      if (debrief) showDebrief(debrief);
     }
     telemetry.noteFrame(dt, this.speed);
     this.renderer.queueEvents(this.state, events);

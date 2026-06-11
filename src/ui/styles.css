@@ -324,6 +324,59 @@ body {
   margin-top: 2px;
 }
 
+/* ---------- run debrief ---------- */
+.debrief {
+  width: min(560px, 94vw);
+}
+
+.debrief-wiped {
+  border-color: var(--red);
+  box-shadow: 0 0 24px rgba(209, 59, 59, 0.25);
+}
+
+.debrief-title {
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 #000;
+}
+
+.debrief-title-wiped {
+  color: var(--red);
+}
+
+.debrief-sub {
+  margin: 4px 0 10px;
+}
+
+.debrief-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-top: 1px solid #221a30;
+}
+
+.debrief-row-dead {
+  opacity: 0.8;
+}
+
+.debrief-row-dead .class-sprite {
+  filter: grayscale(1);
+}
+
+.debrief-row-body {
+  flex: 1;
+  line-height: 1.5;
+}
+
+.debrief-footer {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+
 /* ---------- telemetry notice ---------- */
 .telemetry-notice {
   position: fixed;

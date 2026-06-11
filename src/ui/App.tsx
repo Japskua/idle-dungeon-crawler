@@ -10,9 +10,99 @@ import {
 } from '../app/telemetry';
 import { exportSave, importSave } from '../game/save/serialize';
 import { newGame } from '../game/newGame';
+import { INJURIES } from '../game/content';
 import { DungeonScreen } from './DungeonScreen';
 import { VillageScreen } from './VillageScreen';
+import { ClassSprite } from './components';
 import { useUi } from './store';
+
+/** the post-run debrief — stays up until acknowledged; goes full obituary on a wipe */
+function DebriefModal() {
+  const report = useUi((s) => s.debrief);
+  if (!report) return null;
+  const wiped = report.outcome === 'wiped';
+  const seconds = Math.round(report.durationTicks / 10);
+  const fallen = report.heroes.filter((h) => h.outcome === 'died');
+  return (
+    <div className="modal-overlay">
+      <div className={`modal panel debrief ${wiped ? 'debrief-wiped' : ''}`}>
+        <div className={`debrief-title ${wiped ? 'debrief-title-wiped' : ''}`}>
+          {wiped ? '☠ THE PARTY HAS FALLEN' : '🏰 The Party Returns'}
+        </div>
+        <div className="muted debrief-sub">
+          {wiped ? (
+            <>
+              Everyone was struck down at depth {report.depth}.{' '}
+              <b className="req-unmet">{report.goldLost}g</b> was left in the dark
+              {fallen.length > 0
+                ? ` — and ${fallen.length === 1 ? 'one hero' : `${fallen.length} heroes`} will never come home.`
+                : ', but everyone crawled home alive.'}
+            </>
+          ) : (
+            <>
+              Back from depth {report.depth} with <b className="gold">{report.goldKept}g</b> and{' '}
+              {report.lootCount} piece{report.lootCount === 1 ? '' : 's'} of loot.
+            </>
+          )}
+        </div>
+
+        {report.heroes.map((h) => (
+          <div key={h.heroId} className={`debrief-row ${h.outcome === 'died' ? 'debrief-row-dead' : ''}`}>
+            <ClassSprite classId={h.classId} scale={2} />
+            <div className="debrief-row-body">
+              <div>
+                <b>{h.name}</b>{' '}
+                <span className="muted small">
+                  {h.levelAfter > h.levelBefore ? (
+                    <span className="gold">
+                      L{h.levelBefore} → L{h.levelAfter}
+                    </span>
+                  ) : (
+                    <>L{h.levelBefore}</>
+                  )}
+                  {' · '}+{h.xpGained} xp · {h.dmgDealt} dmg dealt
+                </span>
+              </div>
+              <div className="small">
+                {h.outcome === 'died' && <span className="req-unmet">☠ {h.deathCause ?? 'died'}</span>}
+                {h.outcome === 'carried' && (
+                  <span className="req-met">🤝 carried to safety by {h.carriedBy ?? 'a friend'}</span>
+                )}
+                {h.outcome === 'crawled' && <span className="muted">🩸 incapacitated — barely made it home</span>}
+                {h.outcome === 'fine' && <span className="muted">made it back on their own two feet</span>}
+                {h.carriedOut && <span className="req-met"> · 🏅 carried {h.carriedOut} out</span>}
+              </div>
+              {h.injuriesGained.length > 0 && (
+                <div className="small">
+                  {h.injuriesGained.map((iid) => (
+                    <span key={iid} className="tag tag-bad" title={INJURIES[iid]?.flavor}>
+                      {INJURIES[iid]?.name ?? iid}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        <div className="muted small debrief-footer">
+          {report.monstersSlain} monsters slain
+          {report.bossesSlain.length > 0 ? ` · ${report.bossesSlain.length} boss${report.bossesSlain.length > 1 ? 'es' : ''} felled` : ''}
+          {' · '}
+          {Math.floor(seconds / 60)}m {seconds % 60}s in the dark
+        </div>
+        <div className="row modal-footer">
+          <button
+            className={`btn ${wiped ? 'btn-danger' : 'btn-primary'}`}
+            onClick={() => useUi.setState({ debrief: null })}
+          >
+            {wiped ? 'Mourn and move on' : 'Continue'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** one-time heads-up that anonymous stats are collected (opt-out right there) */
 function TelemetryNotice() {
@@ -208,6 +298,7 @@ export function App() {
       </header>
       {inDungeon ? <DungeonScreen /> : <VillageScreen />}
       <OfflineModal />
+      <DebriefModal />
       <TelemetryNotice />
     </div>
   );

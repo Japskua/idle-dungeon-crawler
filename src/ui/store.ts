@@ -6,6 +6,7 @@
  */
 import { create } from 'zustand';
 import type { GameEvent, GameState } from '../game/types';
+import type { DebriefReport } from '../app/debrief';
 import type { OfflineReport } from '../game/village/offline';
 import { CLASSES, INJURIES, ITEMS, creatureDef } from '../game/content';
 
@@ -34,6 +35,8 @@ interface UiState {
   offlineReport: OfflineReport | null;
   lockedByOtherTab: boolean;
   villageView: VillageView;
+  /** post-run debrief; stays up until the player acknowledges it */
+  debrief: DebriefReport | null;
 }
 
 export const useUi = create<UiState>(() => ({
@@ -44,7 +47,12 @@ export const useUi = create<UiState>(() => ({
   offlineReport: null,
   lockedByOtherTab: false,
   villageView: 'scene',
+  debrief: null,
 }));
+
+export function showDebrief(report: DebriefReport) {
+  useUi.setState({ debrief: report });
+}
 
 export function setVillageView(view: VillageView) {
   useUi.setState({ villageView: view });
