@@ -445,7 +445,7 @@ export function GuildView({ game }: { game: GameState }) {
                 className={`btn hero-tab ${h.id === hero.id ? 'active' : ''}`}
                 onClick={() => setSelectedId(h.id)}
               >
-                <ClassSprite classId={h.classId} scale={2} />
+                <ClassSprite classId={h.classId} scale={3} />
                 <span>
                   {h.name}
                   <span className="muted small"> L{h.level} · INT {Math.floor(derive(h).attrs.int)}</span>
@@ -544,7 +544,7 @@ export function TavernView({ game }: { game: GameState }) {
           return (
             <div key={r.key} className="panel">
               <div className="portrait-row">
-                <ClassSprite classId={r.classId} scale={3} />
+                <ClassSprite classId={r.classId} scale={4} />
                 <div>
                   <div className="panel-title">
                     {r.name} <span className="muted">L{r.level} {cls.name}</span>
@@ -726,7 +726,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
   return (
     <div className="panel hero-card">
       <div className="portrait-row">
-        <ClassSprite classId={hero.classId} scale={3} />
+        <ClassSprite classId={hero.classId} scale={4} />
         <div style={{ flex: 1 }}>
           <div className="panel-title">
             {hero.name} <span className="muted">— L{hero.level} {CLASSES[hero.classId]?.name}</span>
@@ -882,7 +882,7 @@ export function GateView({ game }: { game: GameState }) {
             return (
               <label key={h.id} className="check-row gate-row">
                 <input type="checkbox" checked={selected.includes(h.id)} onChange={() => toggle(h.id)} />
-                <ClassSprite classId={h.classId} scale={2} />
+                <ClassSprite classId={h.classId} scale={3} />
                 <span>
                   <b>{h.name}</b>{' '}
                   <span className="muted small">

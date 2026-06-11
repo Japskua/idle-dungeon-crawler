@@ -25,6 +25,7 @@ if (loaded) {
   if (report) useUi.setState({ offlineReport: report });
 } else {
   telemetry.markNewGame();
+  useUi.setState({ welcome: true });
 }
 app.boot(state);
 

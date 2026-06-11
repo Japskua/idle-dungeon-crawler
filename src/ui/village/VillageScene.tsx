@@ -19,6 +19,8 @@ const H = 288;
 interface BuildingSpot {
   id: string;
   name: string;
+  /** one-line purpose shown in brackets under the name */
+  desc: string;
   sprite: string;
   x: number;
   y: number;
@@ -27,14 +29,14 @@ interface BuildingSpot {
 }
 
 const BUILDINGS: BuildingSpot[] = [
-  { id: 'tavern', name: 'Tavern', sprite: 'village/bld_tavern', x: 24, y: 24, view: 'tavern', smoke: { x: 66, y: 14 } },
-  { id: 'armorer', name: 'Armorer', sprite: 'village/bld_armorer', x: 136, y: 24, view: 'armorer', smoke: { x: 178, y: 14 } },
-  { id: 'store', name: 'General Store', sprite: 'village/bld_store', x: 248, y: 24, view: 'store' },
-  { id: 'guild', name: "Magician's Guild", sprite: 'village/bld_guild', x: 360, y: 24, view: 'guild' },
-  { id: 'hall', name: 'Guild Hall', sprite: 'village/bld_hall', x: 24, y: 152, view: 'hall' },
-  { id: 'hospital', name: 'Hospital', sprite: 'village/bld_hospital', x: 136, y: 152, view: 'hospital' },
-  { id: 'graveyard', name: 'Graveyard', sprite: 'village/bld_graveyard', x: 248, y: 152, view: 'graveyard' },
-  { id: 'gate', name: 'Dungeon Gate', sprite: 'village/bld_gate', x: 360, y: 152, view: 'gate' },
+  { id: 'tavern', name: 'Tavern', desc: '(hire heroes)', sprite: 'village/bld_tavern', x: 24, y: 24, view: 'tavern', smoke: { x: 66, y: 14 } },
+  { id: 'armorer', name: 'Armorer', desc: '(weapons & armor)', sprite: 'village/bld_armorer', x: 136, y: 24, view: 'armorer', smoke: { x: 178, y: 14 } },
+  { id: 'store', name: 'General Store', desc: '(potions & sundries)', sprite: 'village/bld_store', x: 248, y: 24, view: 'store' },
+  { id: 'guild', name: "Magician's Guild", desc: '(learn spells)', sprite: 'village/bld_guild', x: 360, y: 24, view: 'guild' },
+  { id: 'hall', name: 'Guild Hall', desc: '(manage heroes)', sprite: 'village/bld_hall', x: 24, y: 152, view: 'hall' },
+  { id: 'hospital', name: 'Hospital', desc: '(treat injuries)', sprite: 'village/bld_hospital', x: 136, y: 152, view: 'hospital' },
+  { id: 'graveyard', name: 'Graveyard', desc: '(honor the dead)', sprite: 'village/bld_graveyard', x: 248, y: 152, view: 'graveyard' },
+  { id: 'gate', name: 'Dungeon Gate', desc: '(send the party down)', sprite: 'village/bld_gate', x: 360, y: 152, view: 'gate' },
 ];
 
 const TREES = [
@@ -172,6 +174,12 @@ export function VillageScene() {
         ctx.fillRect(bx + 32 - tw / 2 - 3, ly - 8, tw + 6, 11);
         ctx.fillStyle = isHover ? '#f2c94c' : '#cfcde0';
         ctx.fillText(b.name, bx + 32, ly);
+        ctx.font = '7px monospace';
+        const dw = ctx.measureText(b.desc).width;
+        ctx.fillStyle = 'rgba(13,10,15,0.65)';
+        ctx.fillRect(bx + 32 - dw / 2 - 2, ly + 2, dw + 4, 9);
+        ctx.fillStyle = isHover ? '#f2c94c' : '#8a87a8';
+        ctx.fillText(b.desc, bx + 32, ly + 9);
         if (badge[b.id] && Math.floor(t * 2) % 2 === 0) {
           ctx.fillStyle = '#f2c94c';
           ctx.fillRect(bx + 56, by - 4, 9, 9);
