@@ -268,13 +268,61 @@ body {
   padding: 4px 10px 4px 4px;
 }
 
+/* uniform boxes: every grid row stretches to the tallest card */
+.building-cols.cols-equal {
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+}
+
 .spell-card {
   border-left: 3px solid var(--blue);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .spell-card.spell-known {
   border-left-color: var(--green);
   opacity: 0.85;
+}
+
+/* reqs + learn button pinned to the card bottom */
+.spell-card-foot {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+/* the spell's category, loud and colored by kind */
+.spell-kind {
+  font-size: 13px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  font-weight: bold;
+}
+
+.spell-kind-attack {
+  color: #ff8a7a;
+  border-color: var(--red);
+}
+
+.spell-kind-heal {
+  color: #95d65a;
+  border-color: var(--green);
+}
+
+.spell-kind-buff {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.spell-kind-debuff {
+  color: #7ec8e8;
+  border-color: var(--blue);
+}
+
+.spell-kind-summon {
+  color: #c79ae8;
+  border-color: #8a5fb0;
 }
 
 .spell-desc {
