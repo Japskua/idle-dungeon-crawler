@@ -353,6 +353,15 @@ function spellEstimate(skill: SkillDef, int: number): string | null {
   return null;
 }
 
+/** spell categories: one source of truth for filter chips and card badges */
+const SPELL_KINDS: { id: SkillDef['kind']; label: string }[] = [
+  { id: 'attack', label: '🔥 attack' },
+  { id: 'heal', label: '💚 heal' },
+  { id: 'buff', label: '✨ buff' },
+  { id: 'debuff', label: '🌀 debuff' },
+  { id: 'summon', label: '💀 summon' },
+];
+
 function SpellCard({ game, hero, skill }: { game: GameState; hero: Hero; skill: SkillDef }) {
   const d = derive(hero);
   const known = hero.skills.includes(skill.id);
@@ -361,19 +370,23 @@ function SpellCard({ game, hero, skill }: { game: GameState; hero: Hero; skill: 
   const intOk = d.attrs.int >= req.minInt;
   const goldOk = game.village.gold >= req.cost;
   const estimate = spellEstimate(skill, d.attrs.int);
+  const kind = SPELL_KINDS.find((k) => k.id === skill.kind);
   return (
     <div className={`panel spell-card ${known ? 'spell-known' : ''}`}>
       <div className="row">
         <b>{skill.name}</b>
         <span className="mana-cost">{skill.mpCost} mana</span>
       </div>
-      <div className="muted small">
-        {skill.target === 'enemiesInRadius' || skill.target === 'alliesInRadius'
-          ? `area ${skill.radius} tiles`
-          : skill.range > 0
-            ? `range ${skill.range}`
-            : 'self'}
-        {' · '}cooldown {(skill.cooldown / 10).toFixed(0)}s · cast {(skill.castTicks / 10).toFixed(1)}s
+      <div className="small">
+        <span className={`spell-kind spell-kind-${skill.kind}`}>{kind?.label ?? skill.kind}</span>{' '}
+        <span className="muted">
+          {skill.target === 'enemiesInRadius' || skill.target === 'alliesInRadius'
+            ? `area ${skill.radius} tiles`
+            : skill.range > 0
+              ? `range ${skill.range}`
+              : 'self'}
+          {' · '}cooldown {(skill.cooldown / 10).toFixed(0)}s · cast {(skill.castTicks / 10).toFixed(1)}s
+        </span>
       </div>
       <div className="small spell-desc">{skill.description}</div>
       {estimate && (
@@ -381,33 +394,35 @@ function SpellCard({ game, hero, skill }: { game: GameState; hero: Hero; skill: 
           <span className="gold">{estimate}</span> <span className="muted">for {hero.name} (INT {Math.floor(d.attrs.int)})</span>
         </div>
       )}
-      <div className="small spell-reqs">
-        <span className={levelOk ? 'req-met' : 'req-unmet'}>level {req.minLevel}+</span>
-        {' · '}
-        <span className={intOk ? 'req-met' : 'req-unmet'}>INT {req.minInt}+</span>
+      <div className="spell-card-foot">
+        <div className="small spell-reqs">
+          <span className={levelOk ? 'req-met' : 'req-unmet'}>level {req.minLevel}+</span>
+          {' · '}
+          <span className={intOk ? 'req-met' : 'req-unmet'}>INT {req.minInt}+</span>
+        </div>
+        {known ? (
+          <span className="tag tag-idle">known</span>
+        ) : (
+          <button
+            className="btn btn-small"
+            disabled={!levelOk || !intOk || !goldOk || hero.activity === 'party'}
+            title={
+              !levelOk
+                ? `requires level ${req.minLevel}`
+                : !intOk
+                  ? `requires ${req.minInt} INT (smarter headgear helps)`
+                  : !goldOk
+                    ? 'not enough gold'
+                    : hero.activity === 'party'
+                      ? 'currently in the dungeon'
+                      : ''
+            }
+            onClick={() => app.dispatch({ t: 'LEARN_SKILL', heroId: hero.id, skillId: skill.id })}
+          >
+            learn for {req.cost}g
+          </button>
+        )}
       </div>
-      {known ? (
-        <span className="tag tag-idle">known</span>
-      ) : (
-        <button
-          className="btn btn-small"
-          disabled={!levelOk || !intOk || !goldOk || hero.activity === 'party'}
-          title={
-            !levelOk
-              ? `requires level ${req.minLevel}`
-              : !intOk
-                ? `requires ${req.minInt} INT (smarter headgear helps)`
-                : !goldOk
-                  ? 'not enough gold'
-                  : hero.activity === 'party'
-                    ? 'currently in the dungeon'
-                    : ''
-          }
-          onClick={() => app.dispatch({ t: 'LEARN_SKILL', heroId: hero.id, skillId: skill.id })}
-        >
-          learn for {req.cost}g
-        </button>
-      )}
     </div>
   );
 }
@@ -492,14 +507,7 @@ export function GuildView({ game }: { game: GameState }) {
           </div>
           <div className="row">
             <Chips
-              options={[
-                { id: 'all', label: 'all' },
-                { id: 'attack', label: '🔥 attack' },
-                { id: 'heal', label: '💚 heal' },
-                { id: 'buff', label: '✨ buff' },
-                { id: 'debuff', label: '🌀 debuff' },
-                { id: 'summon', label: '💀 summon' },
-              ]}
+              options={[{ id: 'all' as const, label: 'all' }, ...SPELL_KINDS]}
               value={spellKind}
               onPick={setSpellKind}
             />
@@ -514,7 +522,7 @@ export function GuildView({ game }: { game: GameState }) {
           {spellbook.length === 0 && (
             <div className="panel muted small">No spells match. The librarian shrugs.</div>
           )}
-          <div className="building-cols">
+          <div className="building-cols cols-equal">
             {spellbook.map((skill) => (
               <SpellCard key={skill.id} game={game} hero={hero} skill={skill} />
             ))}
