@@ -61,9 +61,9 @@ export function startRun(state: GameState, memberIds: Id[], startDepth: number, 
     hero.cooldowns = {};
     hero.stats.runs++;
     hero.stats.runDmg = 0;
-    // auto-stock potions from the village pool (3 hp / 2 mp per hero)
-    const takeHp = Math.min(3, state.village.potions.hp);
-    const takeMp = Math.min(2, state.village.potions.mp);
+    // top up to 3 hp / 2 mp from the village pool; bigger gate loadouts are kept
+    const takeHp = Math.min(Math.max(0, 3 - hero.potions.hp), state.village.potions.hp);
+    const takeMp = Math.min(Math.max(0, 2 - hero.potions.mp), state.village.potions.mp);
     state.village.potions.hp -= takeHp;
     state.village.potions.mp -= takeMp;
     hero.potions = { hp: hero.potions.hp + takeHp, mp: hero.potions.mp + takeMp };

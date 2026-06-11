@@ -299,7 +299,7 @@ export function StoreView({ game }: { game: GameState }) {
         <div className="panel">
           <div className="panel-title">🧪 Buy potions</div>
           <div className="panel-sub">
-            The village stockpile — heroes pack 3 healing / 2 mana potions automatically when embarking.
+            The village stockpile — heroes top up to 3 healing / 2 mana from here when they descend.
           </div>
           {(['hp', 'mp'] as const).map((kind) => (
             <div key={kind} className="sale-row">
@@ -897,6 +897,149 @@ export function HallView({ game }: { game: GameState }) {
 }
 
 // ---------------------------------------------------------------- dungeon gate
+/** one hero at the gate: click to enlist, kit them out right here */
+function GateHeroCard({
+  game,
+  hero,
+  selected,
+  onToggle,
+}: {
+  game: GameState;
+  hero: Hero;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const d = derive(hero);
+  const [editingTactics, setEditingTactics] = useState(false);
+  const stock = game.village.potions;
+  const setPotions = (kind: 'hp' | 'mp', delta: number) =>
+    app.dispatch({
+      t: 'SET_HERO_POTIONS',
+      heroId: hero.id,
+      potions: { ...hero.potions, [kind]: Math.max(0, hero.potions[kind] + delta) },
+    });
+  return (
+    <div className={`panel hero-card gate-card ${selected ? 'gate-selected' : ''}`} onClick={onToggle}>
+      {selected && <div className="stamp">⚔ SELECTED</div>}
+      <div className="portrait-row">
+        <ClassSprite classId={hero.classId} scale={4} />
+        <div style={{ flex: 1 }}>
+          <div className="panel-title">
+            {hero.name}{' '}
+            <span className="muted">
+              — L{hero.level} {CLASSES[hero.classId]?.name}
+            </span>
+          </div>
+          <HeroVitals hero={hero} />
+        </div>
+      </div>
+      <div className="muted small">
+        dmg {d.weaponDmg} · armor {d.armor} · speed {(40 / d.moveTicks).toFixed(1)} · carry{' '}
+        {d.carryUsed.toFixed(1)}/{d.carryMax.toFixed(1)} kg
+      </div>
+      {hero.injuries.length > 0 && (
+        <div className="small">
+          {hero.injuries.map((iid) => (
+            <span key={iid} className="tag tag-bad" title={INJURIES[iid]?.flavor}>
+              {INJURIES[iid]?.name}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="gate-controls small" onClick={(e) => e.stopPropagation()}>
+        {(['weapon', 'offhand', 'armor', 'trinket'] as const).map((slot) => {
+          const item = hero.equipment[slot];
+          const candidates = equipCandidates(game, hero, slot);
+          return (
+            <div key={slot} className="equip-row">
+              <span className="muted">{slot}:</span>{' '}
+              {item ? (
+                <>
+                  <ItemName item={item} />{' '}
+                  <button
+                    className="btn btn-tiny"
+                    onClick={() => app.dispatch({ t: 'UNEQUIP', heroId: hero.id, slot })}
+                  >
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <span className="muted">—</span>
+              )}
+              {candidates.length > 0 && (
+                <select
+                  defaultValue=""
+                  title="equip from storage"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      app.dispatch({ t: 'EQUIP', heroId: hero.id, itemId: e.target.value });
+                      e.target.value = '';
+                    }
+                  }}
+                >
+                  <option value="">{item ? 'swap…' : 'equip…'}</option>
+                  {candidates.slice(0, 12).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {ITEMS[c.defId]?.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          );
+        })}
+        <div className="row">
+          <span className="muted">potions packed:</span>
+          <span className="row-buttons">
+            {(['hp', 'mp'] as const).map((kind) => (
+              <span key={kind} className="potion-stepper">
+                <span className="muted">{kind === 'hp' ? '🧪 heal' : '💧 mana'}</span>
+                <button
+                  className="btn btn-tiny"
+                  disabled={hero.potions[kind] <= 0}
+                  title="put one back on the shelf"
+                  onClick={() => setPotions(kind, -1)}
+                >
+                  −
+                </button>
+                <b>{hero.potions[kind]}</b>
+                <button
+                  className="btn btn-tiny"
+                  disabled={stock[kind] <= 0}
+                  title="pack one from the shelf"
+                  onClick={() => setPotions(kind, 1)}
+                >
+                  +
+                </button>
+              </span>
+            ))}
+          </span>
+        </div>
+        <div className="row">
+          <span className="muted">tactics:</span>
+          <span className="row-buttons">
+            <select
+              value={hero.tactics.activeSetId}
+              title="active tactic set"
+              onChange={(e) => app.dispatch({ t: 'SWITCH_TACTIC_SET', heroId: hero.id, setId: e.target.value })}
+            >
+              {hero.tactics.sets.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <button className="btn btn-tiny" onClick={() => setEditingTactics(true)}>
+              ⚙ edit
+            </button>
+          </span>
+        </div>
+        {editingTactics && <TacticsEditor hero={hero} onClose={() => setEditingTactics(false)} />}
+      </div>
+    </div>
+  );
+}
+
 export function GateView({ game }: { game: GameState }) {
   const [selected, setSelected] = useState<Id[]>([]);
   const [depth, setDepth] = useState(1);
@@ -906,63 +1049,68 @@ export function GateView({ game }: { game: GameState }) {
   const depths = [1, ...game.progress.checkpoints].sort((a, b) => a - b);
   const toggle = (id: Id) =>
     setSelected((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : sel.length < 4 ? [...sel, id] : sel));
+  const spare = selected
+    .map((id) => game.roster[id])
+    .filter((h): h is Hero => !!h)
+    .reduce((sum, h) => {
+      const d = derive(h);
+      return sum + Math.max(0, d.carryMax - d.carryUsed);
+    }, 0);
   return (
     <BuildingShell
       icon="🕳"
       title="Dungeon Gate"
       blurb="Pick up to four. They fight on their own — your tactics decide how. Bosses wait every 5th floor."
     >
-      <div className="building-cols">
-        <div className="panel">
-          <div className="panel-title">Expedition party ({selected.length}/4)</div>
-          {candidates.length === 0 && (
-            <div className="muted small">Nobody is fit to descend. Visit the tavern or the hospital.</div>
-          )}
-          {candidates.map((h) => {
-            const d = derive(h);
-            return (
-              <label key={h.id} className="check-row gate-row">
-                <input type="checkbox" checked={selected.includes(h.id)} onChange={() => toggle(h.id)} />
-                <ClassSprite classId={h.classId} scale={3} />
-                <span>
-                  <b>{h.name}</b>{' '}
-                  <span className="muted small">
-                    L{h.level} {CLASSES[h.classId]?.name} · {Math.floor(h.hp)}/{d.maxHp} hp · carries{' '}
-                    {Math.max(0, d.carryMax - d.carryUsed).toFixed(0)}kg spare
-                    {h.injuries.length > 0 ? ` · ${h.injuries.length} injur${h.injuries.length > 1 ? 'ies' : 'y'}` : ''}
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
-        <div className="panel">
-          <div className="panel-title">Descent</div>
-          <div className="row">
-            <span className="muted">Start at depth</span>
+      <div className="panel gate-bar">
+        <div className="row">
+          <span className="panel-title" style={{ marginBottom: 0 }}>
+            Expedition party ({selected.length}/4)
+          </span>
+          <span className="row-buttons">
+            <span className="muted">start at depth</span>
             <select value={depth} onChange={(e) => setDepth(Number(e.target.value))}>
-              {depths.map((d) => (
-                <option key={d} value={d}>
-                  {d}
+              {depths.map((dd) => (
+                <option key={dd} value={dd}>
+                  {dd}
                 </option>
               ))}
             </select>
-          </div>
-          <div className="muted small" style={{ margin: '6px 0' }}>
-            Each hero packs up to 3 healing / 2 mana potions from the store shelf ({game.village.potions.hp} hp /{' '}
-            {game.village.potions.mp} mp in stock). A downed hero ends the expedition — the others carry them home.
-          </div>
-          <button
-            className="btn btn-primary wide"
-            disabled={selected.length === 0}
-            onClick={() => {
-              app.dispatch({ t: 'EMBARK', memberIds: selected, startDepth: depth });
-              setSelected([]);
-            }}
-          >
-            ⚔ Descend!
-          </button>
+            <button
+              className="btn btn-primary gate-descend"
+              disabled={selected.length === 0}
+              onClick={() => {
+                app.dispatch({ t: 'EMBARK', memberIds: selected, startDepth: depth });
+                setSelected([]);
+              }}
+            >
+              {selected.length === 0
+                ? '⚔ Descend!'
+                : `⚔ Descend with ${selected.length} hero${selected.length > 1 ? 'es' : ''}!`}
+            </button>
+          </span>
         </div>
+        <div className="panel-sub">
+          Click a hero card to enlist them — gear, potions and tactics can be tuned right on the card. Everyone tops up
+          to 3 healing / 2 mana potions from the store shelf ({game.village.potions.hp} hp / {game.village.potions.mp}{' '}
+          mp in stock); pack extra below if you like.
+          {selected.length > 0 ? ` Party loot space: ${spare.toFixed(0)}kg.` : ''} A downed hero ends the expedition —
+          the others carry them home.
+        </div>
+      </div>
+      {candidates.length === 0 && (
+        <div className="panel muted">Nobody is fit to descend. Visit the tavern or the hospital.</div>
+      )}
+      <div className="building-cols cols-wide">
+        {candidates.map((h) => (
+          <GateHeroCard
+            key={h.id}
+            game={game}
+            hero={h}
+            selected={selected.includes(h.id)}
+            onToggle={() => toggle(h.id)}
+          />
+        ))}
       </div>
     </BuildingShell>
   );
