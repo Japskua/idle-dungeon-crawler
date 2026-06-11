@@ -167,6 +167,14 @@ function EquipSelect({ game, item }: { game: GameState; item: ItemInstance }) {
   );
 }
 
+/** slot labels for gear, shared by filters and per-item badges */
+const SLOT_TAGS: Record<string, string> = {
+  weapon: '⚔ weapon',
+  offhand: '🛡 offhand',
+  armor: '🧥 armor',
+  trinket: '💍 trinket',
+};
+
 export function ArmorerView({ game }: { game: GameState }) {
   const stock = shopStock(game);
   const [filter, setFilter] = useState<ArmoryFilter>('all');
@@ -183,22 +191,25 @@ export function ArmorerView({ game }: { game: GameState }) {
 
   return (
     <BuildingShell icon="⚒" title="Armorer" blurb="Weapons and armor. The hammering never stops. Stock rotates daily.">
-      <div className="building-cols">
+      <div className="shop-grid">
         <div className="panel">
-          <div className="panel-title">For sale today</div>
+          <div className="panel-title">🛒 For sale today</div>
+          <div className="panel-sub">Fresh stock every morning — one of each, first come only served.</div>
           {stock.map((entry) => {
             const def = ITEMS[entry.defId]!;
             const bought = game.village.purchasedToday.includes(entry.key);
             return (
               <div key={entry.key} className="sale-row">
                 <div className="row">
-                  <b>{def.name}</b>
+                  <span>
+                    <b>{def.name}</b> <span className="tag">{SLOT_TAGS[def.slot] ?? def.slot}</span>
+                  </span>
                   <button
                     className="btn btn-small"
                     disabled={bought || game.village.gold < entry.price}
                     onClick={() => app.dispatch({ t: 'BUY_STOCK_ITEM', stockKey: entry.key })}
                   >
-                    {bought ? 'sold' : `${entry.price}g`}
+                    {bought ? 'sold' : `buy ${entry.price}g`}
                   </button>
                 </div>
                 <div className="muted small">{describeItem(entry.defId)}</div>
@@ -208,7 +219,8 @@ export function ArmorerView({ game }: { game: GameState }) {
           })}
         </div>
         <div className="panel">
-          <div className="panel-title">Your armory ({armory.length})</div>
+          <div className="panel-title">🎒 Your armory ({armory.length})</div>
+          <div className="panel-sub">Gear you own — hand it to a hero, or sell it back for scrap value.</div>
           <div className="row">
             <Chips
               options={[
@@ -227,20 +239,25 @@ export function ArmorerView({ game }: { game: GameState }) {
             <SortSelect sort={sort} setSort={setSort} />
           </div>
           {armory.length === 0 && <div className="muted small">Empty racks. The dungeon provides.</div>}
-          {pageItems.map((item) => (
-            <div key={item.id} className="sale-row">
-              <div className="row">
-                <ItemName item={item} />
-                <span className="row-buttons">
-                  <EquipSelect game={game} item={item} />
-                  <button className="btn btn-tiny" onClick={() => app.dispatch({ t: 'SELL_ITEM', itemId: item.id })}>
-                    sell
-                  </button>
-                </span>
+          {pageItems.map((item) => {
+            const slot = ITEMS[item.defId]?.slot ?? '';
+            return (
+              <div key={item.id} className="sale-row">
+                <div className="row">
+                  <span>
+                    <ItemName item={item} /> <span className="tag">{SLOT_TAGS[slot] ?? slot}</span>
+                  </span>
+                  <span className="row-buttons">
+                    <EquipSelect game={game} item={item} />
+                    <button className="btn btn-tiny" onClick={() => app.dispatch({ t: 'SELL_ITEM', itemId: item.id })}>
+                      sell
+                    </button>
+                  </span>
+                </div>
+                <div className="muted small">{describeItem(item.defId)}</div>
               </div>
-              <div className="muted small">{describeItem(item.defId)}</div>
-            </div>
-          ))}
+            );
+          })}
           <Pager page={page} setPage={setPage} total={armory.length} pageSize={ARMORY_PAGE} />
         </div>
       </div>
@@ -269,67 +286,83 @@ export function StoreView({ game }: { game: GameState }) {
   const junk = game.village.inventory.filter((i) => ITEMS[i.defId]?.slot === 'junk');
   const junkGold = junk.reduce((sum, i) => sum + Math.max(1, Math.round((ITEMS[i.defId]?.value ?? 0) * 0.4)), 0);
 
+  const TAB_TAGS: Record<Exclude<StoreTab, 'all'>, string> = {
+    healing: '🧪 healing',
+    magic: '✨ magic',
+    gear: '⚔ gear',
+    collectables: '🗝 collectable',
+  };
+
   return (
     <BuildingShell icon="🧺" title="General Store" blurb="Potions, sundries, and a shopkeeper who buys absolutely anything.">
-      <div className="building-cols">
+      <div className="shop-grid">
         <div className="panel">
-          <div className="panel-title">Potions</div>
+          <div className="panel-title">🧪 Buy potions</div>
+          <div className="panel-sub">
+            The village stockpile — heroes pack 3 healing / 2 mana potions automatically when embarking.
+          </div>
           {(['hp', 'mp'] as const).map((kind) => (
-            <div key={kind} className="row">
-              <span>
-                {kind === 'hp' ? '🧪 Healing potion' : '🧪 Mana potion'}{' '}
-                <span className="muted small">(in stock: {game.village.potions[kind]})</span>
-              </span>
-              <span className="row-buttons">
-                {[1, 5].map((qty) => (
-                  <button
-                    key={qty}
-                    className="btn btn-small"
-                    disabled={game.village.gold < POTION_PRICES[kind] * qty}
-                    onClick={() => app.dispatch({ t: 'BUY_POTION', potion: kind, qty })}
-                  >
-                    ×{qty} ({POTION_PRICES[kind] * qty}g)
-                  </button>
-                ))}
-              </span>
+            <div key={kind} className="sale-row">
+              <div className="row">
+                <span>
+                  <b>{kind === 'hp' ? 'Healing potion' : 'Mana potion'}</b>{' '}
+                  <span className="muted small">in stock: {game.village.potions[kind]}</span>
+                </span>
+                <span className="row-buttons">
+                  {[1, 5].map((qty) => (
+                    <button
+                      key={qty}
+                      className="btn btn-small"
+                      disabled={game.village.gold < POTION_PRICES[kind] * qty}
+                      onClick={() => app.dispatch({ t: 'BUY_POTION', potion: kind, qty })}
+                    >
+                      buy ×{qty} ({POTION_PRICES[kind] * qty}g)
+                    </button>
+                  ))}
+                </span>
+              </div>
+              <div className="muted small">
+                {kind === 'hp'
+                  ? `Restores ${ITEMS['hp_potion_s']?.potion?.amount ?? 25} HP. The difference between a story and an obituary.`
+                  : `Restores ${ITEMS['mp_potion_s']?.potion?.amount ?? 20} MP. Tastes like static.`}
+              </div>
             </div>
           ))}
-          <div className="muted small" style={{ marginTop: 8 }}>
-            Heroes pack 3 healing / 2 mana potions automatically when embarking.
-          </div>
-          <div className="row" style={{ marginTop: 10 }}>
-            <span className="muted small">Rat tails, goo, bones piling up?</span>
+        </div>
+        <div className="panel">
+          <div className="panel-title">💰 Sell goods ({sellables.length})</div>
+          <div className="panel-sub">Everything the party hauled home — the shopkeeper pays 40% of value, no questions.</div>
+          <div className="row">
+            <Chips
+              options={[
+                { id: 'all', label: 'all' },
+                { id: 'healing', label: '🧪 healing' },
+                { id: 'magic', label: '✨ magic' },
+                { id: 'gear', label: '⚔ gear' },
+                { id: 'collectables', label: '🗝 collectables' },
+              ]}
+              value={tab}
+              onPick={(t) => {
+                setTab(t);
+                setPage(0);
+              }}
+            />
             <button
               className="btn btn-small"
               disabled={junk.length === 0}
-              title="sells every collectable in storage"
+              title="sells every rat tail, goo and bone in storage at once"
               onClick={() => app.dispatch({ t: 'SELL_ALL_JUNK' })}
             >
               Sell all oddities ({junk.length} → {junkGold}g)
             </button>
           </div>
-        </div>
-        <div className="panel">
-          <div className="panel-title">Sell goods ({sellables.length})</div>
-          <Chips
-            options={[
-              { id: 'all', label: 'all' },
-              { id: 'healing', label: '🧪 healing' },
-              { id: 'magic', label: '✨ magic' },
-              { id: 'gear', label: '⚔ gear' },
-              { id: 'collectables', label: '🗝 collectables' },
-            ]}
-            value={tab}
-            onPick={(t) => {
-              setTab(t);
-              setPage(0);
-            }}
-          />
           {sellables.length === 0 && <div className="muted small">Nothing here. Yet. The rats are out there.</div>}
           {pageItems.map((item) => (
             <div key={item.id} className="sale-row">
               <div className="row">
-                <ItemName item={item} />
+                <span>
+                  <ItemName item={item} /> <span className="tag">{TAB_TAGS[storeTabOf(item)]}</span>
+                </span>
                 <button className="btn btn-tiny" onClick={() => app.dispatch({ t: 'SELL_ITEM', itemId: item.id })}>
                   sell {Math.max(1, Math.round((ITEMS[item.defId]?.value ?? 0) * 0.4))}g
                 </button>
