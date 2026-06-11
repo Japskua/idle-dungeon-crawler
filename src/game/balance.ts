@@ -157,7 +157,7 @@ export const STARTING_GOLD = 60;
 export const POTION_PRICES: Record<'hp' | 'mp', number> = { hp: 12, mp: 15 };
 export const SELL_VALUE_FRACTION = 0.4;
 export const SHOP_STOCK_SIZE = 6;
-export const TAVERN_RECRUITS_PER_DAY = 3;
+export const TAVERN_RECRUITS = 6;
 
 export function hireCost(baseCost: number, level: number, perkValueAdjust: number): number {
   return Math.max(10, Math.round(baseCost * Math.pow(1.4, level - 1) * (1 + perkValueAdjust)));
