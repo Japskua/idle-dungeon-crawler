@@ -5,6 +5,7 @@
   "kind": "mace",
   "tier": 1,
   "base": { "dmg": 5, "attackTicks": 13 },
+  "weight": 3,
   "value": 9,
   "flavor": "Bonk. Also makes a decent omelette.",
   "sprite": {

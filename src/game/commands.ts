@@ -4,9 +4,10 @@
  */
 import type { Command, GameEvent, GameState } from './types';
 import { startRun, chronicle } from './run/lifecycle';
-import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
-import { CHORES, INJURIES, classDef, itemDef } from './content';
+import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE } from './balance';
+import { CHORES, INJURIES, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
+import { canEquip } from './hero/equipment';
 import { makeItem } from './items/factory';
 import { makeHero } from './hero/create';
 import { effectiveHireCost, shopStock, tavernRecruits } from './village/shop';
@@ -42,7 +43,15 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
         delete state.roster[cmd.heroId];
         state.rosterOrder = state.rosterOrder.filter((id) => id !== cmd.heroId);
         state.progress.totalPermadeaths++;
-        events.push({ t: 'heroDied', heroId: cmd.heroId, name: hero.name, depth: run.depth });
+        events.push({
+          t: 'heroDied',
+          heroId: cmd.heroId,
+          name: hero.name,
+          classId: hero.classId,
+          level: hero.level,
+          depth: run.depth,
+          cause: 'abandoned by the party, on purpose, by name',
+        });
         chronicle(state, nowMs, `${hero.name} was abandoned at depth ${run.depth} and never seen again.`, run.depth);
       } else {
         const pool = Object.values(INJURIES)
@@ -84,7 +93,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (cmd.qty > 0 && state.village.gold >= price) {
         state.village.gold -= price;
         state.village.potions[cmd.potion] += cmd.qty;
-        events.push({ t: 'purchase', what: `${cmd.qty}x ${cmd.potion} potion`, cost: price });
+        events.push({ t: 'purchase', what: `${cmd.qty}x ${cmd.potion} potion`, cost: price, category: 'potion' });
       }
       return;
     }
@@ -95,7 +104,19 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       state.village.gold -= entry.price;
       state.village.purchasedToday.push(cmd.stockKey);
       state.village.inventory.push(makeItem(state, entry.defId, Math.max(1, state.progress.maxDepthReached)));
-      events.push({ t: 'purchase', what: itemDef(entry.defId).name, cost: entry.price });
+      events.push({ t: 'purchase', what: itemDef(entry.defId).name, cost: entry.price, category: 'gear', refId: entry.defId });
+      return;
+    }
+    case 'SELL_ALL_JUNK': {
+      const junk = state.village.inventory.filter((it) => itemDef(it.defId).slot === 'junk');
+      if (junk.length === 0) return;
+      let gold = 0;
+      for (const item of junk) {
+        gold += Math.max(1, Math.round(itemDef(item.defId).value * SELL_VALUE_FRACTION));
+      }
+      state.village.inventory = state.village.inventory.filter((it) => itemDef(it.defId).slot !== 'junk');
+      state.village.gold += gold;
+      events.push({ t: 'sold', what: `${junk.length} oddities`, gold });
       return;
     }
     case 'SELL_ITEM': {
@@ -113,8 +134,15 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const i = state.village.inventory.findIndex((it) => it.id === cmd.itemId);
       if (!hero || i === -1) return;
       const item = state.village.inventory[i]!;
-      const slot = itemDef(item.defId).slot;
+      const def = itemDef(item.defId);
+      const slot = def.slot;
       if (slot !== 'weapon' && slot !== 'offhand' && slot !== 'armor' && slot !== 'trinket') return;
+      if (!canEquip(hero.classId, def)) return; // a mage holding a warhammer is a comedy, not a build
+      // carry capacity: swapping counts the replaced item's weight as freed
+      const d = derive(hero);
+      const replaced = hero.equipment[slot];
+      const replacedWeight = replaced ? itemDef(replaced.defId).weight : 0;
+      if (d.carryUsed - replacedWeight + def.weight > d.carryMax + 1e-9) return; // too heavy
       state.village.inventory.splice(i, 1);
       const old = hero.equipment[slot];
       hero.equipment[slot] = item;
@@ -196,7 +224,34 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.village.gold < cost) return;
       state.village.gold -= cost;
       hero.injuries = hero.injuries.filter((i) => i !== cmd.injuryId);
-      events.push({ t: 'purchase', what: `Treated: ${injury.name} (${hero.name})`, cost });
+      events.push({ t: 'purchase', what: `Treated: ${injury.name} (${hero.name})`, cost, category: 'healing', refId: injury.id });
+      return;
+    }
+    case 'LEARN_SKILL': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero || hero.skills.includes(cmd.skillId)) return;
+      const skill = SKILLS[cmd.skillId];
+      if (!skill) return;
+      const cls = classDef(hero.classId);
+      const unlock = cls.skillUnlocks.find((u) => u.skillId === cmd.skillId);
+      let cost: number;
+      if (unlock) {
+        // class training: learn your own skill ahead of its level
+        cost = learnSkillCost(unlock.level, unlock.level - hero.level);
+      } else if (skill.guild) {
+        // the open spellbook: anyone smart and seasoned enough may study
+        if (hero.level < skill.guild.minLevel) return;
+        if (derive(hero).attrs.int < skill.guild.minInt) return;
+        cost = skill.guild.cost;
+      } else {
+        return; // monster moves and other classes' techniques are not for sale
+      }
+      if (state.village.gold < cost) return;
+      state.village.gold -= cost;
+      hero.skills.push(cmd.skillId);
+      events.push({ t: 'purchase', what: `${hero.name} learned ${skill.name}`, cost, category: 'training', refId: skill.id });
+      chronicle(state, nowMs, `${hero.name} studied at the Magician's Guild and learned ${skill.name}.`);
       return;
     }
     case 'REST_HERO': {
@@ -210,7 +265,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       hero.hp = d.maxHp;
       hero.mp = d.maxMp;
       if (hero.activity === 'recovering') hero.activity = 'idle';
-      events.push({ t: 'purchase', what: `Patched up ${hero.name}`, cost });
+      events.push({ t: 'purchase', what: `Patched up ${hero.name}`, cost, category: 'healing' });
       return;
     }
   }

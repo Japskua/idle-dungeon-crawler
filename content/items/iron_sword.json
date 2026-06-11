@@ -5,6 +5,7 @@
   "kind": "sword",
   "tier": 2,
   "base": { "dmg": 9, "attackTicks": 12 },
+  "weight": 4.5,
   "value": 60,
   "sprite": {
     "size": 16,

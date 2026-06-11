@@ -5,6 +5,7 @@
   "kind": "potion",
   "tier": 1,
   "potion": { "kind": "hp", "amount": 25 },
+  "weight": 0.5,
   "value": 12,
   "sprite": {
     "size": 16,

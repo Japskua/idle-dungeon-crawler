@@ -5,6 +5,7 @@
   "kind": "bow",
   "tier": 2,
   "base": { "dmg": 8, "attackTicks": 14, "range": 6 },
+  "weight": 3,
   "value": 65,
   "sprite": {
     "size": 16,

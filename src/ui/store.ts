@@ -6,6 +6,7 @@
  */
 import { create } from 'zustand';
 import type { GameEvent, GameState } from '../game/types';
+import type { DebriefReport } from '../app/debrief';
 import type { OfflineReport } from '../game/village/offline';
 import { CLASSES, INJURIES, ITEMS, creatureDef } from '../game/content';
 
@@ -15,6 +16,17 @@ export interface LogEntry {
   cls: 'dmg' | 'heal' | 'loot' | 'gold' | 'level' | 'bad' | 'info';
 }
 
+export type VillageView =
+  | 'scene'
+  | 'tavern'
+  | 'armorer'
+  | 'store'
+  | 'guild'
+  | 'hall'
+  | 'hospital'
+  | 'graveyard'
+  | 'gate';
+
 interface UiState {
   game: GameState | null;
   rev: number;
@@ -22,6 +34,9 @@ interface UiState {
   speed: number;
   offlineReport: OfflineReport | null;
   lockedByOtherTab: boolean;
+  villageView: VillageView;
+  /** post-run debrief; stays up until the player acknowledges it */
+  debrief: DebriefReport | null;
 }
 
 export const useUi = create<UiState>(() => ({
@@ -31,7 +46,17 @@ export const useUi = create<UiState>(() => ({
   speed: 1,
   offlineReport: null,
   lockedByOtherTab: false,
+  villageView: 'scene',
+  debrief: null,
 }));
+
+export function showDebrief(report: DebriefReport) {
+  useUi.setState({ debrief: report });
+}
+
+export function setVillageView(view: VillageView) {
+  useUi.setState({ villageView: view });
+}
 
 let logId = 1;
 
@@ -74,6 +99,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`${mobName(e.defId)} (L${e.level}) dies. +${e.xp} xp, +${e.gold}g`, 'gold');
     case 'lootPicked':
       return entry(`${heroName(game, e.by)} picks up ${ITEMS[e.defId]?.name ?? e.defId}`, 'loot');
+    case 'lootTooHeavy':
+      return entry(`The party's bags are too full for ${ITEMS[e.defId]?.name ?? e.defId} — left behind.`, 'info');
     case 'chestOpened':
       return entry(`Chest opened: +${e.gold}g${e.items.length ? ', ' + e.items.map((i) => ITEMS[i]?.name ?? i).join(', ') : ''}`, 'loot');
     case 'levelUp':
@@ -98,6 +125,10 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return e.outcome === 'withdrawn'
         ? entry(`The party returns from depth ${e.depth} with ${e.goldKept} gold.`, 'gold')
         : null;
+    case 'summon':
+      return entry(`${heroName(game, e.heroId)} summons ${e.count}x ${mobName(e.defId)}!`, 'level');
+    case 'minionDied':
+      return entry(`A ${mobName(e.defId).toLowerCase()} crumbles away.`, 'info');
     case 'neutralSighted':
       return entry(`A wild ${mobName(e.defId)} minds its own business nearby.`, 'info');
     case 'neutralKilled':
@@ -110,6 +141,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`${e.name} hired${e.cost > 0 ? ` for ${e.cost}g` : ' (free — the village insists)'}.`, 'info');
     case 'purchase':
       return entry(`Bought: ${e.what} (−${e.cost}g)`, 'info');
+    case 'sold':
+      return entry(`Sold ${e.what} (+${e.gold}g)`, 'gold');
     default:
       return null;
   }
@@ -127,7 +160,9 @@ export function publish(game: GameState, events: GameEvent[]) {
         if (log.length > 200) log = log.slice(log.length - 200);
       }
     }
-    return { game, rev: s.rev + 1, log };
+    // coming home from a run always lands on the village overview
+    const cameHome = events.some((e) => e.t === 'runEnded');
+    return { game, rev: s.rev + 1, log, ...(cameHome ? { villageView: 'scene' as const } : {}) };
   });
 }
 

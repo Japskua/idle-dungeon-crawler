@@ -5,6 +5,7 @@
   "kind": "axe",
   "tier": 2,
   "base": { "dmg": 13, "attackTicks": 16 },
+  "weight": 6,
   "value": 70,
   "sprite": {
     "size": 16,

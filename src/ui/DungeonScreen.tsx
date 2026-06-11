@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { app } from '../app/loop';
+import { telemetry } from '../app/telemetry';
 import { CLASSES } from '../game/content';
+import { lootBagWeight, partySpareCapacity } from '../game/run/runtime';
 import type { Hero } from '../game/types';
-import { VIEW_H, VIEW_W } from '../render/renderer';
+import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
 import { HeroVitals } from './components';
 import { TacticsEditor } from './TacticsEditor';
@@ -15,7 +17,10 @@ function TacticSwitch({ hero }: { hero: Hero }) {
       <select
         value={hero.tactics.activeSetId}
         title="switch tactic set (applies immediately)"
-        onChange={(e) => app.dispatch({ t: 'SWITCH_TACTIC_SET', heroId: hero.id, setId: e.target.value })}
+        onChange={(e) => {
+          telemetry.bump('tactic_set_switched');
+          app.dispatch({ t: 'SWITCH_TACTIC_SET', heroId: hero.id, setId: e.target.value });
+        }}
       >
         {hero.tactics.sets.map((s) => (
           <option key={s.id} value={s.id}>
@@ -37,13 +42,23 @@ function CanvasView() {
     if (canvas) app.renderer.attach(canvas);
     else app.renderer.detach();
   }, []);
-  const [scale, setScale] = useState(1);
+  const [dims, setDims] = useState({ w: VIEW_W, h: VIEW_H, scale: 1 });
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const update = () => {
-      const s = Math.max(1, Math.floor(Math.min(el.clientWidth / VIEW_W, el.clientHeight / VIEW_H)));
-      setScale(s);
+      const cw = Math.max(64, el.clientWidth);
+      const ch = Math.max(64, el.clientHeight);
+      // chunkiest integer pixel scale that keeps at least ~20x12 tiles on screen...
+      const scale = Math.max(
+        1,
+        Math.min(MAX_PIXEL_SCALE, Math.floor(Math.min(cw / MIN_VIEW_W, ch / MIN_VIEW_H))),
+      );
+      // ...then grow the internal canvas so the window is filled edge to edge
+      const w = Math.ceil(cw / scale);
+      const h = Math.ceil(ch / scale);
+      app.renderer.resize(w, h);
+      setDims({ w: Math.max(MIN_VIEW_W, w), h: Math.max(MIN_VIEW_H, h), scale });
     };
     update();
     const obs = new ResizeObserver(update);
@@ -55,7 +70,7 @@ function CanvasView() {
       <canvas
         ref={canvasRef}
         className="game-canvas"
-        style={{ width: VIEW_W * scale, height: VIEW_H * scale }}
+        style={{ width: dims.w * dims.scale, height: dims.h * dims.scale }}
       />
     </div>
   );
@@ -102,7 +117,10 @@ export function DungeonScreen() {
                 {downed && !carrying && (
                   <button
                     className="btn btn-danger btn-small"
-                    onClick={() => app.dispatch({ t: 'ABANDON_HERO', heroId: id })}
+                    onClick={() => {
+                      telemetry.bump('abandon_clicked');
+                      app.dispatch({ t: 'ABANDON_HERO', heroId: id });
+                    }}
                     title="Leave them behind. 50% they never come back."
                   >
                     Abandon
@@ -117,12 +135,22 @@ export function DungeonScreen() {
             <span>
               Carried gold: <b className="gold">{party.goldCarried}g</b>
             </span>
-            <span className="muted">loot: {party.lootBag.length}</span>
+            <span className="muted">
+              loot: {party.lootBag.length} ({lootBagWeight(run).toFixed(1)}kg
+              {(() => {
+                const spare = partySpareCapacity(app.state, run);
+                return spare <= 2 ? ', bags full!' : `, ${spare.toFixed(0)}kg spare`;
+              })()}
+              )
+            </span>
           </div>
           <button
             className="btn btn-warn wide"
             disabled={run.intent === 'withdraw'}
-            onClick={() => app.dispatch({ t: 'WITHDRAW' })}
+            onClick={() => {
+              telemetry.noteManualWithdraw();
+              app.dispatch({ t: 'WITHDRAW' });
+            }}
             title="The party fights only when forced and carries downed friends to the exit."
           >
             {run.intent === 'withdraw' ? 'Withdrawing…' : '⟲ Withdraw'}

@@ -1,0 +1,26 @@
+{
+  "id": "grass",
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "GGGGGGGGGGGGGGGG",
+        "GGGGGgGGGGGGGGGG",
+        "GGGGGGGGGGGGlGGG",
+        "GGlGGGGGGGGGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGGGGGgGGGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGGGGGGGGGGgGG",
+        "GGgGGGGGGGGGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGGGlGGGGGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        "GlGGGGGGGGGGGlGG",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGgGGGGGGGGGGG",
+        "GGGGGGGGGGGGGGGG"
+      ]
+    ]
+  }
+}

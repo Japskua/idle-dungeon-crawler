@@ -1,6 +1,17 @@
 {
-  // Cloudflare Pages project config — `bunx wrangler pages deploy` reads this.
-  "name": "idle-dungeon-crawler",
-  "pages_build_output_dir": "dist",
-  "compatibility_date": "2026-06-01"
+	// Cloudflare Pages project config — `bunx wrangler pages deploy` reads this.
+	"name": "idle-dungeon-crawler",
+	"pages_build_output_dir": "dist",
+	"compatibility_date": "2026-06-01",
+	// telemetry database — functions/api/track.ts reads it as env.DB.
+	// Schema: bunx wrangler d1 execute idc-stats --remote --file=db/schema.sql
+	// Query examples live in db/queries.sql.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "idc-stats",
+			"database_id": "63d1164c-a05a-4800-9515-11daa5e12b74",
+			"remote": true
+		}
+	]
 }

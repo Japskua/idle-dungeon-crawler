@@ -1,6 +1,31 @@
+import { useEffect, useRef } from 'react';
 import type { Hero, ItemInstance } from '../game/types';
 import { ITEMS } from '../game/content';
 import { derive } from '../game/hero/derive';
+import { atlasDraw, getAtlas } from '../render/spriteCompiler';
+
+/** An animated pixel portrait of a class (idle bob, faces right). */
+export function ClassSprite({ classId, scale = 3 }: { classId: string; scale?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = false;
+    let frame = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      atlasDraw(ctx, getAtlas(), `hero/${classId}`, frame, 0, 0, false, scale);
+    };
+    draw();
+    const iv = setInterval(() => {
+      frame = 1 - frame;
+      draw();
+    }, 450);
+    return () => clearInterval(iv);
+  }, [classId, scale]);
+  return <canvas ref={ref} width={16 * scale} height={16 * scale} className="class-sprite" />;
+}
 
 export function Bar({ value, max, color, label }: { value: number; max: number; color: string; label?: string }) {
   const frac = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
@@ -13,6 +38,24 @@ export function Bar({ value, max, color, label }: { value: number; max: number; 
       </span>
     </div>
   );
+}
+
+/** humanized "what does it do" line; the flavor text stays charmingly vague */
+export function describeItem(defId: string): string {
+  const def = ITEMS[defId];
+  if (!def) return '';
+  const bits: string[] = [];
+  if (def.base?.dmg) bits.push(`${def.base.dmg} dmg every ${((def.base.attackTicks ?? 12) / 10).toFixed(1)}s`);
+  if (def.base?.range && def.base.range > 1) bits.push(`range ${def.base.range}`);
+  if (def.base?.armor) bits.push(`${def.base.armor} armor`);
+  if (def.base?.moveTicks) bits.push(`slows you down`);
+  if (def.base?.stats) {
+    for (const [k, v] of Object.entries(def.base.stats)) bits.push(`+${v} ${k}`);
+  }
+  if (def.potion) bits.push(`restores ${def.potion.amount} ${def.potion.kind === 'hp' ? 'health' : 'mana'}`);
+  if (def.slot === 'junk') bits.push('worth a few coins to the right buyer');
+  bits.push(`${def.weight}kg`);
+  return bits.join(' · ');
 }
 
 const rarityColor: Record<string, string> = {
@@ -41,6 +84,7 @@ export function ItemName({ item }: { item: ItemInstance }) {
       if (mod.kind === 'attr') stats.push(`+${mod.add} ${mod.attr}`);
     }
   }
+  if (def?.weight) stats.push(`${def.weight}kg`);
   const title = [def?.flavor, stats.join(', ')].filter(Boolean).join(' — ');
   return (
     <span className="item-name" style={{ color: rarityColor[item.rarity] }} title={title}>

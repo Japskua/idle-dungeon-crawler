@@ -64,9 +64,13 @@ export interface ItemDef {
     attackTicks?: number;
     range?: number;
     armor?: number;
+    /** extra ticks per tile while worn — heavy armor protects but slows */
+    moveTicks?: number;
     stats?: Partial<Attributes>;
   };
   potion?: { kind: PotionKind; amount: number };
+  /** kg — counts against a hero's carry capacity */
+  weight: number;
   value: number;
   flavor?: string;
   sprite: SpriteData;
@@ -106,6 +110,8 @@ export interface MonsterDef {
   disposition: 'hostile' | 'neutral';
   /** neutrals only */
   behavior?: 'wander' | 'flee';
+  /** never spawns naturally — only conjured by summon skills */
+  summonOnly?: boolean;
   base: {
     hp: number;
     dmg: number;
@@ -147,13 +153,17 @@ export interface MonsterInstance {
   statuses: StatusInstance[];
   cooldowns: Record<SkillId, number>;
   lastHitBy?: Id;
+  /** set on friendly minions: the hero who conjured them */
+  summonedBy?: Id;
+  /** minions crumble when this reaches zero */
+  ttlTicks?: number;
 }
 
 // ---------- content: skills & statuses ----------
 export interface SkillDef {
   id: SkillId;
   name: string;
-  kind: 'attack' | 'heal' | 'buff' | 'debuff';
+  kind: 'attack' | 'heal' | 'buff' | 'debuff' | 'summon';
   target: 'enemy' | 'lowestHpAlly' | 'self' | 'enemiesInRadius' | 'alliesInRadius';
   range: number;
   radius?: number;
@@ -165,6 +175,10 @@ export interface SkillDef {
   physical?: boolean;
   applies?: { statusId: StatusId; duration: number; chance: number }[];
   description: string;
+  /** present = teachable at the Magician's Guild to any hero meeting the bar */
+  guild?: { cost: number; minLevel: number; minInt: number };
+  /** summon skills conjure friendly minions that fight alongside the party */
+  summon?: { defId: MonsterDefId; count: number; durationTicks: number };
 }
 
 export interface StatusDef {
@@ -175,6 +189,8 @@ export interface StatusDef {
   mods?: StatMod[];
   taunt?: boolean;
   stun?: boolean;
+  /** monsters cannot see, target, or hit this hero; broken by attacking */
+  stealth?: boolean;
 }
 
 export interface StatusInstance {
@@ -193,7 +209,14 @@ export interface ClassDef {
   growth: Attributes;
   baseHp: number;
   baseMp: number;
+  /** kg before strength — fighters lug more than wizards */
+  baseCarry: number;
+  /** weapon kinds this class can wield (sword, dagger, bow, wand, ...) */
   weaponKinds: string[];
+  /** armor/offhand kinds this class can wear (cloth, leather, plate, shield, ...) */
+  armorKinds: string[];
+  /** weaponless fighters (monks, mimes): fists that scale with level */
+  unarmed?: { baseDmg: number; dmgPerLevel: number; attackTicks: number };
   startingItems: ItemDefId[];
   skillUnlocks: { level: number; skillId: SkillId }[];
   hireCostBase: number;
@@ -287,6 +310,26 @@ export interface TacticSet {
 // ---------- heroes ----------
 export type HeroActivity = 'idle' | 'party' | 'chore' | 'recovering';
 
+/** the story arc that comes to everyone */
+export interface HeroStats {
+  runs: number;
+  kills: number;
+  dmgDealt: number;
+  /** damage dealt in the current crawl (reset at embark) */
+  runDmg: number;
+  bestRunDmg: number;
+  biggestHitTaken: number;
+  biggestHitFrom?: string;
+  downs: number;
+  lastDownedHow?: string;
+  /** most recent thing that hurt them, e.g. "Lvl 4 Cave Slime" */
+  lastHitByName?: string;
+  /** times they were carried out of the dungeon by a friend */
+  carriedOut: number;
+  /** times they carried a downed friend to safety */
+  rescues: number;
+}
+
 export interface EntityAction {
   kind: 'attack' | 'cast' | 'potion' | 'defend' | 'retreat' | 'wait';
   targetId?: Id;
@@ -317,6 +360,7 @@ export interface Hero {
   /** fractional chore-xp accumulator (whole points are granted as xp). */
   choreXpCarry?: number;
   tactics: { sets: TacticSet[]; activeSetId: Id };
+  stats: HeroStats;
 }
 
 // ---------- dungeon ----------
@@ -379,6 +423,8 @@ export interface GroundLoot {
   id: Id;
   pos: Vec2;
   item: ItemInstance;
+  /** already reported as too heavy — don't spam the log */
+  heavy?: boolean;
 }
 
 export interface DungeonRun {
@@ -454,6 +500,7 @@ export type Command =
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
   | { t: 'BUY_POTION'; potion: PotionKind; qty: number }
   | { t: 'SELL_ITEM'; itemId: Id }
+  | { t: 'SELL_ALL_JUNK' }
   | { t: 'EQUIP'; heroId: Id; itemId: Id }
   | { t: 'UNEQUIP'; heroId: Id; slot: EquipSlot }
   | { t: 'SET_HERO_POTIONS'; heroId: Id; potions: Record<PotionKind, number> }
@@ -461,21 +508,23 @@ export type Command =
   | { t: 'DISMISS'; heroId: Id }
   | { t: 'ASSIGN_CHORE'; heroId: Id; choreId: ChoreId | null }
   | { t: 'HEAL_INJURY'; heroId: Id; injuryId: InjuryId }
-  | { t: 'REST_HERO'; heroId: Id };
+  | { t: 'REST_HERO'; heroId: Id }
+  | { t: 'LEARN_SKILL'; heroId: Id; skillId: SkillId };
 
 // ---------- events (sim -> log/fx/tests, transient) ----------
 export type GameEvent =
-  | { t: 'damage'; src: Id; dst: Id; amount: number; crit: boolean; pos: Vec2 }
+  | { t: 'damage'; src: Id; dst: Id; amount: number; crit: boolean; pos: Vec2; srcPos?: Vec2 }
   | { t: 'heal'; src: Id; dst: Id; amount: number; pos: Vec2 }
   | { t: 'skillCast'; src: Id; skillId: SkillId }
   | { t: 'potionUsed'; heroId: Id; potion: PotionKind; amount: number; pos: Vec2 }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }
+  | { t: 'lootTooHeavy'; defId: ItemDefId }
   | { t: 'chestOpened'; gold: number; items: ItemDefId[]; pos: Vec2 }
   | { t: 'heroDowned'; heroId: Id; pos: Vec2 }
   | { t: 'heroCarried'; carrier: Id; carried: Id }
-  | { t: 'heroDied'; heroId: Id; name: string; depth: number }
+  | { t: 'heroDied'; heroId: Id; name: string; classId: ClassId; level: number; depth: number; cause: string }
   | { t: 'injury'; heroId: Id; injuryId: InjuryId }
   | { t: 'levelUp'; heroId: Id; level: number }
   | { t: 'xpGain'; heroId: Id; amount: number }
@@ -483,9 +532,12 @@ export type GameEvent =
   | { t: 'withdrawOrdered' }
   | { t: 'runEnded'; outcome: 'withdrawn' | 'wiped'; depth: number; goldKept: number; goldLost: number }
   | { t: 'wipe'; depth: number; goldLost: number }
+  | { t: 'summon'; heroId: Id; defId: MonsterDefId; count: number }
+  | { t: 'minionDied'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }
   | { t: 'embark'; depth: number; memberIds: Id[] }
-  | { t: 'purchase'; what: string; cost: number }
+  | { t: 'purchase'; what: string; cost: number; category?: 'gear' | 'potion' | 'healing' | 'training'; refId?: string }
+  | { t: 'sold'; what: string; gold: number }
   | { t: 'hire'; heroId: Id; name: string; cost: number };

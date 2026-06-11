@@ -5,6 +5,7 @@
   "kind": "mail",
   "tier": 1,
   "base": { "armor": 4 },
+  "weight": 2,
   "value": 18,
   "flavor": "Previously owned. Briefly.",
   "sprite": {

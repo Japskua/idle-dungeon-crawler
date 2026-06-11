@@ -4,7 +4,8 @@
   "slot": "offhand",
   "kind": "shield",
   "tier": 2,
-  "base": { "armor": 7 },
+  "base": { "armor": 7, "moveTicks": 1 },
+  "weight": 5.5,
   "value": 60,
   "sprite": {
     "size": 16,

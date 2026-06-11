@@ -4,6 +4,7 @@
   "slot": "junk",
   "kind": "junk",
   "tier": 1,
+  "weight": 0.5,
   "value": 2,
   "flavor": "A perfectly ordinary bone. A dog would love it.",
   "sprite": {

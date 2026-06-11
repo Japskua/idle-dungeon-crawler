@@ -7,8 +7,11 @@ import type { Command, GameEvent, GameState } from '../game/types';
 import { TICK_MS } from '../game/balance';
 import { advanceTick } from '../game/run/runtime';
 import { Renderer } from '../render/renderer';
-import { publish, setUiSpeed } from '../ui/store';
+import { publish, setUiSpeed, showDebrief } from '../ui/store';
 import { saveGame } from './saveManager';
+import { RunChronicler } from './debrief';
+import { recordFallen } from './graveyard';
+import { telemetry } from './telemetry';
 
 const MAX_STEPS_PER_FRAME = 40;
 const AUTOSAVE_MS = 30_000;
@@ -16,6 +19,7 @@ const AUTOSAVE_MS = 30_000;
 class GameApp {
   state!: GameState;
   renderer = new Renderer();
+  private chronicler = new RunChronicler();
   speed = 1;
   private acc = 0;
   private lastTs: number | null = null;
@@ -32,11 +36,18 @@ class GameApp {
     this.started = true;
     requestAnimationFrame(this.frame);
     window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && !this.halted) saveGame(this.state);
+      if (document.visibilityState === 'hidden' && !this.halted) {
+        saveGame(this.state);
+        telemetry.flush(true);
+      }
     });
     window.addEventListener('pagehide', () => {
-      if (!this.halted) saveGame(this.state);
+      if (!this.halted) {
+        saveGame(this.state);
+        telemetry.sessionEnd();
+      }
     });
+    telemetry.init(this.state);
     publish(this.state, []);
   }
 
@@ -81,6 +92,13 @@ class GameApp {
       advanceTick(this.state, this.queue.splice(0, this.queue.length), now, events);
     }
 
+    if (events.length > 0) {
+      recordFallen(events, now);
+      telemetry.consume(this.state, events);
+      const debrief = this.chronicler.consume(this.state, events);
+      if (debrief) showDebrief(debrief);
+    }
+    telemetry.noteFrame(dt, this.speed);
     this.renderer.queueEvents(this.state, events);
     this.renderer.draw(this.state, Math.max(0, Math.min(1, this.acc / TICK_MS)));
 

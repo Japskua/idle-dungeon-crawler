@@ -59,6 +59,8 @@ export function startRun(state: GameState, memberIds: Id[], startDepth: number, 
     hero.activity = 'party';
     hero.statuses = [];
     hero.cooldowns = {};
+    hero.stats.runs++;
+    hero.stats.runDmg = 0;
     // auto-stock potions from the village pool (3 hp / 2 mp per hero)
     const takeHp = Math.min(3, state.village.potions.hp);
     const takeMp = Math.min(2, state.village.potions.mp);
@@ -86,15 +88,25 @@ export function enterFloor(state: GameState, run: DungeonRun, depth: number, eve
   run.visitedRooms = [0];
   run.ticksOnFloor = 0;
 
-  // party spawns on/next to the entrance
-  const spots: { x: number; y: number }[] = [floor.entrance];
-  for (const d of DIRS) {
-    const x = floor.entrance.x + d.x;
-    const y = floor.entrance.y + d.y;
-    if (isPassable(floor, x, y)) spots.push({ x, y });
+  // party spawns around the entrance, one hero per tile (BFS for unique cells)
+  const spots: { x: number; y: number }[] = [];
+  const seen = new Set<string>([`${floor.entrance.x},${floor.entrance.y}`]);
+  const queue = [floor.entrance];
+  while (queue.length > 0 && spots.length < run.party.memberIds.length) {
+    const cur = queue.shift()!;
+    spots.push(cur);
+    for (const d of DIRS) {
+      const x = cur.x + d.x;
+      const y = cur.y + d.y;
+      const key = `${x},${y}`;
+      if (!seen.has(key) && isPassable(floor, x, y)) {
+        seen.add(key);
+        queue.push({ x, y });
+      }
+    }
   }
   run.party.memberIds.forEach((id, i) => {
-    const spot = spots[Math.min(i, spots.length - 1)]!;
+    const spot = spots[Math.min(i, spots.length - 1)] ?? floor.entrance;
     run.party.pos[id] = { ...spot };
     run.party.move[id] = null;
     run.party.action[id] = null;
@@ -120,6 +132,7 @@ function rollInjury(state: GameState, hero: Hero, depth: number, events: GameEve
 }
 
 function heroReturnsToVillage(state: GameState, hero: Hero, hpFraction: number) {
+  hero.stats.bestRunDmg = Math.max(hero.stats.bestRunDmg, hero.stats.runDmg);
   const d = derive(hero);
   hero.hp = Math.max(1, Math.min(hero.hp, Math.ceil(d.maxHp * hpFraction)));
   hero.mp = Math.min(hero.mp, d.maxMp);
@@ -132,11 +145,11 @@ function heroReturnsToVillage(state: GameState, hero: Hero, hpFraction: number) 
   hero.potions = { hp: 0, mp: 0 };
 }
 
-function killHero(state: GameState, hero: Hero, depth: number, nowMs: number, events: GameEvent[]) {
+function killHero(state: GameState, hero: Hero, depth: number, nowMs: number, events: GameEvent[], cause: string) {
   delete state.roster[hero.id];
   state.rosterOrder = state.rosterOrder.filter((id) => id !== hero.id);
   state.progress.totalPermadeaths++;
-  events.push({ t: 'heroDied', heroId: hero.id, name: hero.name, depth });
+  events.push({ t: 'heroDied', heroId: hero.id, name: hero.name, classId: hero.classId, level: hero.level, depth, cause });
   chronicle(
     state,
     nowMs,
@@ -152,19 +165,26 @@ export function endRunWithdrawn(state: GameState, nowMs: number, events: GameEve
   const party = run.party;
   const carriedIds = new Set(Object.values(party.carrying));
 
+  // rescuers get their chapter too
+  for (const [carrierId, carriedId] of Object.entries(party.carrying)) {
+    const carrier = state.roster[carrierId];
+    if (carrier && party.downed[carriedId]) carrier.stats.rescues++;
+  }
+
   for (const id of [...party.memberIds]) {
     const hero = state.roster[id];
     if (!hero) continue;
     if (id in party.downed) {
       if (carriedIds.has(id)) {
         // carried out: survives, gains an injury
+        hero.stats.carriedOut++;
         for (let i = 0; i < INJURIES_ON_CARRIED_OUT; i++) rollInjury(state, hero, run.depth, events);
         heroReturnsToVillage(state, hero, 0.15);
         chronicle(state, nowMs, `${hero.name} was carried out of the dungeon, alive but worse for wear.`, run.depth);
       } else {
         // left behind at the exit: a grim roll
         if (chance(state.rng.loot, PERMADEATH_ON_ABANDON)) {
-          killHero(state, hero, run.depth, nowMs, events);
+          killHero(state, hero, run.depth, nowMs, events, 'left behind at the exit, never seen again');
           continue;
         }
         for (let i = 0; i < INJURIES_ON_WIPE; i++) rollInjury(state, hero, run.depth, events);
@@ -203,7 +223,10 @@ export function endRunWiped(state: GameState, nowMs: number, events: GameEvent[]
     const hero = state.roster[id];
     if (!hero) continue;
     if (chance(state.rng.loot, permadeathChanceOnWipe(run.depth))) {
-      killHero(state, hero, run.depth, nowMs, events);
+      const cause = hero.stats.lastHitByName
+        ? `slain by ${hero.stats.lastHitByName} in a party wipe`
+        : 'lost when the whole party fell';
+      killHero(state, hero, run.depth, nowMs, events, cause);
       continue;
     }
     for (let i = 0; i < INJURIES_ON_WIPE; i++) rollInjury(state, hero, run.depth, events);

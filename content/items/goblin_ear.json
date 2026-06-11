@@ -4,6 +4,7 @@
   "slot": "junk",
   "kind": "junk",
   "tier": 1,
+  "weight": 0.1,
   "value": 2,
   "flavor": "The traditional proof of goblin. Goblins disagree with the tradition.",
   "sprite": {

@@ -4,7 +4,22 @@ import { CLASSES, NAME_BANKS, PERKS, itemDef } from '../content';
 import { allocId, makeItem } from '../items/factory';
 import { chance, pick, pickWeighted, rand, type Rng } from '../core/rng';
 import { heroMaxHp, heroMaxMp } from '../balance';
+import { canEquip } from './equipment';
 import { defaultTactics } from '../tactics/defaults';
+
+export function emptyStats() {
+  return {
+    runs: 0,
+    kills: 0,
+    dmgDealt: 0,
+    runDmg: 0,
+    bestRunDmg: 0,
+    biggestHitTaken: 0,
+    downs: 0,
+    carriedOut: 0,
+    rescues: 0,
+  };
+}
 
 export function unlockedSkills(classId: string, level: number): string[] {
   const cls = CLASSES[classId]!;
@@ -40,6 +55,7 @@ export function makeHero(state: GameState, classId: string, name: string, level 
       sets: defaultTactics(classId),
       activeSetId: 'default',
     },
+    stats: emptyStats(),
   };
   // starting gear (auto-equipped)
   for (const defId of cls.startingItems) {
@@ -49,13 +65,19 @@ export function makeHero(state: GameState, classId: string, name: string, level 
       hero.equipment[slot] = inst;
     }
   }
-  // perk starting items go to hero equipment if the slot is free, else village inventory
+  // perk starting items go to hero equipment if the slot is free AND the class
+  // can actually use them, else village inventory (the mage pawns the frying pan)
   for (const pid of perks) {
     const perk = PERKS[pid];
     if (perk?.kind === 'startingItem' && perk.item) {
       const inst = makeItem(state, perk.item, level);
-      const slot = itemDef(perk.item).slot;
-      if ((slot === 'weapon' || slot === 'offhand' || slot === 'armor' || slot === 'trinket') && !hero.equipment[slot]) {
+      const def = itemDef(perk.item);
+      const slot = def.slot;
+      if (
+        (slot === 'weapon' || slot === 'offhand' || slot === 'armor' || slot === 'trinket') &&
+        !hero.equipment[slot] &&
+        canEquip(classId, def)
+      ) {
         hero.equipment[slot] = inst;
       } else {
         state.village.inventory.push(inst);

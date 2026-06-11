@@ -24,8 +24,10 @@ import {
   DMG_VARIANCE,
   ENGAGE_RADIUS,
   REVEAL_RADIUS,
+  manaRegenPerTick,
   monsterDmg,
   monsterGoldMult,
+  monsterMaxHp,
   monsterXp,
   mitigate,
   physDamage,
@@ -40,6 +42,7 @@ import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '.
 import { spellAmount } from '../balance';
 import { rollChestLoot, rollDrops, allocId } from '../items/factory';
 import {
+  DIRS,
   astar,
   astarAdjacent,
   astarTo,
@@ -111,8 +114,17 @@ function monsterOccupancy(run: DungeonRun, exceptId?: Id): Set<string> {
   return set;
 }
 
-function hasStatus(statuses: { statusId: string }[], kind: 'taunt' | 'stun'): boolean {
+function hasStatus(statuses: { statusId: string }[], kind: 'taunt' | 'stun' | 'stealth'): boolean {
   return statuses.some((s) => STATUSES[s.statusId]?.[kind]);
+}
+
+function isStealthed(hero: Hero): boolean {
+  return hasStatus(hero.statuses, 'stealth');
+}
+
+/** any hostile action drops the act */
+function breakStealth(hero: Hero) {
+  hero.statuses = hero.statuses.filter((s) => !STATUSES[s.statusId]?.stealth);
 }
 
 function startHeroMove(run: DungeonRun, id: Id, step: Vec2, ticks: number) {
@@ -218,11 +230,17 @@ function tickStatuses(state: GameState, run: DungeonRun) {
   for (const id of run.party.memberIds) {
     const hero = state.roster[id];
     if (!hero || id in run.party.downed) continue;
+    const d = derive(hero);
+    // mana trickles back each tick, faster for clever heads
+    if (hero.mp < d.maxMp) {
+      hero.mp = Math.min(d.maxMp, hero.mp + manaRegenPerTick(d.attrs.int));
+    }
     for (const st of hero.statuses) {
       st.ticksLeft--;
       const def = STATUSES[st.statusId];
       if (def?.hpPerTick) hero.hp += def.hpPerTick;
     }
+    if (hero.hp > d.maxHp) hero.hp = d.maxHp; // regrowth must not overheal
     hero.statuses = hero.statuses.filter((s) => s.ticksLeft > 0);
   }
   for (const id of run.monsterOrder) {
@@ -233,6 +251,11 @@ function tickStatuses(state: GameState, run: DungeonRun) {
       if (def?.hpPerTick) m.hp += def.hpPerTick;
     }
     m.statuses = m.statuses.filter((s) => s.ticksLeft > 0);
+    // borrowed time: summons crumble when it runs out
+    if (m.ttlTicks !== undefined && m.hp > 0) {
+      m.ttlTicks--;
+      if (m.ttlTicks <= 0) m.hp = 0;
+    }
   }
 }
 
@@ -285,6 +308,42 @@ function nearestOf(pos: Vec2, ids: Id[], getPos: (id: Id) => Vec2): Id | null {
     }
   }
   return best;
+}
+
+/**
+ * The first `count` walkable cells around an anchor, BFS order — one per hero.
+ * Spreading the party over distinct cells (instead of everyone wanting the
+ * same tile) is what makes regrouping converge in 1-wide corridors.
+ */
+function regroupCells(run: DungeonRun, anchor: Vec2, count: number): Vec2[] {
+  const cells: Vec2[] = [];
+  const seen = new Set<string>([`${anchor.x},${anchor.y}`]);
+  const queue: Vec2[] = [anchor];
+  while (queue.length > 0 && cells.length < count) {
+    const cur = queue.shift()!;
+    cells.push(cur);
+    for (const dir of DIRS) {
+      const x = cur.x + dir.x;
+      const y = cur.y + dir.y;
+      const key = `${x},${y}`;
+      if (!seen.has(key) && isPassable(run.floor, x, y)) {
+        seen.add(key);
+        queue.push({ x, y });
+      }
+    }
+  }
+  return cells;
+}
+
+/** everyone standing has settled onto one of the party's regroup cells */
+function partyRegrouped(run: DungeonRun, anchor: Vec2): boolean {
+  const standing = standingIds(run);
+  if (standing.length === 0) return false;
+  const cells = regroupCells(run, anchor, standing.length);
+  return standing.every((hid) => {
+    const p = run.party.pos[hid]!;
+    return cells.some((c) => c.x === p.x && c.y === p.y);
+  });
 }
 
 function computeObjective(run: DungeonRun): Vec2 {
@@ -350,6 +409,11 @@ function buildBattleView(
   const downedAllies = Object.keys(run.party.downed)
     .filter((did) => !carriedBy.has(did))
     .sort();
+  let myMinions = 0;
+  for (const mid of run.monsterOrder) {
+    const m = run.monsters[mid]!;
+    if (m.hp > 0 && m.summonedBy === heroId) myMinions++;
+  }
   return {
     enemies,
     allies,
@@ -358,25 +422,78 @@ function buildBattleView(
     selfMpFrac: d.maxMp > 0 ? hero.mp / d.maxMp : 1,
     carrying: !!run.party.carrying[heroId],
     withdrawing: run.intent === 'withdraw',
+    myMinions,
   };
 }
 
 /**
- * Heroes path as if monsters were not there; stepping into a hostile becomes a
- * bump-attack. This is what kills doorway deadlocks: a monster parked in a
- * 1-wide corridor is an obstacle you fight, not a wall you stare at.
+ * Hero pathing prefers routing AROUND allies (they hard-block the first A*
+ * attempt); only when no such route exists do we fall back to a path through
+ * them, which the swap rule in stepOrFight then resolves. Routing-first kills
+ * the priority-inversion dance where an early-order hero keeps swap-yanking a
+ * later one off its course; swap-as-fallback still breaks head-on corridor jams.
+ */
+function heroRoute(
+  run: DungeonRun,
+  heroId: Id,
+  compute: (blocked?: (x: number, y: number) => boolean) => Vec2[] | null,
+): Vec2[] | null {
+  const allyCells = new Set<string>();
+  for (const aid of run.party.memberIds) {
+    if (aid === heroId || aid in run.party.downed) continue;
+    const p = run.party.pos[aid]!;
+    allyCells.add(`${p.x},${p.y}`);
+  }
+  const around = compute((x, y) => allyCells.has(`${x},${y}`));
+  if (around && around.length > 0) return around;
+  return compute(undefined);
+}
+
+/**
+ * Resolve a hero's next step against whoever actually stands on it — strict
+ * one-entity-per-tile:
+ *  - hostile  -> bump-attack (and provoke the pack); no deadlock at doorways
+ *  - neutral  -> shoo it: swap places (the chicken is gently relocated)
+ *  - ally     -> swap places if they're standing still, otherwise hold a beat
+ *  - empty    -> walk
  */
 function stepOrFight(run: DungeonRun, heroId: Id, d: DerivedStats, step: Vec2, moveTicks: number): boolean {
-  const blocker = run.monsterOrder.find((mid) => {
+  const blockerId = run.monsterOrder.find((mid) => {
     const m = run.monsters[mid]!;
-    return m.hp > 0 && m.pos.x === step.x && m.pos.y === step.y && creatureDef(m.defId).disposition === 'hostile';
+    return m.hp > 0 && m.pos.x === step.x && m.pos.y === step.y;
   });
-  if (blocker) {
-    aggroPack(run, run.monsters[blocker]!.packId);
-    run.party.targetId[heroId] = blocker;
-    run.party.action[heroId] = { kind: 'attack', targetId: blocker, ticksLeft: d.attackTicks, total: d.attackTicks };
+  if (blockerId) {
+    const blocker = run.monsters[blockerId]!;
+    if (creatureDef(blocker.defId).disposition === 'hostile') {
+      aggroPack(run, blocker.packId);
+      run.party.targetId[heroId] = blockerId;
+      run.party.action[heroId] = { kind: 'attack', targetId: blockerId, ticksLeft: d.attackTicks, total: d.attackTicks };
+      return true;
+    }
+    // neutral: swap places so a parked chicken can never wall off a corridor
+    const myPos = { ...run.party.pos[heroId]! };
+    blocker.move = { from: { ...blocker.pos }, t: 0, total: Math.max(1, creatureDef(blocker.defId).base.moveTicks) };
+    blocker.pos = myPos;
+    startHeroMove(run, heroId, step, moveTicks);
     return true;
   }
+
+  const allyId = run.party.memberIds.find(
+    (aid) =>
+      aid !== heroId &&
+      !(aid in run.party.downed) &&
+      run.party.pos[aid]!.x === step.x &&
+      run.party.pos[aid]!.y === step.y,
+  );
+  if (allyId) {
+    if (run.party.move[allyId]) return true; // they're vacating or arriving — wait a beat
+    const myPos = { ...run.party.pos[heroId]! };
+    run.party.move[allyId] = { from: { ...run.party.pos[allyId]! }, t: 0, total: Math.max(1, moveTicks) };
+    run.party.pos[allyId] = myPos;
+    startHeroMove(run, heroId, step, moveTicks);
+    return true;
+  }
+
   startHeroMove(run, heroId, step, moveTicks);
   return true;
 }
@@ -417,9 +534,17 @@ function performResolved(
         return true;
       }
       if (run.intent === 'withdraw') return false;
-      const path = melee
-        ? astarAdjacent(run.floor, myPos, target.pos)
-        : astar(run.floor, myPos, target.pos, (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange);
+      const path = heroRoute(run, heroId, (blocked) =>
+        melee
+          ? astarAdjacent(run.floor, myPos, target.pos, blocked)
+          : astar(
+              run.floor,
+              myPos,
+              target.pos,
+              (x, y) => euclid2({ x, y }, target.pos) <= d.attackRange * d.attackRange,
+              blocked,
+            ),
+      );
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
@@ -453,7 +578,9 @@ function performResolved(
         events.push({ t: 'skillCast', src: heroId, skillId: skill.id });
         return true;
       }
-      const path = astar(run.floor, myPos, targetPos!, (x, y) => euclid2({ x, y }, targetPos!) <= range * range);
+      const path = heroRoute(run, heroId, (blocked) =>
+        astar(run.floor, myPos, targetPos!, (x, y) => euclid2({ x, y }, targetPos!) <= range * range, blocked),
+      );
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
@@ -474,6 +601,7 @@ function performResolved(
       const nearest = nearestOf(myPos, engagedNow, (mid) => run.monsters[mid]!.pos)!;
       const ePos = run.monsters[nearest]!.pos;
       const occupied = monsterOccupancy(run);
+      const heroCells = heroesByPos(state, run);
       let best: Vec2 | null = null;
       let bestD = euclid2(myPos, ePos);
       for (const dir of [
@@ -485,7 +613,7 @@ function performResolved(
         const nx = myPos.x + dir.x;
         const ny = myPos.y + dir.y;
         if (!isPassable(run.floor, nx, ny)) continue;
-        if (occupied.has(`${nx},${ny}`)) continue;
+        if (occupied.has(`${nx},${ny}`) || heroCells.has(`${nx},${ny}`)) continue;
         const dd = euclid2({ x: nx, y: ny }, ePos);
         if (dd > bestD) {
           bestD = dd;
@@ -508,7 +636,7 @@ function performResolved(
         events.push({ t: 'heroCarried', carrier: heroId, carried: resolved.targetId });
         return true;
       }
-      const path = astarTo(run.floor, myPos, tPos);
+      const path = heroRoute(run, heroId, (blocked) => astarTo(run.floor, myPos, tPos, blocked));
       if (path && path.length > 0) {
         return stepOrFight(run, heroId, d, path[0]!, moveTicks);
       }
@@ -551,7 +679,7 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
         events.push({ t: 'heroCarried', carrier: id, carried: target });
         continue;
       }
-      const path = astarTo(run.floor, myPos, tPos);
+      const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, tPos, blocked));
       if (path && path.length > 0) {
         stepOrFight(run, id, d, path[0]!, moveTicks);
         continue;
@@ -581,15 +709,31 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
       continue;
     }
 
-    // 3. travel toward the party objective (next room / chest / stairs / exit)
+    // 3. travel toward the party objective (next room / chest / stairs / exit).
+    //    Near the goal each hero claims their OWN regroup cell — one per tile,
+    //    so four people never fight over the same flagstone.
+    const standing = standingIds(run);
+    const myIndex = Math.max(0, standing.indexOf(id));
     if (run.intent === 'withdraw') {
-      const step = flowStep(run.floor, entranceField(run), myPos);
-      if (step) stepOrFight(run, id, d, step, moveTicks);
+      const entrance = run.floor.entrance;
+      if (chebyshev(myPos, entrance) <= 4) {
+        const cells = regroupCells(run, entrance, standing.length);
+        const myCell = cells[Math.min(myIndex, cells.length - 1)] ?? entrance;
+        if (myPos.x !== myCell.x || myPos.y !== myCell.y) {
+          const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, myCell, blocked));
+          if (path && path.length > 0) stepOrFight(run, id, d, path[0]!, moveTicks);
+        }
+      } else {
+        const step = flowStep(run.floor, entranceField(run), myPos);
+        if (step) stepOrFight(run, id, d, step, moveTicks);
+      }
       continue;
     }
     const objective = computeObjective(run);
-    if (objective.x !== myPos.x || objective.y !== myPos.y) {
-      const path = astarTo(run.floor, myPos, objective);
+    const cells = regroupCells(run, objective, standing.length);
+    const myCell = cells[Math.min(myIndex, cells.length - 1)] ?? objective;
+    if (myPos.x !== myCell.x || myPos.y !== myCell.y) {
+      const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, myCell, blocked));
       if (path && path.length > 0) {
         stepOrFight(run, id, d, path[0]!, moveTicks);
       }
@@ -602,34 +746,53 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
   const standing = standingIds(run);
   const heroPos = (hid: Id) => run.party.pos[hid]!;
 
+  // living friendly minions are valid targets for hostiles (and shields for heroes)
+  const minionIds = run.monsterOrder.filter((mid) => {
+    const mm = run.monsters[mid]!;
+    return mm.hp > 0 && mm.summonedBy;
+  });
+
   for (const id of run.monsterOrder) {
     const m = run.monsters[id]!;
     if (m.hp <= 0 || m.action || m.move) continue;
     if (hasStatus(m.statuses, 'stun')) continue;
     const def = creatureDef(m.defId);
 
+    if (m.summonedBy) {
+      minionBehavior(state, run, m, def);
+      continue;
+    }
+
     if (def.disposition === 'neutral') {
       neutralBehavior(state, run, m);
       continue;
     }
 
-    // aggro check
-    if (!m.aggro && standing.length > 0) {
+    // stealthed heroes are invisible to monsters: no aggro, no targeting
+    const visible = standing.filter((hid) => {
+      const hero = state.roster[hid];
+      return hero && !isStealthed(hero);
+    });
+    const targetPosOf = (tid: Id) => (run.monsters[tid] ? run.monsters[tid]!.pos : heroPos(tid));
+    const targetables = [...visible, ...minionIds];
+
+    // aggro check (minions provoke just like heroes)
+    if (!m.aggro && targetables.length > 0) {
       const r2 = def.base.aggroRadius * def.base.aggroRadius;
-      for (const hid of standing) {
-        if (euclid2(m.pos, heroPos(hid)) <= r2) {
+      for (const tid of targetables) {
+        if (euclid2(m.pos, targetPosOf(tid)) <= r2) {
           aggroPack(run, m.packId);
           break;
         }
       }
     }
-    if (!m.aggro || standing.length === 0) continue;
+    if (!m.aggro || targetables.length === 0) continue;
 
-    // target: taunt source if valid, else nearest standing hero
+    // target: taunt source if valid (and visible), else nearest visible hero/minion
     let targetId: Id | null = null;
     const taunt = m.statuses.find((s) => STATUSES[s.statusId]?.taunt);
-    if (taunt && standing.includes(taunt.sourceId)) targetId = taunt.sourceId;
-    if (!targetId) targetId = nearestOf(m.pos, standing, heroPos);
+    if (taunt && visible.includes(taunt.sourceId)) targetId = taunt.sourceId;
+    if (!targetId) targetId = nearestOf(m.pos, targetables, targetPosOf);
     if (!targetId) continue;
     m.targetId = targetId;
 
@@ -657,7 +820,7 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
     }
     if (casted) continue;
 
-    const tPos = heroPos(targetId);
+    const tPos = targetPosOf(targetId);
     if (manhattan(m.pos, tPos) <= def.base.range) {
       m.action = { kind: 'attack', targetId, ticksLeft: def.base.attackTicks, total: def.base.attackTicks };
       continue;
@@ -668,6 +831,46 @@ function monsterDecisions(state: GameState, run: DungeonRun) {
     const isBlocked = (x: number, y: number) => occupied.has(`${x},${y}`) || heroCells.has(`${x},${y}`);
     const path = astarAdjacent(run.floor, m.pos, tPos, isBlocked);
     if (path && path.length > 0) {
+      const step = path[0]!;
+      // strict one-per-tile: A* exempts goal cells from blocking, so re-check
+      if (!isBlocked(step.x, step.y)) {
+        startMonsterMove(m, step, def.base.moveTicks);
+      }
+    }
+  }
+}
+
+/** summoned creatures: fight the party's enemies, heel near the summoner otherwise */
+function minionBehavior(state: GameState, run: DungeonRun, m: MonsterInstance, def: ReturnType<typeof creatureDef>) {
+  const hostiles = run.monsterOrder.filter((mid) => {
+    const mm = run.monsters[mid]!;
+    if (mm.hp <= 0 || mm.summonedBy) return false;
+    if (creatureDef(mm.defId).disposition !== 'hostile') return false;
+    return mm.aggro || euclid2(m.pos, mm.pos) <= 64;
+  });
+  const occupied = monsterOccupancy(run, m.id);
+  const heroCells = heroesByPos(state, run);
+  const isBlocked = (x: number, y: number) => occupied.has(`${x},${y}`) || heroCells.has(`${x},${y}`);
+
+  const targetId = nearestOf(m.pos, hostiles, (mid) => run.monsters[mid]!.pos);
+  if (targetId) {
+    const tPos = run.monsters[targetId]!.pos;
+    if (manhattan(m.pos, tPos) <= def.base.range) {
+      m.targetId = targetId;
+      m.action = { kind: 'attack', targetId, ticksLeft: def.base.attackTicks, total: def.base.attackTicks };
+      return;
+    }
+    const path = astarAdjacent(run.floor, m.pos, tPos, isBlocked);
+    if (path && path.length > 0 && !isBlocked(path[0]!.x, path[0]!.y)) {
+      startMonsterMove(m, path[0]!, def.base.moveTicks);
+    }
+    return;
+  }
+  // nothing to fight: shamble after the summoner
+  const owner = m.summonedBy && !(m.summonedBy in run.party.downed) ? run.party.pos[m.summonedBy] : undefined;
+  if (owner && euclid2(m.pos, owner) > 9) {
+    const path = astarTo(run.floor, m.pos, owner, isBlocked);
+    if (path && path.length > 0 && !isBlocked(path[0]!.x, path[0]!.y)) {
       startMonsterMove(m, path[0]!, def.base.moveTicks);
     }
   }
@@ -701,10 +904,12 @@ function neutralBehavior(state: GameState, run: DungeonRun, m: MonsterInstance) 
   }
   if (freeNeighbors.length === 0) return;
 
-  if (def.behavior === 'flee' && standing.length > 0) {
+  if (standing.length > 0) {
     const nearest = nearestOf(m.pos, standing, (hid) => run.party.pos[hid]!)!;
     const hp = run.party.pos[nearest]!;
-    if (euclid2(m.pos, hp) <= 25) {
+    // shoo: any neutral steps aside when a hero crowds it (flee-types from further out)
+    const panicR2 = def.behavior === 'flee' ? 25 : 2;
+    if (euclid2(m.pos, hp) <= panicR2) {
       let best = freeNeighbors[0]!;
       let bestD = -1;
       for (const n of freeNeighbors) {
@@ -785,22 +990,85 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     if (!inRange) return; // target moved away mid-swing
     const def = creatureDef(target.defId);
     const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
-    const crit = chance(state.rng.combat, d.critChance);
+    // a strike from the shadows always finds the gap — and ends the act
+    const fromStealth = isStealthed(hero);
+    const crit = fromStealth || chance(state.rng.combat, d.critChance);
+    if (fromStealth) breakStealth(hero);
     let dmg = physDamage(d.weaponDmg, d.attrs.str) * d.dmgMult * variance * (crit ? CRIT_MULT : 1);
     dmg = Math.max(1, Math.round(mitigate(dmg, def.base.armor)));
     target.hp -= dmg;
     target.lastHitBy = hero.id;
+    hero.stats.dmgDealt += dmg;
+    hero.stats.runDmg += dmg;
     if (def.disposition === 'hostile') aggroPack(run, target.packId);
-    events.push({ t: 'damage', src: hero.id, dst: target.id, amount: dmg, crit, pos: { ...target.pos } });
+    events.push({ t: 'damage', src: hero.id, dst: target.id, amount: dmg, crit, pos: { ...target.pos }, srcPos: { ...myPos } });
     return;
   }
 
   if (action.kind === 'cast' && action.skillId) {
     const skill = SKILLS[action.skillId];
     if (!skill) return;
+
+    // summons: conjure friendly minions on free cells around the caster
+    if (skill.kind === 'summon' && skill.summon) {
+      const def = creatureDef(skill.summon.defId);
+      const alive = run.monsterOrder.filter((mid) => {
+        const m = run.monsters[mid]!;
+        return m.hp > 0 && m.summonedBy === hero.id;
+      }).length;
+      const want = Math.max(0, skill.summon.count - alive);
+      let spawned = 0;
+      const seen = new Set<string>([`${myPos.x},${myPos.y}`]);
+      const queue: Vec2[] = [myPos];
+      const heroCells = heroesByPos(state, run);
+      const occupied = monsterOccupancy(run);
+      while (queue.length > 0 && spawned < want) {
+        const cur = queue.shift()!;
+        const key = `${cur.x},${cur.y}`;
+        if (cur !== myPos && !heroCells.has(key) && !occupied.has(key)) {
+          const minion: MonsterInstance = {
+            id: allocId(state, 'mn'),
+            defId: def.id,
+            level: hero.level,
+            elite: false,
+            hp: monsterMaxHp(def.base.hp, hero.level, false, false),
+            pos: { ...cur },
+            move: null,
+            targetId: null,
+            aggro: false,
+            packId: 0,
+            action: null,
+            statuses: [],
+            cooldowns: {},
+            summonedBy: hero.id,
+            ttlTicks: skill.summon.durationTicks,
+          };
+          run.monsters[minion.id] = minion;
+          run.monsterOrder.push(minion.id);
+          occupied.add(key);
+          spawned++;
+        }
+        for (const dir of DIRS) {
+          const x = cur.x + dir.x;
+          const y = cur.y + dir.y;
+          const nkey = `${x},${y}`;
+          if (!seen.has(nkey) && isPassable(run.floor, x, y)) {
+            seen.add(nkey);
+            queue.push({ x, y });
+          }
+        }
+      }
+      if (spawned > 0) {
+        events.push({ t: 'summon', heroId: hero.id, defId: def.id, count: spawned });
+      }
+      return;
+    }
     const power = skill.physical
       ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
+    const offensive = skill.kind === 'attack' || skill.kind === 'debuff';
+    const fromStealth = offensive && isStealthed(hero);
+    if (fromStealth) breakStealth(hero);
 
     const applyStatuses = (targetStatuses: { statusId: string; ticksLeft: number; sourceId: Id }[]) => {
       for (const ap of skill.applies ?? []) {
@@ -814,11 +1082,13 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       const def = creatureDef(m.defId);
       if (power > 0) {
         const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
-        const crit = skill.physical ? chance(state.rng.combat, d.critChance) : false;
+        const crit = skill.physical ? fromStealth || chance(state.rng.combat, d.critChance) : false;
         const dmg = Math.max(1, Math.round(mitigate(power * variance * (crit ? CRIT_MULT : 1), def.base.armor)));
         m.hp -= dmg;
         m.lastHitBy = hero.id;
-        events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos } });
+        hero.stats.dmgDealt += dmg;
+        hero.stats.runDmg += dmg;
+        events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos }, srcPos: { ...myPos } });
       }
       applyStatuses(m.statuses);
       if (def.disposition === 'hostile') aggroPack(run, m.packId);
@@ -834,7 +1104,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
       for (const mid of [...run.monsterOrder]) {
         const m = run.monsters[mid]!;
-        // AoE is indiscriminate: neutral bystanders are very much in the blast
+        if (m.summonedBy) continue; // the party's own summons are spared the blast
+        // AoE is otherwise indiscriminate: neutral bystanders are very much in it
         if (m.hp > 0 && euclid2(center, m.pos) <= r2) hitMonster(m);
       }
       return;
@@ -850,8 +1121,29 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       applyStatuses(ally.statuses);
       return;
     }
-    if (skill.target === 'self' || skill.target === 'alliesInRadius') {
+    if (skill.target === 'self') {
+      if (skill.kind === 'heal' && power > 0) {
+        const amount = Math.max(1, Math.round(power));
+        hero.hp = Math.min(d.maxHp, hero.hp + amount);
+        events.push({ t: 'heal', src: hero.id, dst: hero.id, amount, pos: { ...myPos } });
+      }
       applyStatuses(hero.statuses);
+      return;
+    }
+    if (skill.target === 'alliesInRadius') {
+      const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
+      for (const hid of standingIds(run)) {
+        const ally = state.roster[hid];
+        if (!ally) continue;
+        if (euclid2(myPos, run.party.pos[hid]!) > r2) continue;
+        if (skill.kind === 'heal' && power > 0) {
+          const ad = hid === hero.id ? d : derive(ally);
+          const amount = Math.max(1, Math.round(power));
+          ally.hp = Math.min(ad.maxHp, ally.hp + amount);
+          events.push({ t: 'heal', src: hero.id, dst: hid, amount, pos: { ...run.party.pos[hid]! } });
+        }
+        applyStatuses(ally.statuses);
+      }
       return;
     }
     return;
@@ -877,6 +1169,7 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
 function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstance, power: number, heroId: Id, events: GameEvent[]) {
   const hero = state.roster[heroId];
   if (!hero || heroId in run.party.downed) return;
+  if (isStealthed(hero)) return; // can't hit what you can't see
   const d = derive(hero);
   const defending = run.party.action[heroId]?.kind === 'defend';
   const armor = d.armor + (defending ? DEFEND_ARMOR_BONUS : 0);
@@ -884,8 +1177,9 @@ function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstanc
   const raw = power * Math.pow(1.12, m.level - 1) * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
+  recordHitTaken(hero, dmg, m, creatureDef(m.defId).name);
   const pos = run.party.pos[heroId]!;
-  events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos } });
+  events.push({ t: 'damage', src: m.id, dst: heroId, amount: dmg, crit: false, pos: { ...pos }, srcPos: { ...m.pos } });
 }
 
 function resolveMonsterCast(state: GameState, run: DungeonRun, m: MonsterInstance, action: EntityAction, events: GameEvent[]) {
@@ -927,10 +1221,29 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
     return;
   }
   if (action.kind !== 'attack' || !action.targetId) return;
+
+  // creature-on-creature: minions striking hostiles, hostiles striking minions
+  const creatureTarget = run.monsters[action.targetId];
+  if (creatureTarget) {
+    if (creatureTarget.hp <= 0) return;
+    const def = creatureDef(m.defId);
+    if (manhattan(m.pos, creatureTarget.pos) > def.base.range) return;
+    const targetDef = creatureDef(creatureTarget.defId);
+    const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+    const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
+    const dmg = Math.max(1, Math.round(mitigate(raw, targetDef.base.armor)));
+    creatureTarget.hp -= dmg;
+    creatureTarget.lastHitBy = m.id;
+    if (m.summonedBy && targetDef.disposition === 'hostile') aggroPack(run, creatureTarget.packId);
+    events.push({ t: 'damage', src: m.id, dst: creatureTarget.id, amount: dmg, crit: false, pos: { ...creatureTarget.pos }, srcPos: { ...m.pos } });
+    return;
+  }
+
   if (action.targetId in run.party.downed) return;
   if (!run.party.memberIds.includes(action.targetId)) return;
   const hero = state.roster[action.targetId];
   if (!hero) return;
+  if (isStealthed(hero)) return; // vanished mid-swing: the blade finds only shadow
   const def = creatureDef(m.defId);
   const hPos = run.party.pos[hero.id]!;
   if (manhattan(m.pos, hPos) > def.base.range) return;
@@ -942,7 +1255,18 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
   const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
   const dmg = Math.max(1, Math.round(mitigate(raw, armor)));
   hero.hp -= dmg;
-  events.push({ t: 'damage', src: m.id, dst: hero.id, amount: dmg, crit: false, pos: { ...hPos } });
+  recordHitTaken(hero, dmg, m, def.name);
+  events.push({ t: 'damage', src: m.id, dst: hero.id, amount: dmg, crit: false, pos: { ...hPos }, srcPos: { ...m.pos } });
+}
+
+/** the story arc remembers who hurt you, and how badly */
+function recordHitTaken(hero: Hero, dmg: number, m: MonsterInstance, defName: string) {
+  const source = `${m.elite ? 'Elite ' : ''}Lvl ${m.level} ${defName}`;
+  hero.stats.lastHitByName = source;
+  if (dmg > hero.stats.biggestHitTaken) {
+    hero.stats.biggestHitTaken = dmg;
+    hero.stats.biggestHitFrom = source;
+  }
 }
 
 // ---------- deaths ----------
@@ -954,6 +1278,17 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
     const def = creatureDef(m.defId);
     const standing = standingIds(run);
 
+    if (m.summonedBy) {
+      // summons crumble quietly: no loot, no xp, no mourning
+      events.push({ t: 'minionDied', defId: m.defId, pos: { ...m.pos } });
+      delete run.monsters[id];
+      run.monsterOrder = run.monsterOrder.filter((mid) => mid !== id);
+      for (const hid of run.party.memberIds) {
+        if (run.party.targetId[hid] === id) run.party.targetId[hid] = null;
+      }
+      continue;
+    }
+
     if (def.disposition === 'neutral') {
       events.push({ t: 'neutralKilled', defId: m.defId, pos: { ...m.pos } });
       chronicle(state, nowMs, `The party feels bad about the ${def.name.toLowerCase()}.`, run.depth);
@@ -963,6 +1298,8 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
       const goldMult = killer ? derive(killer).goldMult : 1;
       const gold = Math.round(goldRoll * monsterGoldMult(m.level, def.tier === 'boss') * goldMult);
       run.party.goldCarried += gold;
+      const killerHero = m.lastHitBy ? state.roster[m.lastHitBy] : undefined;
+      if (killerHero) killerHero.stats.kills++;
       const xp = monsterXp(def.xpBase, m.level, m.elite, def.tier === 'boss');
       const share = xpShare(xp, Math.max(1, standing.length));
       for (const hid of standing) {
@@ -996,6 +1333,8 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
     const hero = state.roster[id];
     if (!hero || hero.hp > 0) continue;
     hero.hp = 0;
+    hero.stats.downs++;
+    hero.stats.lastDownedHow = `at depth ${run.depth}, struck down by ${hero.stats.lastHitByName ?? 'sheer misadventure'}`;
     run.party.downed[id] = { pos: { ...run.party.pos[id]! } };
     run.party.action[id] = null;
     run.party.move[id] = null;
@@ -1010,13 +1349,32 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
   }
 }
 
+/** kg the standing party can still haul: Σ(capacity − pack) − loot bag weight */
+export function lootBagWeight(run: DungeonRun): number {
+  let w = 0;
+  for (const item of run.party.lootBag) w += ITEMS[item.defId]?.weight ?? 0;
+  return Math.round(w * 10) / 10;
+}
+
+export function partySpareCapacity(state: GameState, run: DungeonRun): number {
+  let spare = 0;
+  for (const id of standingIds(run)) {
+    const hero = state.roster[id];
+    if (!hero) continue;
+    const d = derive(hero);
+    spare += Math.max(0, d.carryMax - d.carryUsed);
+  }
+  return Math.round((spare - lootBagWeight(run)) * 10) / 10;
+}
+
 // ---------- party logic: loot, chests, rooms, descend, withdraw exit ----------
 function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: GameEvent[]) {
   run.ticksOnFloor++;
   const standing = standingIds(run);
 
-  // loot pickup (same tile)
+  // loot pickup (same tile) — limited by what the party can still carry
   if (run.groundLoot.length > 0) {
+    let spare = partySpareCapacity(state, run);
     const keep: typeof run.groundLoot = [];
     for (const loot of run.groundLoot) {
       const taker = standing.find((hid) => {
@@ -1024,24 +1382,41 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
         return p.x === loot.pos.x && p.y === loot.pos.y;
       });
       if (taker) {
-        run.party.lootBag.push(loot.item);
-        events.push({ t: 'lootPicked', defId: loot.item.defId, by: taker });
-      } else {
-        keep.push(loot);
+        const weight = ITEMS[loot.item.defId]?.weight ?? 0;
+        if (weight <= spare) {
+          spare -= weight;
+          run.party.lootBag.push(loot.item);
+          events.push({ t: 'lootPicked', defId: loot.item.defId, by: taker });
+          continue;
+        }
+        if (!loot.heavy) {
+          loot.heavy = true;
+          events.push({ t: 'lootTooHeavy', defId: loot.item.defId });
+        }
       }
+      keep.push(loot);
     }
     run.groundLoot = keep;
   }
 
-  // chests (adjacent or same tile)
+  // chests (adjacent incl. diagonals — travel parks heroes at chebyshev 1)
   for (const chest of run.floor.chests) {
     if (chest.opened) continue;
-    const opener = standing.find((hid) => manhattan(run.party.pos[hid]!, chest.pos) <= 1);
+    const opener = standing.find((hid) => chebyshev(run.party.pos[hid]!, chest.pos) <= 1);
     if (!opener) continue;
     chest.opened = true;
     const loot = rollChestLoot(state, run.depth);
     run.party.goldCarried += loot.gold;
-    run.party.lootBag.push(...loot.items);
+    let spare = partySpareCapacity(state, run);
+    for (const item of loot.items) {
+      const weight = ITEMS[item.defId]?.weight ?? 0;
+      if (weight <= spare) {
+        spare -= weight;
+        run.party.lootBag.push(item);
+      } else {
+        run.groundLoot.push({ id: allocId(state, 'g'), pos: { ...chest.pos }, item, heavy: true });
+      }
+    }
     events.push({ t: 'chestOpened', gold: loot.gold, items: loot.items.map((i) => i.defId), pos: { ...chest.pos } });
   }
 
@@ -1054,7 +1429,7 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
       for (const mid of run.monsterOrder) {
         const m = run.monsters[mid]!;
         const def = creatureDef(m.defId);
-        if (def.disposition === 'neutral' && insideAnyRoom(run.floor.rooms, m.pos.x, m.pos.y) === ri) {
+        if (def.disposition === 'neutral' && !m.summonedBy && insideAnyRoom(run.floor.rooms, m.pos.x, m.pos.y) === ri) {
           events.push({ t: 'neutralSighted', defId: m.defId, pos: { ...m.pos } });
           chronicle(state, nowMs, sightingText(def.name), run.depth);
         }
@@ -1092,19 +1467,17 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
     (did) => !Object.values(run.party.carrying).includes(did),
   );
 
-  // descend: everyone (carrying included) grouped on the stairs, nobody left behind
+  // descend: everyone (carrying included) settled around the stairs, nobody left behind
   if (run.intent === 'explore' && unCarried.length === 0 && standing.length > 0) {
-    const allAtStairs = standing.every((hid) => chebyshev(run.party.pos[hid]!, run.floor.stairs) <= 1);
-    if (allAtStairs) {
+    if (partyRegrouped(run, run.floor.stairs)) {
       enterFloor(state, run, run.depth + 1, events);
       return;
     }
   }
 
-  // withdraw exit: all standing heroes grouped on the entrance
+  // withdraw exit: all standing heroes settled around the entrance
   if (run.intent === 'withdraw' && standing.length > 0) {
-    const allAtExit = standing.every((hid) => chebyshev(run.party.pos[hid]!, run.floor.entrance) <= 1);
-    if (allAtExit) {
+    if (partyRegrouped(run, run.floor.entrance)) {
       endRunWithdrawn(state, nowMs, events);
     }
   }

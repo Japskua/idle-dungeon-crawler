@@ -27,6 +27,7 @@ function view(partial?: Partial<BattleView>): BattleView {
     selfMpFrac: 1,
     carrying: false,
     withdrawing: false,
+    myMinions: 0,
     ...partial,
   };
 }

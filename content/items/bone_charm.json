@@ -5,6 +5,7 @@
   "kind": "trinket",
   "tier": 2,
   "base": { "stats": { "vit": 2 } },
+  "weight": 0.5,
   "value": 55,
   "flavor": "Someone's femur, polished to a friendly shine.",
   "sprite": {

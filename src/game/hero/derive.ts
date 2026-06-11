@@ -4,7 +4,7 @@
  */
 import type { Attributes, Hero, StatMod } from '../types';
 import { CLASSES, INJURIES, PERKS, STATUSES, itemDef } from '../content';
-import { HERO_MOVE_TICKS, UNARMED, critChance, heroMaxHp, heroMaxMp } from '../balance';
+import { HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp } from '../balance';
 
 export interface DerivedStats {
   attrs: Attributes;
@@ -19,6 +19,10 @@ export interface DerivedStats {
   goldMult: number;
   critChance: number;
   moveTicks: number;
+  /** kg the hero can carry (class build + strength) */
+  carryMax: number;
+  /** kg currently on their back: equipment + carried potions */
+  carryUsed: number;
 }
 
 const EQUIP_SLOTS = ['weapon', 'offhand', 'armor', 'trinket'] as const;
@@ -30,15 +34,20 @@ export function derive(hero: Hero): DerivedStats {
   const mods: StatMod[] = [];
 
   let armor = 0;
-  let weaponDmg = UNARMED.dmg;
-  let attackTicks = UNARMED.attackTicks;
+  // weaponless classes (monks, mimes) grow their fists with every level
+  let weaponDmg = cls.unarmed ? cls.unarmed.baseDmg + cls.unarmed.dmgPerLevel * hero.level : UNARMED.dmg;
+  let attackTicks = cls.unarmed ? cls.unarmed.attackTicks : UNARMED.attackTicks;
   let attackRange = UNARMED.range;
+  let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT;
+  let gearMoveTicks = 0;
 
   for (const slot of EQUIP_SLOTS) {
     const inst = hero.equipment[slot];
     if (!inst) continue;
     const def = itemDef(inst.defId);
     armor += def.base?.armor ?? 0;
+    carryUsed += def.weight ?? 0;
+    gearMoveTicks += def.base?.moveTicks ?? 0; // heavy armor protects but slows
     if (slot === 'weapon') {
       weaponDmg = def.base?.dmg ?? UNARMED.dmg;
       attackTicks = def.base?.attackTicks ?? UNARMED.attackTicks;
@@ -79,7 +88,7 @@ export function derive(hero: Hero): DerivedStats {
     attrs,
     maxHp: Math.max(1, Math.round(heroMaxHp(cls.baseHp, attrs.vit) * maxhpMult)),
     maxMp: Math.max(0, heroMaxMp(cls.baseMp, attrs.int)),
-    weaponDmg,
+    weaponDmg: Math.round(weaponDmg * 10) / 10,
     attackTicks,
     attackRange,
     armor,
@@ -87,6 +96,8 @@ export function derive(hero: Hero): DerivedStats {
     xpMult,
     goldMult,
     critChance: critChance(attrs.dex),
-    moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult)),
+    moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult) + gearMoveTicks),
+    carryMax: carryCapacity(cls.baseCarry, attrs.str),
+    carryUsed: Math.round(carryUsed * 10) / 10,
   };
 }

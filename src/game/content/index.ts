@@ -63,6 +63,11 @@ export function validateContent(): string[] {
     for (const a of s.applies ?? []) {
       if (!STATUSES[a.statusId]) problems.push(`skill ${s.id}: status '${a.statusId}' missing`);
     }
+    if (s.summon) {
+      const def = MONSTERS[s.summon.defId] ?? NEUTRALS[s.summon.defId];
+      if (!def) problems.push(`skill ${s.id}: summon def '${s.summon.defId}' missing`);
+      else if (!def.summonOnly) problems.push(`skill ${s.id}: summon def '${s.summon.defId}' must be summonOnly`);
+    }
   }
   for (let depth = 1; depth <= 30; depth++) {
     const any = Object.values(MONSTERS).some((m) =>

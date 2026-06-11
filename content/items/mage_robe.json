@@ -1,0 +1,34 @@
+{
+  "id": "mage_robe",
+  "name": "Mage Robe",
+  "slot": "armor",
+  "kind": "robe",
+  "tier": 1,
+  "base": { "armor": 1, "stats": { "int": 2 } },
+  "weight": 1.5,
+  "value": 45,
+  "flavor": "Pockets full of chalk, stars sewn in for confidence.",
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "................",
+        "................",
+        "..000......000..",
+        ".0vvv000000vvv0.",
+        ".0vv0vvvvvv0vv0.",
+        ".0v0vvvvvvvv0v0.",
+        "..00vvvvvvvv00..",
+        "...0vvyvvvvv0...",
+        "...0vvvvvvvv0...",
+        "...0vVvvvvVv0...",
+        "...0vvvvvyvv0...",
+        "...0vvvvvvvv0...",
+        "...0000000000...",
+        "................",
+        "................"
+      ]
+    ]
+  }
+}

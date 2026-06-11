@@ -2,8 +2,9 @@
  * The tactics editor: priority-ordered IF trigger THEN action rules, multiple
  * named sets per hero, switchable mid-run. Edits are local until Save.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { app } from '../app/loop';
+import { telemetry } from '../app/telemetry';
 import { CLASSES, SKILLS } from '../game/content';
 import type { Hero, TacticAction, TacticRule, TacticSet, Trigger } from '../game/types';
 
@@ -75,7 +76,10 @@ function RuleRow({
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
 }) {
-  const classSkills = CLASSES[hero.classId]?.skillUnlocks.map((u) => u.skillId) ?? [];
+  // learned skills (guild spellbook included) plus class unlocks still to come
+  const classSkills = [
+    ...new Set([...hero.skills, ...(CLASSES[hero.classId]?.skillUnlocks.map((u) => u.skillId) ?? [])]),
+  ];
   const skillFallback = classSkills[0] ?? 'heal';
   const trigger = rule.trigger as Record<string, unknown> & Trigger;
   const action = rule.action as Record<string, unknown> & TacticAction;
@@ -173,6 +177,9 @@ function RuleRow({
 export function TacticsEditor({ hero, onClose }: { hero: Hero; onClose: () => void }) {
   const [sets, setSets] = useState<TacticSet[]>(() => JSON.parse(JSON.stringify(hero.tactics.sets)));
   const [activeId, setActiveId] = useState(hero.tactics.activeSetId);
+  useEffect(() => {
+    telemetry.bump('tactics_editor_opened');
+  }, []);
   const current = sets.find((s) => s.id === activeId) ?? sets[0]!;
 
   const updateSet = (updated: TacticSet) => setSets(sets.map((s) => (s.id === updated.id ? updated : s)));
@@ -278,6 +285,16 @@ export function TacticsEditor({ hero, onClose }: { hero: Hero; onClose: () => vo
           <button
             className="btn btn-primary"
             onClick={() => {
+              const rules = sets.flatMap((s) => s.rules).filter((r) => r.enabled);
+              telemetry.track('tactics_saved', {
+                cls: hero.classId,
+                value: rules.length,
+                payload: {
+                  sets: sets.length,
+                  triggers: rules.map((r) => r.trigger.k),
+                  actions: rules.map((r) => r.action.k),
+                },
+              });
               app.dispatch({ t: 'SET_TACTICS', heroId: hero.id, sets, activeSetId: activeId });
               onClose();
             }}
