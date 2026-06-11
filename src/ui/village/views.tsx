@@ -845,7 +845,7 @@ export function HallView({ game }: { game: GameState }) {
       title="Guild Hall"
       blurb="The roster: equipment, tactics, chores. Heroes between expeditions loiter here."
     >
-      <div className="building-cols">
+      <div className="building-cols cols-wide">
         {game.rosterOrder.map((id) => {
           const hero = game.roster[id];
           return hero ? <HallHeroCard key={id} game={game} hero={hero} /> : null;

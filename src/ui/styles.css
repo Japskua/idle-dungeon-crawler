@@ -26,7 +26,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Courier New', ui-monospace, monospace;
-  font-size: 16px;
+  font-size: 18px;
   image-rendering: pixelated;
 }
 
@@ -74,7 +74,7 @@ body {
 }
 
 .small {
-  font-size: 13px;
+  font-size: 15px;
 }
 
 /* ---------- panels & layout ---------- */
@@ -135,8 +135,8 @@ body {
 }
 
 .sidebar {
-  width: 400px;
-  flex: 0 0 400px;
+  width: 440px;
+  flex: 0 0 440px;
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -173,7 +173,7 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 14px;
-  max-width: 1200px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
 }
@@ -188,7 +188,7 @@ body {
 }
 
 .building-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: bold;
   letter-spacing: 2px;
   color: var(--gold);
@@ -197,9 +197,25 @@ body {
 
 .building-cols {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 10px;
   align-items: start;
+}
+
+/* roomier two-across cards (Guild Hall) */
+.building-cols.cols-wide {
+  grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+}
+
+/* the chore select must shrink so the dismiss button never clips */
+.hero-card .row .row-buttons {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hero-card .row .row-buttons select {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .grave {
@@ -307,7 +323,7 @@ body {
   color: var(--text);
   border: 1px solid var(--border);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   padding: 3px 6px;
   min-width: 140px;
 }
@@ -345,7 +361,7 @@ body {
 }
 
 .debrief-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: bold;
   letter-spacing: 2px;
   color: var(--gold);
@@ -400,7 +416,7 @@ body {
   background: var(--bg-panel);
   border: 2px solid var(--border);
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 16px;
   z-index: 60;
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
 }
@@ -435,7 +451,7 @@ body {
 /* ---------- bars ---------- */
 .bar {
   position: relative;
-  height: 16px;
+  height: 18px;
   background: #000;
   border: 1px solid var(--border);
   margin: 2px 0;
@@ -450,9 +466,9 @@ body {
 .bar-label {
   position: relative;
   z-index: 1;
-  font-size: 12px;
+  font-size: 14px;
   padding-left: 4px;
-  line-height: 15px;
+  line-height: 17px;
   text-shadow: 1px 1px 0 #000;
 }
 
@@ -462,7 +478,7 @@ body {
   color: var(--text);
   border: 2px solid var(--border);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   padding: 4px 10px;
   cursor: pointer;
 }
@@ -497,12 +513,12 @@ body {
 }
 
 .btn-small {
-  font-size: 13px;
+  font-size: 15px;
   padding: 2px 8px;
 }
 
 .btn-tiny {
-  font-size: 12px;
+  font-size: 13px;
   padding: 1px 5px;
 }
 
@@ -518,7 +534,7 @@ body {
 }
 
 .tag {
-  font-size: 12px;
+  font-size: 13px;
   padding: 0 4px;
   border: 1px solid var(--border);
   margin-left: 4px;
@@ -560,14 +576,14 @@ body {
 
 .item-stats {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* ---------- log ---------- */
 .combat-log {
   flex: 1;
   overflow-y: auto;
-  font-size: 13px;
+  font-size: 15px;
   min-height: 120px;
   max-height: 40vh;
 }
@@ -613,7 +629,7 @@ input[type='number'] {
   color: var(--text);
   border: 1px solid var(--border);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 /* ---------- tactics editor ---------- */
@@ -662,5 +678,5 @@ input[type='number'] {
 }
 
 .num-input {
-  width: 58px;
+  width: 64px;
 }
