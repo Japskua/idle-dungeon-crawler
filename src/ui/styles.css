@@ -254,6 +254,61 @@ body {
   gap: 8px;
 }
 
+/* ---------- dungeon gate ---------- */
+.gate-card {
+  position: relative;
+  cursor: pointer;
+}
+
+.gate-card:hover {
+  border-color: var(--muted);
+}
+
+.gate-card.gate-selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(242, 201, 76, 0.15);
+}
+
+/* the enlistment stamp */
+.stamp {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  transform: rotate(7deg);
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  background: rgba(13, 10, 15, 0.75);
+  padding: 1px 8px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  z-index: 2;
+}
+
+/* long names duck under the stamp */
+.gate-card.gate-selected .panel-title {
+  padding-right: 130px;
+}
+
+/* the kit area doesn't toggle selection */
+.gate-controls {
+  cursor: default;
+  border-top: 1px dotted var(--border);
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.potion-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+}
+
+.gate-descend {
+  padding: 6px 16px;
+}
+
 .hero-tabs {
   display: flex;
   gap: 6px;
