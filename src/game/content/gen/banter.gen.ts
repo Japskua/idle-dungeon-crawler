@@ -83,6 +83,13 @@ export const BANTER: BanterContent = {
      "Even your explosions seek me out, {ally}. Understandable.",
      "I'd have dodged that, {ally}, if I'd believed you could miss me.",
      "Aim at the legend again, {ally}, and the ballad gets a villain."
+    ],
+    "react": [
+     "Funny — I was about to say the same thing, but better.",
+     "I said that once. Louder, and to a king.",
+     "An interesting point, {ally}. It reminds me of me.",
+     "Hm. Almost something I would say. High praise.",
+     "Agreed — and you heard it while standing next to a legend. Lucky."
     ]
    }
   },
@@ -166,6 +173,13 @@ export const BANTER: BanterContent = {
      "Et tu, {ally}? No, no, it's fine. It's always fine.",
      "Even our own side hurts us. There's a lesson there I refuse to learn.",
      "Thank you, {ally}. I'd almost forgotten the universe's policy on me."
+    ],
+    "react": [
+     "If that's bad news, I believe you. If it's good news, give it a week.",
+     "Mm. That's the spirit. Whatever's left of it.",
+     "I'd agree, but agreement never helped anyone.",
+     "Say it again at the bottom of a pit. Everything sounds truer down there.",
+     "That's either very wise or very doomed. Usually those are the same."
     ]
    }
   },
@@ -248,6 +262,13 @@ export const BANTER: BanterContent = {
      "Haha, you got me, {ally}! Please don't get me again!",
      "Singed but smiling, {ally}!",
      "That's okay, {ally}! Friendly fire is still friendly!"
+    ],
+    "react": [
+     "Yes! Exactly! Whatever you meant — yes!",
+     "Oh, {ally}, you always know just what to say! Mostly!",
+     "I love this conversation! Keep going, you're doing wonderfully!",
+     "See, this is why we keep you, {ally}! One of the reasons!",
+     "Well said! Someone hug {ally} when hands are free!"
     ]
    }
   },
@@ -331,6 +352,13 @@ export const BANTER: BanterContent = {
      "You scorched my coin purse, {ally}. Now it's personal.",
      "That explosion was a waste of perfectly sellable materials, {ally}.",
      "Add it to {ally}'s tab. With interest."
+    ],
+    "react": [
+     "Sure, sure. Now back to the part where we split the loot.",
+     "Is there money in it? Then I'm listening. Otherwise I'm half-listening.",
+     "Great thought, {ally}. Free, too. My favorite price.",
+     "Talk is cheap. That's why I hoard so much of it.",
+     "Interesting. Could we sell that? Someone would buy it. Someone buys anything."
     ]
    }
   },
@@ -413,6 +441,13 @@ export const BANTER: BanterContent = {
      "I trusted you, {ally}! I trusted you the most because you stood the closest!",
      "Now I have to be afraid of BOTH sides?!",
      "That was friendly?! {ally}, I'd hate to see hostile!"
+    ],
+    "react": [
+     "Can we agree on this AND keep walking toward the exit?",
+     "That's exactly the kind of talk that happens right before something attacks.",
+     "I agree with whoever gets us out of here fastest.",
+     "Shh — not so loud! The walls have ears. And probably teeth.",
+     "Lovely point, {ally}. Make it again on the surface, where it's safe."
     ]
    }
   },
@@ -495,6 +530,13 @@ export const BANTER: BanterContent = {
      "O {ally}, your explosion scanned beautifully and hurt enormously.",
      "Betrayal in iambs: boom, da-BOOM, ow.",
      "I shall write you into the poem, {ally}. As a cautionary stanza."
+    ],
+    "react": [
+     "Your words fall like rain on old stone — mostly noise, somewhere a seed.",
+     "Hm. There's a verse in that. Buried deep, but there.",
+     "Spoken like a candle: brief, warm, slightly waxy.",
+     "The dungeon heard that too. Listen — it's still deciding what it thinks.",
+     "Ah, {ally}. You speak in prose, but you dream in meter. I can tell."
     ]
    }
   },
@@ -577,6 +619,13 @@ export const BANTER: BanterContent = {
      "Friendly fire from {ally}. Emphasis on fire, citation needed on friendly.",
      "I'm charred. {ally}, we'll laugh about this. You first.",
      "Direct hit from our own side. Efficiency."
+    ],
+    "react": [
+     "Riveting. Continue. Or don't.",
+     "I've heard worse. Recently. From you.",
+     "Mm. Adding that to the pile.",
+     "That is certainly a sentence you said.",
+     "Noted, filed, and partially forgotten already."
     ]
    }
   },
@@ -659,6 +708,13 @@ export const BANTER: BanterContent = {
      "{ally}, that explosion had real malice in it. Proud of you. Furious, but proud.",
      "Save the fire for the enemy, {ally} — they need it more!",
      "You blew me up, {ally}. I'm choosing to be flattered."
+    ],
+    "react": [
+     "Great. Inspiring. Can we hit something now?",
+     "I agree with the spirit of it. The spirit being violence, hopefully.",
+     "Spoken like someone who's never solved a problem with an axe. It works on most problems.",
+     "Words, words. There's a fight at the end of all this, right? There usually is.",
+     "Say it again while we charge, {ally}. Everything sounds better mid-charge."
     ]
    }
   },
@@ -741,6 +797,13 @@ export const BANTER: BanterContent = {
      "Burnt by a friend — that's seven years of awkward luck, {ally}!",
      "The charms protected me from everything except {ally}, apparently.",
      "I forgive you, {ally}, but the universe keeps its own ledger."
+    ],
+    "react": [
+     "Careful saying things like that out loud. The dungeon collects them.",
+     "Hm. The torch flickered right as you spoke. Make of that what you will. I have.",
+     "That's either an omen or a coincidence, and I don't believe in coincidences.",
+     "Knock on wood after a statement like that, {ally}. Twice. I'll wait.",
+     "The bones said someone would say that today. The bones are showing off."
     ]
    }
   },
@@ -823,6 +886,13 @@ export const BANTER: BanterContent = {
      "I dropped my biscuit in that explosion, {ally}. The wound is secondary.",
      "Toasted by a teammate. And not the good kind of toasted, {ally}.",
      "Warn me next time, {ally} — I had food airborne!"
+    ],
+    "react": [
+     "Agreed. Now — has anyone seen my other biscuit?",
+     "I'd argue, but arguing burns calories I cannot spare.",
+     "You know what would go well with this conversation? Soup.",
+     "Mm-hm, mm-hm. Is it lunchtime yet? Continue. But is it?",
+     "Strong words, {ally}. On an empty stomach, too. I assume. Mine are."
     ]
    }
   },
@@ -905,6 +975,13 @@ export const BANTER: BanterContent = {
      "Ow! {ally}, dear, we AIM the dangerous end AWAY from family.",
      "I'm not angry, {ally}, I'm disappointed. And singed. Mostly singed.",
      "That's coming up at dinner, {ally}. Repeatedly."
+    ],
+    "react": [
+     "That's lovely, dear. Now, have you eaten today? Be honest.",
+     "Mm-hm, I hear you, sweetheart. I also hear that cough you're hiding.",
+     "Such opinions, {ally}! That's the good food and proper sleep talking. You're welcome.",
+     "We can chat and watch our feet at the same time, dears. Eyes forward.",
+     "Whatever you decide, wear a scarf while doing it."
     ]
    }
   },
@@ -986,6 +1063,13 @@ export const BANTER: BanterContent = {
      "Scorched by {ally}. Adding 'allies' to my hazards appendix.",
      "Per my notes, {ally}, that was meant for the enemy. My notes are on fire now, by the way.",
      "An explosive result, {ally}. Sadly, I was in the results section."
+    ],
+    "react": [
+     "Technically true. I've decided not to ruin it with the details.",
+     "Citation needed. But carry on — boldness is its own bibliography.",
+     "An interesting hypothesis, {ally}. Untested, like the best ones.",
+     "Actually— no. No, I'll allow it. This time. Noted, though.",
+     "I've read three treatises on that exact subject. They all disagree, so you may well be right."
     ]
    }
   }
@@ -1047,6 +1131,12 @@ export const BANTER: BanterContent = {
     "Boots polished, sword sharp, paperwork regrettably pending.",
     "A true knight checks every door twice. Even the broken ones. Especially those.",
     "I do miss the village. The village has filing cabinets."
+   ],
+   "react": [
+    "That's not in the code of conduct, but I'll allow it.",
+    "Noted. Filed. Saluted, even.",
+    "Procedure says I should object. Procedure has never been down here.",
+    "I'll log that in the evening report under 'morale.'"
    ]
   },
   "cleric": {
@@ -1106,6 +1196,12 @@ export const BANTER: BanterContent = {
     "Five whole minutes of silence. I'm going to frame this moment.",
     "If anyone stubs a toe in the next hour, they can walk it off.",
     "Divine light, hold the line. Mama needs one quiet floor."
+   ],
+   "react": [
+    "Mm-hm. Take two prayers and tell me in the morning.",
+    "I've heard worse. Usually from people actively bleeding on me.",
+    "Agreeing costs me less mana than arguing, so: yes.",
+    "Sure. Whatever keeps you walking on your own two legs."
    ]
   },
   "ranger": {
@@ -1160,6 +1256,12 @@ export const BANTER: BanterContent = {
     "Quiet doesn't mean empty. It means waiting.",
     "Should've packed more arrows. Should've packed more jerky, frankly.",
     "Everything is unfolding exactly as planned. Even the wrong turns. Especially those."
+   ],
+   "react": [
+    "That was always part of the plan.",
+    "I knew you'd say that. Page two of the plan.",
+    "Interesting. Doesn't change the plan. Nothing changes the plan.",
+    "The plan accounted for that remark. Moving on."
    ]
   },
   "mage": {
@@ -1212,6 +1314,11 @@ export const BANTER: BanterContent = {
     "These walls would look fantastic on fire. Purely an observation.",
     "Mana reserves at... some percent. Arithmetic was a different school.",
     "Someday I'll learn a quiet spell. Today is not that day."
+   ],
+   "react": [
+    "I tested a similar theory once. Hence the eyebrows.",
+    "Compelling. Wrong, but compelling.",
+    "That hypothesis survives contact with reality longer than most of mine."
    ]
   },
   "necromancer": {
@@ -1266,6 +1373,12 @@ export const BANTER: BanterContent = {
     "The deceased make excellent listeners and terrible conversationalists.",
     "Reminder: order more coffins. We're scaling.",
     "Everyone mocks the necromancer until they need overnight coverage."
+   ],
+   "react": [
+    "I'll raise that point at the next all-bones meeting.",
+    "The skeletons have heard worse. No ears, but still.",
+    "Noted. I'll circulate a memo to the crypt.",
+    "Per the dead, who have seen everything: a shrug."
    ]
   },
   "barbarian": {
@@ -1318,6 +1431,12 @@ export const BANTER: BanterContent = {
     "I wrestled a boulder once. The boulder respects me now.",
     "Walking is just fighting that hasn't found anyone yet.",
     "Cold down here. GOOD. Pain builds character."
+   ],
+   "react": [
+    "I AGREE LOUDLY.",
+    "WORDS! GOOD ONES, PROBABLY!",
+    "That kind of talk needs no armor. LIKE ME.",
+    "Didn't understand it, so it must be wise. OR ARMOR PROPAGANDA."
    ]
   },
   "monk": {
@@ -1370,6 +1489,12 @@ export const BANTER: BanterContent = {
     "The dungeon breathes. In. Out. Mostly damp.",
     "A weapon would only slow me down. So would shoes, honestly.",
     "Serenity is easy in a garden. The true practice is corridors."
+   ],
+   "react": [
+    "The river says the same, only quieter.",
+    "Both true and untrue. So: lunch?",
+    "I will sit with that. Briefly.",
+    "Every shout earns an echo. I am the echo. Hm."
    ]
   },
   "paladin": {
@@ -1428,6 +1553,12 @@ export const BANTER: BanterContent = {
     "These halls lack natural light. Fortunately, I brought my own.",
     "A quiet moment is perfect for renewing vows. I maintain forty.",
     "Updating the smite tally, then the gauze inventory. A paladin's work is lists."
+   ],
+   "react": [
+    "The Light heard that. The Light is withholding comment.",
+    "I forgive you for saying that. Loudly, so everyone can hear me forgiving.",
+    "Inspiring! Nearly as inspiring as something I would say.",
+    "I'll add that to my dawn affirmations. Lightly improved, of course."
    ]
   },
   "druid": {
@@ -1487,6 +1618,12 @@ export const BANTER: BanterContent = {
     "I miss the canopy. This ceiling is a poor substitute and it knows it.",
     "Somewhere above us, a tree is having a lovely day. That keeps me going.",
     "I left a saucer of water out for the lichens. They take decades to say thanks."
+   ],
+   "react": [
+    "Gerald the moss agrees. Gerald rarely commits like this.",
+    "Hm. The mushrooms say otherwise, but they're contrarians.",
+    "The lichen heard that and didn't flinch. High praise.",
+    "I told the ferns you'd say that. They owe me a spore."
    ]
   },
   "bard": {
@@ -1546,6 +1683,12 @@ export const BANTER: BanterContent = {
     "I'm workshopping a ballad about today. So far it's entirely bridge.",
     "Every silence is just an intro I haven't ruined yet.",
     "'The Lay of the Lost Kitten' needs a third verse and considerably fewer tears."
+   ],
+   "react": [
+    "Say that again, slower, in D minor.",
+    "That's going in the second verse.",
+    "Hold the thought — I need it for the bridge.",
+    "Ooh, that rhymes with 'doom.' Everything good does."
    ]
   },
   "chef": {
@@ -1605,6 +1748,12 @@ export const BANTER: BanterContent = {
     "Soup at camp tonight. The broth forgives all of today's mistakes.",
     "Damp stone, old bone, a whisper of mushroom. This dungeon needs a bouquet garni.",
     "The barbarian eats jerky like it isn't a crime against cooking. I say nothing. Loudly."
+   ],
+   "react": [
+    "Needs salt, but the base is solid.",
+    "That's a stew of an opinion. Let it simmer.",
+    "I've heard fresher takes, but it plates well.",
+    "Mm. Half-baked. I can work with half-baked."
    ]
   },
   "mime": {
@@ -1664,6 +1813,12 @@ export const BANTER: BanterContent = {
     "*struggles forward against a powerful invisible wind in the still air*",
     "*produces an invisible sandwich, eats half, wraps the rest for later*",
     "*rehearses a scream, mouth wide open, in total silence*"
+   ],
+   "react": [
+    "*nods, then traps the nod inside an invisible box*",
+    "*applauds without producing a single sound*",
+    "*mimes writing it down, folds the nothing, pockets it*",
+    "*pulls the conversation closer with an invisible rope, hand over hand*"
    ]
   },
   "beekeeper": {
@@ -1722,6 +1877,12 @@ export const BANTER: BanterContent = {
     "Honey in the rations, honey in the flask, honey in the first aid kit. Balance.",
     "Negotiations with the hive resume Thursday. They want more lavender. They deserve more lavender.",
     "I count flowers down here for the bees. Two so far. Both were mushrooms."
+   ],
+   "react": [
+    "The bees reached the same conclusion last spring.",
+    "A hive would've voted on that first. Just saying.",
+    "Buzzy take. The good kind of buzzy.",
+    "Bees would answer that with a dance. Picture the dance. That's my answer."
    ]
   },
   "thief": {
@@ -1781,6 +1942,12 @@ export const BANTER: BanterContent = {
     "Lockpicks, check. Smoke bomb, check. Alibi, in progress.",
     "Traps don't scare me. A trap is just a lock with self-esteem.",
     "Four loose stones and one suspicious draft. This corridor has secrets, and I intend to invoice them."
+   ],
+   "react": [
+    "Worth about three silver, as remarks go.",
+    "I'd deny that. I deny most things.",
+    "No comment. Officially. Unofficially: heh.",
+    "Lovely thought. Everyone check your pockets, unrelated."
    ]
   }
  },

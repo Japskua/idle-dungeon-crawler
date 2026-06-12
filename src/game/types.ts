@@ -381,7 +381,8 @@ export type BanterContext =
   | 'boss'
   | 'descend'
   | 'idle'
-  | 'friendlyFire';
+  | 'friendlyFire'
+  | 'react';
 
 export interface BanterTrait {
   id: string;
@@ -401,6 +402,8 @@ export interface BanterVoice {
   taunts: Record<string, string[]>;
   kill: string[];
   idle: string[];
+  /** conversation continuers: responses that follow anything an ally said */
+  react: string[];
 }
 
 export interface BanterPair {

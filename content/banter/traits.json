@@ -80,6 +80,13 @@
      "Even your explosions seek me out, {ally}. Understandable.",
      "I'd have dodged that, {ally}, if I'd believed you could miss me.",
      "Aim at the legend again, {ally}, and the ballad gets a villain."
+    ],
+    "react": [
+     "Funny — I was about to say the same thing, but better.",
+     "I said that once. Louder, and to a king.",
+     "An interesting point, {ally}. It reminds me of me.",
+     "Hm. Almost something I would say. High praise.",
+     "Agreed — and you heard it while standing next to a legend. Lucky."
     ]
    }
   },
@@ -163,6 +170,13 @@
      "Et tu, {ally}? No, no, it's fine. It's always fine.",
      "Even our own side hurts us. There's a lesson there I refuse to learn.",
      "Thank you, {ally}. I'd almost forgotten the universe's policy on me."
+    ],
+    "react": [
+     "If that's bad news, I believe you. If it's good news, give it a week.",
+     "Mm. That's the spirit. Whatever's left of it.",
+     "I'd agree, but agreement never helped anyone.",
+     "Say it again at the bottom of a pit. Everything sounds truer down there.",
+     "That's either very wise or very doomed. Usually those are the same."
     ]
    }
   },
@@ -245,6 +259,13 @@
      "Haha, you got me, {ally}! Please don't get me again!",
      "Singed but smiling, {ally}!",
      "That's okay, {ally}! Friendly fire is still friendly!"
+    ],
+    "react": [
+     "Yes! Exactly! Whatever you meant — yes!",
+     "Oh, {ally}, you always know just what to say! Mostly!",
+     "I love this conversation! Keep going, you're doing wonderfully!",
+     "See, this is why we keep you, {ally}! One of the reasons!",
+     "Well said! Someone hug {ally} when hands are free!"
     ]
    }
   },
@@ -328,6 +349,13 @@
      "You scorched my coin purse, {ally}. Now it's personal.",
      "That explosion was a waste of perfectly sellable materials, {ally}.",
      "Add it to {ally}'s tab. With interest."
+    ],
+    "react": [
+     "Sure, sure. Now back to the part where we split the loot.",
+     "Is there money in it? Then I'm listening. Otherwise I'm half-listening.",
+     "Great thought, {ally}. Free, too. My favorite price.",
+     "Talk is cheap. That's why I hoard so much of it.",
+     "Interesting. Could we sell that? Someone would buy it. Someone buys anything."
     ]
    }
   },
@@ -410,6 +438,13 @@
      "I trusted you, {ally}! I trusted you the most because you stood the closest!",
      "Now I have to be afraid of BOTH sides?!",
      "That was friendly?! {ally}, I'd hate to see hostile!"
+    ],
+    "react": [
+     "Can we agree on this AND keep walking toward the exit?",
+     "That's exactly the kind of talk that happens right before something attacks.",
+     "I agree with whoever gets us out of here fastest.",
+     "Shh — not so loud! The walls have ears. And probably teeth.",
+     "Lovely point, {ally}. Make it again on the surface, where it's safe."
     ]
    }
   },
@@ -492,6 +527,13 @@
      "O {ally}, your explosion scanned beautifully and hurt enormously.",
      "Betrayal in iambs: boom, da-BOOM, ow.",
      "I shall write you into the poem, {ally}. As a cautionary stanza."
+    ],
+    "react": [
+     "Your words fall like rain on old stone — mostly noise, somewhere a seed.",
+     "Hm. There's a verse in that. Buried deep, but there.",
+     "Spoken like a candle: brief, warm, slightly waxy.",
+     "The dungeon heard that too. Listen — it's still deciding what it thinks.",
+     "Ah, {ally}. You speak in prose, but you dream in meter. I can tell."
     ]
    }
   },
@@ -574,6 +616,13 @@
      "Friendly fire from {ally}. Emphasis on fire, citation needed on friendly.",
      "I'm charred. {ally}, we'll laugh about this. You first.",
      "Direct hit from our own side. Efficiency."
+    ],
+    "react": [
+     "Riveting. Continue. Or don't.",
+     "I've heard worse. Recently. From you.",
+     "Mm. Adding that to the pile.",
+     "That is certainly a sentence you said.",
+     "Noted, filed, and partially forgotten already."
     ]
    }
   },
@@ -656,6 +705,13 @@
      "{ally}, that explosion had real malice in it. Proud of you. Furious, but proud.",
      "Save the fire for the enemy, {ally} — they need it more!",
      "You blew me up, {ally}. I'm choosing to be flattered."
+    ],
+    "react": [
+     "Great. Inspiring. Can we hit something now?",
+     "I agree with the spirit of it. The spirit being violence, hopefully.",
+     "Spoken like someone who's never solved a problem with an axe. It works on most problems.",
+     "Words, words. There's a fight at the end of all this, right? There usually is.",
+     "Say it again while we charge, {ally}. Everything sounds better mid-charge."
     ]
    }
   },
@@ -738,6 +794,13 @@
      "Burnt by a friend — that's seven years of awkward luck, {ally}!",
      "The charms protected me from everything except {ally}, apparently.",
      "I forgive you, {ally}, but the universe keeps its own ledger."
+    ],
+    "react": [
+     "Careful saying things like that out loud. The dungeon collects them.",
+     "Hm. The torch flickered right as you spoke. Make of that what you will. I have.",
+     "That's either an omen or a coincidence, and I don't believe in coincidences.",
+     "Knock on wood after a statement like that, {ally}. Twice. I'll wait.",
+     "The bones said someone would say that today. The bones are showing off."
     ]
    }
   },
@@ -820,6 +883,13 @@
      "I dropped my biscuit in that explosion, {ally}. The wound is secondary.",
      "Toasted by a teammate. And not the good kind of toasted, {ally}.",
      "Warn me next time, {ally} — I had food airborne!"
+    ],
+    "react": [
+     "Agreed. Now — has anyone seen my other biscuit?",
+     "I'd argue, but arguing burns calories I cannot spare.",
+     "You know what would go well with this conversation? Soup.",
+     "Mm-hm, mm-hm. Is it lunchtime yet? Continue. But is it?",
+     "Strong words, {ally}. On an empty stomach, too. I assume. Mine are."
     ]
    }
   },
@@ -902,6 +972,13 @@
      "Ow! {ally}, dear, we AIM the dangerous end AWAY from family.",
      "I'm not angry, {ally}, I'm disappointed. And singed. Mostly singed.",
      "That's coming up at dinner, {ally}. Repeatedly."
+    ],
+    "react": [
+     "That's lovely, dear. Now, have you eaten today? Be honest.",
+     "Mm-hm, I hear you, sweetheart. I also hear that cough you're hiding.",
+     "Such opinions, {ally}! That's the good food and proper sleep talking. You're welcome.",
+     "We can chat and watch our feet at the same time, dears. Eyes forward.",
+     "Whatever you decide, wear a scarf while doing it."
     ]
    }
   },
@@ -983,6 +1060,13 @@
      "Scorched by {ally}. Adding 'allies' to my hazards appendix.",
      "Per my notes, {ally}, that was meant for the enemy. My notes are on fire now, by the way.",
      "An explosive result, {ally}. Sadly, I was in the results section."
+    ],
+    "react": [
+     "Technically true. I've decided not to ruin it with the details.",
+     "Citation needed. But carry on — boldness is its own bibliography.",
+     "An interesting hypothesis, {ally}. Untested, like the best ones.",
+     "Actually— no. No, I'll allow it. This time. Noted, though.",
+     "I've read three treatises on that exact subject. They all disagree, so you may well be right."
     ]
    }
   }

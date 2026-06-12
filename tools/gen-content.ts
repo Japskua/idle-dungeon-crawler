@@ -232,7 +232,7 @@ const CLASS_IDS = [
 ];
 const ROLE_IDS = ['tank', 'healer', 'ranged_dps', 'caster', 'melee_dps', 'support'];
 const FAMILY_IDS = ['beast', 'slime', 'goblinoid', 'undead', 'cultist', 'fungus', 'landlord', 'generic'];
-const BANTER_CONTEXTS = ['kill', 'hurt', 'lowHp', 'allyDown', 'rescue', 'loot', 'boss', 'descend', 'idle', 'friendlyFire'];
+const BANTER_CONTEXTS = ['kill', 'hurt', 'lowHp', 'allyDown', 'rescue', 'loot', 'boss', 'descend', 'idle', 'friendlyFire', 'react'];
 const PLACEHOLDERS = new Set(['enemy', 'ally', 'hero', 'depth', 'gold', 'kills', 'downs', 'rescuer', 'worst']);
 
 async function readBanterFile(name: string): Promise<any> {
@@ -284,6 +284,7 @@ if (banterVoices) {
     for (const fam of FAMILY_IDS) checkLines(f, `${voice.id}.taunts.${fam}`, voice.taunts?.[fam]);
     checkLines(f, `${voice.id}.kill`, voice.kill);
     checkLines(f, `${voice.id}.idle`, voice.idle);
+    checkLines(f, `${voice.id}.react`, voice.react);
   }
   for (const cid of CLASS_IDS) if (!seen.has(cid)) err(f, `class ${cid} has no voice`);
 }
