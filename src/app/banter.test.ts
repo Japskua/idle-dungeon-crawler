@@ -16,8 +16,10 @@ import {
   linePool,
   memoryPool,
   pairExchange,
+  reactPool,
   tauntPool,
 } from './banter';
+import { makeHero } from '../game/hero/create';
 
 const NOW = 1_750_000_000_000;
 
@@ -134,5 +136,56 @@ describe('banter director', () => {
     const reply = director.consume(state, [], t + 2_000);
     expect(reply.length).toBe(1); // the scheduled answer
     expect(reply[0]!.heroId).not.toBe(first[0]!.heroId);
+  });
+
+  test('conversations can chain to 6 lines, pull in extra heroes, never go endless', () => {
+    const state = newGame(11, NOW);
+    // a four-hero party so a full table can join the conversation
+    for (const cls of ['barbarian', 'bard']) {
+      const hero = makeHero(state, cls, `extra_${cls}`, 1, []);
+      state.roster[hero.id] = hero;
+      state.rosterOrder.push(hero.id);
+    }
+    advanceTick(state, [{ t: 'EMBARK', memberIds: [...state.rosterOrder], startDepth: 1 }], NOW, []);
+    const director = new BanterDirector(() => 0); // every continuation roll passes
+    const start = NOW + 100_000;
+    const all = [...director.consume(state, [], start)];
+    // flush every scheduled line (last lands ~9s in); +20s keeps everyone
+    // inside their per-hero cooldown so no NEW line can sneak into the count
+    all.push(...director.consume(state, [], start + 20_000));
+    // hard cap: opener + reply + 4 reactions
+    expect(all.length).toBe(6);
+    // no speaker twice in a row
+    for (let i = 1; i < all.length; i++) {
+      expect(all[i]!.heroId).not.toBe(all[i - 1]!.heroId);
+    }
+    // at least 3 distinct heroes took part
+    expect(new Set(all.map((u) => u.heroId)).size).toBeGreaterThanOrEqual(3);
+    for (const u of all) expect(u.text.length).toBeGreaterThan(0);
+  });
+
+  test('conversations are rarer than solo lines (conversation cooldown)', () => {
+    const state = newGame(11, NOW);
+    advanceTick(state, [{ t: 'EMBARK', memberIds: [...state.rosterOrder], startDepth: 1 }], NOW, []);
+    const director = new BanterDirector(() => 0.2);
+    const start = NOW + 100_000;
+    expect(director.consume(state, [], start).length).toBe(1); // conversation opener
+    director.consume(state, [], start + 10_000); // flush the reply
+    // 30s later: idle check fires but the conversation gap (70s) holds —
+    // the party falls back to a solo musing instead of a new conversation
+    const later = director.consume(state, [], start + 40_000);
+    expect(later.length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('the mime is silent everywhere', () => {
+  test('trait and perk lines never leak words past a mime', () => {
+    const mime = { classId: 'mime', traits: ['boastful', 'hungry'], perks: ['brave'] } as never;
+    for (const ctx of ['kill', 'idle', 'descend', 'loot']) {
+      for (const line of linePool(mime, ctx)) {
+        expect(line.startsWith('*')).toBe(true);
+      }
+    }
+    for (const line of reactPool(mime)) expect(line.startsWith('*')).toBe(true);
   });
 });

@@ -25,6 +25,9 @@ const HERO_GAP_MS = 22_000; // min silence per hero
 const IDLE_CHECK_MS = 9_000; // how often the quiet-halls dice roll
 const COMBAT_QUIET_MS = 6_000; // no idle chatter this soon after a fight
 const REPLY_DELAY_MS = 1_500; // beat before the other hero answers
+const CONVERSATION_GAP_MS = 70_000; // min silence between multi-line conversations
+/** chance each further reply happens — decays, so 6-line talks are rare */
+const CONTINUE_CHANCE = [0.5, 0.38, 0.28, 0.18];
 const CHANCE = {
   kill: 0.1,
   taunt: 0.12, // when a fight breaks out
@@ -90,7 +93,24 @@ export function linePool(hero: Hero, context: string): string[] {
       if (shouts) pool.push(...shouts.lines[perkCtx]);
     }
   }
-  return pool;
+  return mimeSafe(hero, pool);
+}
+
+/** the mime never speaks: only stage directions survive the filter */
+function mimeSafe(hero: Hero, pool: string[]): string[] {
+  return hero.classId === 'mime' ? pool.filter((l) => l.startsWith('*')) : pool;
+}
+
+/** conversation continuers: trait reactions + class voice reactions */
+export function reactPool(hero: Hero): string[] {
+  const pool: string[] = [];
+  for (const tid of hero.traits) {
+    const trait = BANTER.traits.find((t) => t.id === tid);
+    if (trait?.lines.react) pool.push(...trait.lines.react);
+  }
+  const voice = BANTER.voices[hero.classId];
+  if (voice?.react) pool.push(...voice.react);
+  return mimeSafe(hero, pool);
 }
 
 /** stat-driven memory lines this hero has earned (their little story arc) */
@@ -160,6 +180,7 @@ export class BanterDirector {
   private saidLowHp = new Set<Id>();
   private lastCombatMs = 0;
   private lastIdleCheckMs = 0;
+  private lastConversationMs = 0;
   private pending: { atMs: number; u: Utterance }[] = [];
   /** last hero to damage each monster — credits the kill line */
   private lastHitBy = new Map<Id, Id>();
@@ -167,6 +188,14 @@ export class BanterDirector {
 
   constructor(rand: () => number = Math.random) {
     this.rand = rand;
+  }
+
+  /** a mime handed a spoken line performs something instead */
+  private mimeLine(hero: Hero, line: string): string {
+    if (hero.classId !== 'mime' || line.startsWith('*')) return line;
+    const pool = reactPool(hero);
+    if (pool.length > 0) return pool[Math.floor(this.rand() * pool.length)]!;
+    return '*gestures eloquently*';
   }
 
   private gate(heroId: Id, nowMs: number, chance: number): boolean {
@@ -326,21 +355,55 @@ export class BanterDirector {
       const calm = nowMs - this.lastCombatMs > COMBAT_QUIET_MS;
       if (calm && this.rand() < CHANCE.idleTick) {
         const heroes = this.standing(state);
-        if (heroes.length >= 2 && this.rand() < 0.55) {
-          // a two-line exchange between two heroes
+        if (
+          heroes.length >= 2 &&
+          this.rand() < 0.55 &&
+          nowMs - this.lastConversationMs > CONVERSATION_GAP_MS
+        ) {
+          // a conversation: opener + reply, then maybe the rest chime in
           const i = Math.floor(this.rand() * heroes.length);
           let j = Math.floor(this.rand() * (heroes.length - 1));
           if (j >= i) j++;
           const ex = pairExchange(heroes[i]!, heroes[j]!, this.rand);
           if (ex && nowMs - this.lastGlobalMs > GLOBAL_GAP_MS) {
+            this.lastConversationMs = nowMs;
             const varsA = { ...this.baseVars(state, ex.first), ally: ex.second.name };
             const varsB = { ...this.baseVars(state, ex.second), ally: ex.first.name };
-            this.speak(out, ex.first, ex.lines[0], varsA, nowMs);
+            this.speak(out, ex.first, this.mimeLine(ex.first, ex.lines[0]), varsA, nowMs);
+            let at = nowMs + REPLY_DELAY_MS;
             this.pending.push({
-              atMs: nowMs + REPLY_DELAY_MS,
-              u: { heroId: ex.second.id, text: decorate(fillTemplate(ex.lines[1], varsB), ex.second.traits, this.rand) },
+              atMs: at,
+              u: {
+                heroId: ex.second.id,
+                text: decorate(fillTemplate(this.mimeLine(ex.second, ex.lines[1]), varsB), ex.second.traits, this.rand),
+              },
             });
-            this.lastByHero.set(ex.second.id, nowMs + REPLY_DELAY_MS);
+            this.lastByHero.set(ex.second.id, at);
+            // the chain: decaying odds, fresh voices first, never the same
+            // speaker twice in a row, hard cap = opener + reply + 4 reactions
+            const spoken = new Set([ex.first.id, ex.second.id]);
+            let prev = ex.second;
+            for (const chance of CONTINUE_CHANCE) {
+              if (this.rand() >= chance) break;
+              const fresh = heroes.filter((h) => !spoken.has(h.id));
+              const candidates = fresh.length > 0 ? fresh : heroes.filter((h) => h.id !== prev.id);
+              if (candidates.length === 0) break;
+              const speaker = candidates[Math.floor(this.rand() * candidates.length)]!;
+              const pool = reactPool(speaker);
+              if (pool.length === 0) break;
+              at += REPLY_DELAY_MS + 400;
+              const raw = pool[Math.floor(this.rand() * pool.length)]!;
+              const text = decorate(
+                fillTemplate(raw, { ...this.baseVars(state, speaker), ally: prev.name }),
+                speaker.traits,
+                this.rand,
+              );
+              this.pending.push({ atMs: at, u: { heroId: speaker.id, text } });
+              this.lastByHero.set(speaker.id, at);
+              spoken.add(speaker.id);
+              prev = speaker;
+            }
+            this.lastGlobalMs = at; // nothing interleaves mid-conversation
           }
         } else if (heroes.length > 0) {
           // a solo musing — sometimes a memory surfaces instead
