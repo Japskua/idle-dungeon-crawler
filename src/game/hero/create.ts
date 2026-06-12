@@ -2,7 +2,7 @@
 import type { GameState, Hero } from '../types';
 import { CLASSES, NAME_BANKS, PERKS, itemDef } from '../content';
 import { allocId, makeItem } from '../items/factory';
-import { chance, pick, pickWeighted, rand, type Rng } from '../core/rng';
+import { chance, pick, pickWeighted, rand, randInt, type Rng } from '../core/rng';
 import { heroMaxHp, heroMaxMp } from '../balance';
 import { canEquip } from './equipment';
 import { defaultTactics } from '../tactics/defaults';
@@ -26,7 +26,43 @@ export function unlockedSkills(classId: string, level: number): string[] {
   return cls.skillUnlocks.filter((u) => u.level <= level).map((u) => u.skillId);
 }
 
-export function makeHero(state: GameState, classId: string, name: string, level = 1, perks: string[] = []): Hero {
+/** the trait ids heroes can roll; kept in sync with content/banter/traits.json */
+export const TRAIT_IDS = [
+  'boastful',
+  'gloomy',
+  'cheerful',
+  'greedy',
+  'cowardly',
+  'poetic',
+  'deadpan',
+  'bloodthirsty',
+  'superstitious',
+  'hungry',
+  'motherly',
+  'scholarly',
+] as const;
+
+/** 2-3 distinct personality traits; loud ones are rarer by weight elsewhere */
+export function rollTraits(rng: Rng): string[] {
+  const pool = [...TRAIT_IDS];
+  const count = 2 + (randInt(rng, 0, 99) < 40 ? 1 : 0);
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const idx = randInt(rng, 0, pool.length - 1);
+    out.push(pool[idx]!);
+    pool.splice(idx, 1);
+  }
+  return out;
+}
+
+export function makeHero(
+  state: GameState,
+  classId: string,
+  name: string,
+  level = 1,
+  perks: string[] = [],
+  traits?: string[],
+): Hero {
   const cls = CLASSES[classId]!;
   const attrs = {
     str: cls.base.str + cls.growth.str * (level - 1),
@@ -46,6 +82,7 @@ export function makeHero(state: GameState, classId: string, name: string, level 
     equipment: {},
     potions: { hp: 0, mp: 0 },
     bombs: 0,
+    traits: traits ?? rollTraits(state.rng.village),
     skills: unlockedSkills(classId, level),
     perks,
     injuries: [],

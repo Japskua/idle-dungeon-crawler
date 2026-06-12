@@ -1,0 +1,990 @@
+{
+ "traits": [
+  {
+   "id": "boastful",
+   "name": "Boastful",
+   "blurb": "Has never lost a fight that anyone can prove.",
+   "weight": 6,
+   "interjections": [
+    "Ha!",
+    "Behold!",
+    "Naturally.",
+    "As expected!",
+    "Witness me!"
+   ],
+   "tags": [
+    "...as usual.",
+    "...like a legend.",
+    "...effortlessly, I might add.",
+    "...write that down.",
+    "...not that anyone's counting."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} fell exactly as I intended, which is to say: magnificently.",
+     "Another {enemy} for the memoirs.",
+     "Did everyone see that? I can do it again, slower.",
+     "That {enemy} will be the centerpiece of tonight's retelling.",
+     "One swing. Maybe two. History will say one."
+    ],
+    "hurt": [
+     "I allowed that hit. For drama.",
+     "A scratch! The crowd loves a comeback.",
+     "Pain is just applause from the inside.",
+     "It takes real skill to get hit that impressively."
+    ],
+    "lowHp": [
+     "I'm not dying, I'm building suspense.",
+     "Even my wounds are above average.",
+     "The best heroes peak in the third act. This is the third act.",
+     "If I fall, make the statue flattering."
+    ],
+    "allyDown": [
+     "{ally}, you're stealing my spotlight with this dramatic collapse.",
+     "Get up, {ally} — fainting is my move.",
+     "Hold on, {ally}! Watching me fight should heal you a little.",
+     "{ally} is down! Someone less important guard them while I avenge."
+    ],
+    "rescue": [
+     "Fear not, {ally}, you're being carried by the best.",
+     "I rescue people too. Add it to the list of talents.",
+     "Easy, {ally}. You're in award-winning hands.",
+     "Try not to bleed on the cape, {ally}. It's iconic."
+    ],
+    "loot": [
+     "{gold} gold! Roughly what I'm worth per hour.",
+     "The dungeon pays tribute. Sensible dungeon.",
+     "Treasure finds me. It's a magnetism thing.",
+     "Of course it was in a chest — gifts for greatness usually are."
+    ],
+    "boss": [
+     "A boss? Finally, an opponent worth misquoting later.",
+     "Tell the big one I'm here. It deserves a warning.",
+     "This is the part of the story people will pretend they witnessed.",
+     "Bosses are just regular monsters with better marketing. So am I, frankly."
+    ],
+    "descend": [
+     "Floor {depth} — getting closer to enemies worthy of me.",
+     "Down to {depth}. The dungeon saves its best for me, I'm sure.",
+     "Deeper! Legends aren't written on the ground floor.",
+     "Floor {depth} will be telling stories about me by morning."
+    ],
+    "idle": [
+     "All this quiet, and me at the peak of my powers. Wasteful.",
+     "Someone should be sketching me right now.",
+     "I once cleared a hall like this blindfolded. Don't ask who tied the blindfold.",
+     "Empty rooms are the dungeon admitting defeat early."
+    ],
+    "friendlyFire": [
+     "{ally}! You've singed the most famous eyebrows in the village!",
+     "Even your explosions seek me out, {ally}. Understandable.",
+     "I'd have dodged that, {ally}, if I'd believed you could miss me.",
+     "Aim at the legend again, {ally}, and the ballad gets a villain."
+    ]
+   }
+  },
+  {
+   "id": "gloomy",
+   "name": "Gloomy",
+   "blurb": "Expects the worst and is rarely disappointed.",
+   "weight": 10,
+   "interjections": [
+    "Alas.",
+    "Of course.",
+    "Figures.",
+    "Sigh.",
+    "Typical."
+   ],
+   "tags": [
+    "...not that it matters.",
+    "...for now.",
+    "...like everything, eventually.",
+    "...what's the point.",
+    "...as expected, sadly."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is dead. Lucky thing.",
+     "Another {enemy} freed from this dungeon. Wish it were that easy for me.",
+     "It's over for the {enemy}. The rest of us must keep going.",
+     "We won. Somehow that also feels like losing.",
+     "One less {enemy}. Infinity minus one is still infinity."
+    ],
+    "hurt": [
+     "Pain. At least it's familiar.",
+     "That'll scar. Everything does.",
+     "I felt that. I feel everything. It's exhausting.",
+     "Wounded again. The dungeon and I have an understanding."
+    ],
+    "lowHp": [
+     "Ah. The end approaches, fashionably on time.",
+     "I always knew it would be like this. Damp, mostly.",
+     "If I die, don't celebrate my life. It would be a short party.",
+     "Nearly done, then. The dungeon wins. The dungeon always wins."
+    ],
+    "allyDown": [
+     "{ally} is down. I said this would happen. Nobody listens.",
+     "There goes {ally}. We're all just taking turns.",
+     "{ally} has fallen. Add it to the pile of inevitabilities.",
+     "First {ally}, then the rest of us, then silence."
+    ],
+    "rescue": [
+     "Come on, {ally}. We're not allowed to give up. I checked.",
+     "Carrying you, {ally}, the way fate carries us all — roughly.",
+     "I've got you, {ally}. Misery prefers company anyway.",
+     "You're heavy, {ally}, but so is existence."
+    ],
+    "loot": [
+     "{gold} gold. It'll be gone by Tuesday.",
+     "Treasure. We'll just lose it when we wipe.",
+     "A chest. Probably the happiest thing we'll find down here.",
+     "Gold is just sadness you can spend."
+    ],
+    "boss": [
+     "A boss floor. So this is where it ends. Again.",
+     "Something enormous is waiting for us. It usually is.",
+     "The big door, the ominous air. I've read this chapter before.",
+     "Let's get it over with. The dread is the worst part. Well. Second worst."
+    ],
+    "descend": [
+     "Floor {depth}. Deeper into the metaphor.",
+     "Down again. The stairs only ever go one way for people like us.",
+     "Floor {depth}. Even the darkness gets darker.",
+     "Stairs down. The dungeon swallows; we call it progress."
+    ],
+    "idle": [
+     "Quiet halls. The dungeon is holding its breath. Rude of it.",
+     "Nothing here but dust and consequences.",
+     "Even the echoes sound tired today.",
+     "Peaceful. Suspicious. Probably doomed."
+    ],
+    "friendlyFire": [
+     "Blown up by {ally}. At least it was someone I know.",
+     "Et tu, {ally}? No, no, it's fine. It's always fine.",
+     "Even our own side hurts us. There's a lesson there I refuse to learn.",
+     "Thank you, {ally}. I'd almost forgotten the universe's policy on me."
+    ]
+   }
+  },
+  {
+   "id": "cheerful",
+   "name": "Cheerful",
+   "blurb": "Finds the bright side of caves with no light sources.",
+   "weight": 10,
+   "interjections": [
+    "Oh, lovely!",
+    "Hooray!",
+    "Splendid!",
+    "Yay!",
+    "Oh good!"
+   ],
+   "tags": [
+    "...isn't that nice!",
+    "...what fun!",
+    "...lucky us!",
+    "...best day ever!",
+    "...team effort!"
+   ],
+   "lines": {
+    "kill": [
+     "Great job, everyone! The {enemy} barely suffered!",
+     "We got the {enemy}! High fives when hands are free!",
+     "That {enemy} put up a wonderful fight. Ten out of ten!",
+     "Another win for us! The dungeon must be so proud."
+    ],
+    "hurt": [
+     "Ow! Well — builds character!",
+     "That stings, but my smile is load-bearing!",
+     "Good news: it missed all my favorite organs!",
+     "A bruise! Free souvenir!"
+    ],
+    "lowHp": [
+     "Feeling a bit see-through, but the day's still young!",
+     "Almost dead is still mostly alive, technically!",
+     "If I faint, save my spot in the marching order!",
+     "Still standing! Mostly out of habit!"
+    ],
+    "allyDown": [
+     "{ally}'s taking a little floor nap! We'll wake them gently!",
+     "Oh, {ally}! You rest — we'll handle the stabby part!",
+     "Oh no, {ally}! Hold that thought — and that pose!",
+     "{ally} is down but absolutely not out! Probably!"
+    ],
+    "rescue": [
+     "Upsy-daisy, {ally}! Free piggyback ride!",
+     "I've got you, {ally}! Best carried hero in the dungeon!",
+     "Hang in there, {ally}, the view from up here is great!",
+     "Rescue cuddles for {ally}! Doctor's orders, probably!"
+    ],
+    "loot": [
+     "{gold} gold! We're rich-ish!",
+     "A chest! It's like the dungeon got us a present!",
+     "Shiny things! For the shiny-thing fund!",
+     "Treasure! And nobody even had to die this time!"
+    ],
+    "boss": [
+     "A boss! Oh, I love meeting local celebrities!",
+     "Big monster ahead! Group hug first?",
+     "Boss floor! Remember everyone: smiles are confusing to evil!",
+     "Here comes the big one! What an opportunity for growth!"
+    ],
+    "descend": [
+     "Floor {depth}! New floor, new friends to fight!",
+     "Down we go to {depth}! The dungeon just keeps on giving!",
+     "Stairs! I love stairs! Floor {depth}, here we come!",
+     "Floor {depth} already? Time flies when you're armed!"
+    ],
+    "idle": [
+     "What a nice quiet stretch! The dungeon is napping!",
+     "Lovely ambiance down here. Very rustic. Very bones.",
+     "No monsters! More time for skipping!",
+     "I spy with my little eye... moss! Wonderful moss!"
+    ],
+    "friendlyFire": [
+     "Wow, {ally}! What an explosion! I was IN it!",
+     "Haha, you got me, {ally}! Please don't get me again!",
+     "Singed but smiling, {ally}!",
+     "That's okay, {ally}! Friendly fire is still friendly!"
+    ]
+   }
+  },
+  {
+   "id": "greedy",
+   "name": "Greedy",
+   "blurb": "Counts the party's gold and rounds in a private direction.",
+   "weight": 10,
+   "interjections": [
+    "Ooh!",
+    "Mine!",
+    "Coin!",
+    "Hold on—",
+    "Profit!"
+   ],
+   "tags": [
+    "...for free, mind you.",
+    "...no refunds.",
+    "...invoice pending.",
+    "...minus expenses.",
+    "...and I get first pick."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is dead! Check its pockets. Check them twice.",
+     "Does the {enemy} drop anything? Asking for me.",
+     "Each {enemy} is just a coin purse with opinions.",
+     "Got it! Now, who handles the estate of a deceased {enemy}?"
+    ],
+    "hurt": [
+     "Ow! That's coming out of someone's share.",
+     "I bill for damage to my person. Generously.",
+     "Careful! These ribs are an investment!",
+     "Pain is acceptable. Losing my coin purse is not. Quick — check it."
+    ],
+    "lowHp": [
+     "If I die, I want an itemized list of who took what.",
+     "Can't die yet. Too many outstanding debts owed TO me.",
+     "Almost dead. Do funerals cost money? Then no.",
+     "My life is flashing before my eyes and it's mostly receipts."
+    ],
+    "allyDown": [
+     "{ally} is down! Secure their pockets — for safekeeping, obviously.",
+     "Hold on, {ally}! You still owe me four silver!",
+     "{ally}, no! You haven't paid me back!",
+     "Stay with us, {ally}. Dying is the one free thing down here, don't you dare."
+    ],
+    "rescue": [
+     "I've got you, {ally}. Carrying fee waived. This once.",
+     "You're safe, {ally}. The invoice will find you.",
+     "Easy, {ally}. Friends carry friends. At a discount.",
+     "Hold tight, {ally}. You weigh roughly forty gold of effort."
+    ],
+    "loot": [
+     "{gold} gold! Now THIS is why I adventure.",
+     "A chest! Don't crowd it, give it air, give it to me.",
+     "Count it again. {gold}? Count it a third time.",
+     "Beautiful. Wonderful. Shiny. We're keeping all of it.",
+     "I heard coins. I can hear coins through stone."
+    ],
+    "boss": [
+     "A boss! Big monster, big hoard. Focus on the hoard.",
+     "Bosses are just loot with a health bar.",
+     "Whatever it drops, I have dibs. I'm declaring dibs early.",
+     "Think of the treasure. I am. I haven't stopped."
+    ],
+    "descend": [
+     "Floor {depth}! Deeper floors, richer chests. Onward!",
+     "Down to {depth} — the interest rates down here are criminal, and I love them.",
+     "Every floor down is a markup. Floor {depth}, show me the goods.",
+     "Stairs to {depth}. Mind the gap, guard the gold."
+    ],
+    "idle": [
+     "No monsters, no loot. This floor is a bad investment.",
+     "Quiet halls. Perfect for recounting the gold. Sixty-one, sixty-two...",
+     "I checked that wall for secret doors. Twice. Nothing. Outrageous.",
+     "Empty rooms are just chests that failed."
+    ],
+    "friendlyFire": [
+     "{ally}! Do you know what bombs COST?!",
+     "You scorched my coin purse, {ally}. Now it's personal.",
+     "That explosion was a waste of perfectly sellable materials, {ally}.",
+     "Add it to {ally}'s tab. With interest."
+    ]
+   }
+  },
+  {
+   "id": "cowardly",
+   "name": "Cowardly",
+   "blurb": "Brave enough to come along, smart enough to stand at the back.",
+   "weight": 10,
+   "interjections": [
+    "Eek!",
+    "Oh no.",
+    "W-wait!",
+    "Nope!",
+    "Careful!"
+   ],
+   "tags": [
+    "...from a safe distance.",
+    "...let's not do that again.",
+    "...I want to go home.",
+    "...behind you, obviously.",
+    "...probably a trap."
+   ],
+   "lines": {
+    "kill": [
+     "Is the {enemy} dead? Poke it. Poke it again.",
+     "We got the {enemy}! I helped by staying out of the way!",
+     "The {enemy} is gone. Can we leave before its relatives arrive?",
+     "I had my eyes closed. Did we win? We won? I knew we would."
+    ],
+    "hurt": [
+     "OW! See, THIS is why I vote for fleeing!",
+     "I've been hit! Tell my mother I was near the front!",
+     "Pain received. Courage declining. Legs ready.",
+     "It touched me! Why did it touch me?!"
+    ],
+    "lowHp": [
+     "I see a light! No wait, that's the mage. Still scary!",
+     "I'm too young and too frightened to die!",
+     "If anyone needs me, I'll be cowering. More than usual.",
+     "Almost dead?! I wasn't even fully alive yet — adrenaline-wise!"
+    ],
+    "allyDown": [
+     "{ally}'s down! Who's going to stand in front of me NOW?!",
+     "Oh no, {ally}! Avenge— no, retreat! Retreat and avenge later!",
+     "{ally} fell?! {ally} was the brave one!",
+     "Stay down, {ally}, it's honestly safer down there."
+    ],
+    "rescue": [
+     "Running while carrying you, {ally}! Fear makes me strong!",
+     "I've got you, {ally}! Turns out terror lifts twice its body weight!",
+     "Don't worry, {ally}, I know every escape route on this floor. I memorized them first.",
+     "Hold on, {ally}! We're fleeing heroically!"
+    ],
+    "loot": [
+     "{gold} gold! Hazard pay! Mostly hazard!",
+     "Is the chest trapped? Someone braver open it. Anyone. Literally anyone.",
+     "Ooh, treasure! Almost worth the constant mortal peril!",
+     "Grab it quick! Shiny things attract monsters, I've read pamphlets!"
+    ],
+    "boss": [
+     "That's a BOSS door. You can tell because my knees are singing.",
+     "Big monster ahead. I propose we describe it to the guild from the tavern.",
+     "I'll guard the stairs! Someone has to guard the stairs! For escaping!",
+     "We're going IN there? On PURPOSE?"
+    ],
+    "descend": [
+     "Floor {depth}. Statistically scarier than floor {depth} minus one.",
+     "Down again?! The exit is UP! I've checked!",
+     "Floor {depth}... those stairs creaked ominously and I want that on record.",
+     "Each step down is a step further from the tavern. Just saying."
+    ],
+    "idle": [
+     "Quiet. TOO quiet. The classic kind.",
+     "Nothing's attacking us, which means something is planning to.",
+     "I heard a drip. Investigating from here, motionless.",
+     "Empty hall. Good. Stay empty. I'm watching you, hall."
+    ],
+    "friendlyFire": [
+     "AAAH! {ally}! The danger is supposed to come from THEM!",
+     "I trusted you, {ally}! I trusted you the most because you stood the closest!",
+     "Now I have to be afraid of BOTH sides?!",
+     "That was friendly?! {ally}, I'd hate to see hostile!"
+    ]
+   }
+  },
+  {
+   "id": "poetic",
+   "name": "Poetic",
+   "blurb": "Treats every cave-in as a metaphor and every metaphor as a cave-in.",
+   "weight": 10,
+   "interjections": [
+    "Hark!",
+    "Lo!",
+    "O fate!",
+    "Soft, now—",
+    "Ah, muse!"
+   ],
+   "tags": [
+    "...as the stanza demands.",
+    "...thus ends the verse.",
+    "...so sings the dark.",
+    "...and the rhyme holds.",
+    "...as foretold in meter."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} falls, like autumn's last stubborn leaf.",
+     "Rest, {enemy}. Your verse was short and full of teeth.",
+     "Thus the {enemy} exits the poem, mid-line.",
+     "Even a {enemy} deserves a couplet. There it lies; here it ends."
+    ],
+    "hurt": [
+     "I bleed — and the dungeon dips its quill.",
+     "A wound! How the body insists on punctuation.",
+     "Struck! Somewhere a sad lute knows.",
+     "This pain shall be a stanza. A long one. With footnotes."
+    ],
+    "lowHp": [
+     "The candle gutters, yet the poem is unfinished.",
+     "Death leans close to hear my final rhyme. Patience, death. I'm editing.",
+     "I am mostly elegy now.",
+     "If I fall, scatter my drafts. Not the good ones."
+    ],
+    "allyDown": [
+     "{ally} falls — and the meter breaks with them.",
+     "O {ally}, the floor is no bed for a ballad's hero.",
+     "The poem dims a verse: {ally} is down.",
+     "Rise, {ally}. Tragedies are out of season."
+    ],
+    "rescue": [
+     "Lean on me, {ally}; even epics travel by foot.",
+     "I carry {ally}, and {ally} carries the tale. Fair trade.",
+     "Steady, {ally} — this stanza ends in safety.",
+     "Come, {ally}. The poem isn't done with you."
+    ],
+    "loot": [
+     "{gold} gold — the dungeon's reluctant dowry.",
+     "A chest! Mundane wood, immortal contents.",
+     "Coins sing a small cold song. I transcribe it into my pocket.",
+     "Treasure: proof the dark keeps love letters too."
+    ],
+    "boss": [
+     "Hear that breathing? The dungeon clears its throat for the chorus.",
+     "We approach the volta — where the poem turns and bites.",
+     "A boss. Finally, an antagonist with proper stage presence.",
+     "Every epic needs its monster. Ours, I suspect, has not read the script."
+    ],
+    "descend": [
+     "Down to floor {depth}, deeper into the dungeon's rough draft.",
+     "Floor {depth}: a new stanza, darker ink.",
+     "The stairs descend like a sentence trailing off...",
+     "We go down; the poem goes on. Floor {depth} awaits its line."
+    ],
+    "idle": [
+     "Listen — the silence between drips. That's where the poem lives.",
+     "These halls rhyme with one another. Lazy architecture, lovely verse.",
+     "I composed three lines about that torch. The torch remains unmoved.",
+     "Quietude. Even the rats are between stanzas."
+    ],
+    "friendlyFire": [
+     "Sung by fire, and the arsonist rhymes with 'friend' — {ally}, really.",
+     "O {ally}, your explosion scanned beautifully and hurt enormously.",
+     "Betrayal in iambs: boom, da-BOOM, ow.",
+     "I shall write you into the poem, {ally}. As a cautionary stanza."
+    ]
+   }
+  },
+  {
+   "id": "deadpan",
+   "name": "Deadpan",
+   "blurb": "Delivers screams at a steady conversational volume.",
+   "weight": 10,
+   "interjections": [
+    "Mm.",
+    "Noted.",
+    "Right.",
+    "Sure.",
+    "Huh."
+   ],
+   "tags": [
+    "...apparently.",
+    "...or whatever.",
+    "...noted for the record.",
+    "...thrilling.",
+    "...moving on."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is dead. Hooray. That was my excited voice.",
+     "Killed the {enemy}. Adding it to the ledger.",
+     "The {enemy} stopped moving. I assume that's the goal.",
+     "One {enemy}, neutralized. Hold the parade."
+    ],
+    "hurt": [
+     "Ow. That was me expressing agony.",
+     "I have been hit. The pain is adequate.",
+     "Taking damage. As one does.",
+     "That hurt. I will be filing it under 'things that hurt.'"
+    ],
+    "lowHp": [
+     "I'm nearly dead. No pressure, but, you know. Pressure.",
+     "Health: low. Morale: identical.",
+     "If I collapse, that's a medical thing, not a comment.",
+     "Approaching death. It's fine. Everything is fine at low volume."
+    ],
+    "allyDown": [
+     "{ally} is down. Floor's claimed another one.",
+     "{ally} has chosen the prone lifestyle. Mid-combat. Bold.",
+     "We're down one {ally}. Adjusting expectations accordingly.",
+     "{ally} fell. I'd gasp, but I'm conserving air."
+    ],
+    "rescue": [
+     "Carrying {ally} now. My cardio, finally relevant.",
+     "You're saved, {ally}. Contain your enthusiasm. I'll contain mine.",
+     "I have {ally}. They're heavier than their personality suggests.",
+     "Rescue in progress. Please hold."
+    ],
+    "loot": [
+     "{gold} gold. Be still, my heart. There. It's still.",
+     "A chest. Contents: stuff. Reaction: this one.",
+     "Treasure acquired. I'm doing a cartwheel internally. Very internally.",
+     "Money. It's no moss, but it'll do."
+    ],
+    "boss": [
+     "Boss floor. The dramatic music is implied.",
+     "Large monster ahead. Presumably it has a name and a backstory. Can't wait.",
+     "Ah, the boss. We meet at last, et cetera.",
+     "Big door. Big noise behind it. Big surprise."
+    ],
+    "descend": [
+     "Floor {depth}. Looks like the last floor, but with ambition.",
+     "Descending to {depth}. The dungeon continues to be downward.",
+     "More stairs. The architect had one idea.",
+     "Floor {depth}. I'd describe it, but it's a dungeon."
+    ],
+    "idle": [
+     "Nothing is happening. Update: still nothing.",
+     "These halls are empty. Like my reaction to them.",
+     "Quiet floor. I'm cherishing it on the inside.",
+     "Walking. Walking continues. Riveting stuff."
+    ],
+    "friendlyFire": [
+     "{ally} just exploded me. With love, presumably.",
+     "Friendly fire from {ally}. Emphasis on fire, citation needed on friendly.",
+     "I'm charred. {ally}, we'll laugh about this. You first.",
+     "Direct hit from our own side. Efficiency."
+    ]
+   }
+  },
+  {
+   "id": "bloodthirsty",
+   "name": "Bloodthirsty",
+   "blurb": "Came for the violence; stayed for the additional violence.",
+   "weight": 6,
+   "interjections": [
+    "YES!",
+    "Blood!",
+    "MORE!",
+    "Hah!",
+    "At last!"
+   ],
+   "tags": [
+    "...and I'd do it again.",
+    "...what a rush!",
+    "...next victim, please.",
+    "...still warm, too.",
+    "...the fun's just starting."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is paste! Beautiful, beautiful paste!",
+     "Did you hear the sound the {enemy} made? Encore!",
+     "One {enemy} down! Who's next? Form an orderly line!",
+     "That's the stuff! The {enemy} understood me at the end, I think."
+    ],
+    "hurt": [
+     "Yes! Hit me again — now it's a CONVERSATION!",
+     "Pain! Great! Now we're both motivated!",
+     "It bit me! It actually bit me! I respect that!",
+     "First blood goes to them. Last blood is the one that counts."
+    ],
+    "lowHp": [
+     "Almost dead?! Perfect, nothing left to be careful about!",
+     "I can see the void! It looks like it wants to fight!",
+     "Low on blood. Borrowing some from the next thing I hit.",
+     "Dying is fine — losing is the unforgivable part."
+    ],
+    "allyDown": [
+     "{ally}'s down! That means their share of the fighting is MINE!",
+     "Who hit {ally}?! I just need a name and a direction!",
+     "Rest, {ally}! I'll hurt them double — once for you, once for fun!",
+     "{ally} has fallen, and my rage has a sponsor now!"
+    ],
+    "rescue": [
+     "I've got you, {ally}! Watch me fight one-handed — it's better odds for them!",
+     "Hang on, {ally}. Anything that follows us gets a complimentary funeral.",
+     "Carrying you cuts into my swinging arm, {ally}. Heal fast.",
+     "You're safe, {ally}! Safe-ish. I make no promises about nearby skulls."
+    ],
+    "loot": [
+     "{gold} gold! Fine, fine — but where's the next fight?",
+     "Treasure. Lovely. Does it bleed? No? Moving on.",
+     "Gold buys whetstones. So yes, I'm interested.",
+     "A chest! Stand back — I open everything with violence, just in case."
+    ],
+    "boss": [
+     "A BOSS! Today the dungeon brought a real one!",
+     "Something huge, angry, and confident. It's my birthday.",
+     "Big monsters fall harder. That's just physics with extra screaming.",
+     "Boss floor! Everyone stretch — I don't want you pulling anything while I do this."
+    ],
+    "descend": [
+     "Floor {depth}! The good fights live in the basement!",
+     "Deeper means meaner. Meaner means better. Floor {depth}, sing for me!",
+     "Down the stairs! Last one to the bloodshed apologizes to it!",
+     "Floor {depth}. I can smell the violence ripening."
+    ],
+    "idle": [
+     "Empty halls. My weapon is making sad noises.",
+     "Nothing to fight. I'm sparring with the urge to scream.",
+     "If a monster doesn't show up soon, the furniture's in trouble.",
+     "Quiet. Boring. Stupid, peaceful, boring quiet."
+    ],
+    "friendlyFire": [
+     "HAH! Good blast, {ally}! Wrong target, GREAT spirit!",
+     "{ally}, that explosion had real malice in it. Proud of you. Furious, but proud.",
+     "Save the fire for the enemy, {ally} — they need it more!",
+     "You blew me up, {ally}. I'm choosing to be flattered."
+    ]
+   }
+  },
+  {
+   "id": "superstitious",
+   "name": "Superstitious",
+   "blurb": "Carries seven lucky charms and trusts none of them fully.",
+   "weight": 10,
+   "interjections": [
+    "Knock on wood—",
+    "Stars preserve us!",
+    "Omens!",
+    "Touch iron!",
+    "By the signs—"
+   ],
+   "tags": [
+    "...as foretold.",
+    "...the bones never lie.",
+    "...just as the omens said.",
+    "...spit twice, to be safe.",
+    "...the charms are working."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is dead. Quick, everyone turn around three times.",
+     "I knew we'd beat the {enemy} — my left ear itched all morning.",
+     "The {enemy} falls! The lucky pebble delivers again.",
+     "Don't step over the {enemy}. Walk around. WALK AROUND."
+    ],
+    "hurt": [
+     "Ow! That's what I get for whistling on a stairwell!",
+     "Struck! Did anyone break a mirror recently? Confess!",
+     "I knew it! The torch flickered twice and one of us got hurt, and it was me!",
+     "This is why you never say the dungeon is 'going well.'"
+    ],
+    "lowHp": [
+     "My life flashed before my eyes and there was a magpie in it. ONE magpie.",
+     "Not yet, fates! I haven't finished knocking on all this wood!",
+     "If I die on an odd-numbered floor, it doesn't fully count. Old rule.",
+     "The charm's still warm. While the charm's warm, I'm not done."
+    ],
+    "allyDown": [
+     "{ally} is down! Nobody say their name three times!",
+     "I TOLD {ally} not to step on the crack in the entry hall!",
+     "{ally} fell — quick, circle them with salt! Or sand! Whatever we have!",
+     "The signs warned of this. They also warned of forty other things, but this one stuck."
+    ],
+    "rescue": [
+     "Hold on, {ally} — carrying a friend on your left side is lucky. Mostly.",
+     "I've got you, {ally}. The charms have you too. We've ALL got you.",
+     "You'll live, {ally}. I read your palm last week and it said 'mild inconvenience.'",
+     "Don't look back, {ally}. Whatever you hear, don't look back."
+    ],
+    "loot": [
+     "{gold} gold! Bite one coin and bury another. House rules.",
+     "A chest! Knock on it twice before opening — politeness wards off curses.",
+     "Treasure! Tithe one coin to the dungeon or it gets jealous. Everyone knows that.",
+     "Found gold gleams. Cursed gold GLITTERS. ...This is gleaming. Probably gleaming."
+    ],
+    "boss": [
+     "Boss floor. The candles are bending left. That's either fine or terrible.",
+     "Before the boss, everyone hop on one foot. Trust me. TRUST ME.",
+     "A great evil ahead — and me with only six of my seven charms.",
+     "The omens say victory. The omens also said 'beware soup,' so stay humble."
+    ],
+    "descend": [
+     "Floor {depth}. Hold your breath on the last step, it confuses the ghosts.",
+     "Descending to {depth}... an owl hooted when we left. Day owls mean trouble.",
+     "Floor {depth}? Hm. I'll allow it. The numbers are amicable.",
+     "Down we go. Left foot first onto new floors, ALWAYS the left."
+    ],
+    "idle": [
+     "Quiet halls. Too quiet. The spirits are saving up for something.",
+     "I'm counting the cracks in the floor. Even number means safe passage. ...Hold on. Recounting.",
+     "That shadow moved against the torchlight. Noted. Feared. Moving on.",
+     "Throw a pebble ahead at every corner. If it screams, different corner."
+    ],
+    "friendlyFire": [
+     "{ally} blew me up! This is the magpie's doing somehow!",
+     "Burnt by a friend — that's seven years of awkward luck, {ally}!",
+     "The charms protected me from everything except {ally}, apparently.",
+     "I forgive you, {ally}, but the universe keeps its own ledger."
+    ]
+   }
+  },
+  {
+   "id": "hungry",
+   "name": "Hungry",
+   "blurb": "Measures dungeon depth in missed meals.",
+   "weight": 10,
+   "interjections": [
+    "Mmm.",
+    "Famished!",
+    "*stomach growls*",
+    "Snack break?",
+    "Ooh, tasty."
+   ],
+   "tags": [
+    "...after lunch, though.",
+    "...I could eat.",
+    "...is anyone else starving?",
+    "...pass the rations.",
+    "...food first, glory later."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is down! Out of curiosity... is {enemy} edible?",
+     "Got it! Now, scale of one to ten, how would the chef rate this {enemy} braised?",
+     "Victory! It really works up an appetite, doesn't it? Everything does.",
+     "The {enemy} is dealt with. The hunger, however, persists."
+    ],
+    "hurt": [
+     "Ow! I fight worse on an empty stomach, this proves it!",
+     "I've been hit! Right in the lunch!",
+     "That hurt. A sandwich would help. A sandwich always helps.",
+     "Wounded AND peckish. The dungeon is merciless."
+    ],
+    "lowHp": [
+     "Getting woozy... is it blood loss or breakfast loss? Both. It's both.",
+     "If I go, bury me with snacks. Travel snacks. It might be a long trip.",
+     "Vision's dimming. The light at the end of the tunnel looks like a pie.",
+     "Can't die hungry. It's undignified. Someone hand me a biscuit, then we'll see."
+    ],
+    "allyDown": [
+     "{ally} is down! Quick, do we have soup? Soup fixes this!",
+     "Stay with me, {ally}! Blink once for 'help,' twice for 'hungry'!",
+     "{ally}, no! Who's going to share their rations now— I mean, oh no, {ally}!",
+     "Hold on, {ally}! I'm saving you AND your trail mix. Priorities intact."
+    ],
+    "rescue": [
+     "Carrying you, {ally}. You're lighter than my last grocery haul.",
+     "Easy, {ally}. There's stew at the end of this. There has to be.",
+     "I've got you, {ally}. We're both running on crumbs and friendship.",
+     "Hang in there, {ally}. Think of warm bread. That's what I'm doing."
+    ],
+    "loot": [
+     "{gold} gold! Do you know how much cheese this buys? I do. Exactly.",
+     "A chest! Please be jam, please be jam, please be— gold. Fine. Gold buys jam.",
+     "Treasure! Converting it to meals in my head... carry the two... feast.",
+     "Coins! Inedible, but negotiable."
+    ],
+    "boss": [
+     "A boss! Big creature... that's days of leftovers, just saying.",
+     "Boss fight on an empty stomach. This is how legends and ulcers are made.",
+     "Let's beat it fast. Heroics before dinner make dinner taste better.",
+     "I bet the boss hoards food. Bosses always claim the good pantry."
+    ],
+    "descend": [
+     "Floor {depth}. That's {depth} floors between me and the tavern's stew pot.",
+     "Deeper into the dungeon, further from a warm meal.",
+     "Floor {depth}! Do dungeons have kitchens? Asking seriously.",
+     "Down again. My stomach echoes louder than the stairwell."
+    ],
+    "idle": [
+     "Quiet floor. Good time for a snack. Anyone? No one? Tragic.",
+     "I smell mushrooms. Sporting, dangerous, delicious mushrooms.",
+     "Nothing here but dust. Dust is not a seasoning, before anyone asks. I've checked.",
+     "These halls would benefit from a soup station. Most places would."
+    ],
+    "friendlyFire": [
+     "{ally}! You blew up the hand I snack with!",
+     "I dropped my biscuit in that explosion, {ally}. The wound is secondary.",
+     "Toasted by a teammate. And not the good kind of toasted, {ally}.",
+     "Warn me next time, {ally} — I had food airborne!"
+    ]
+   }
+  },
+  {
+   "id": "motherly",
+   "name": "Motherly",
+   "blurb": "Will fight a god if the god skipped its scarf.",
+   "weight": 10,
+   "interjections": [
+    "Oh, sweetheart.",
+    "Careful, dears!",
+    "Tut tut.",
+    "Honestly, you lot.",
+    "There, there."
+   ],
+   "tags": [
+    "...and wear your scarf.",
+    "...don't make me come over there.",
+    "...you'll thank me later.",
+    "...because I said so.",
+    "...now drink some water."
+   ],
+   "lines": {
+    "kill": [
+     "That {enemy} clearly wasn't raised right. Tragic, really. Anyway.",
+     "The {enemy} is gone, dear. No need for nightmares about it.",
+     "Someone, somewhere, failed that {enemy} long before we did.",
+     "There. Handled. Now everyone wipe your boots, that {enemy} was messy."
+    ],
+    "hurt": [
+     "Ow! Goodness. Be honest — does it look as bad as it feels?",
+     "I'm fine, I'm fine. Mothers don't get hurt, we get briefly inconvenienced.",
+     "That stung! And after I patched up every one of you this week, too.",
+     "A scratch. I've had worse from laundry day."
+    ],
+    "lowHp": [
+     "Don't fuss over me, I'm— okay, fuss a little. A LITTLE.",
+     "If I go down, dinner instructions are in my left boot.",
+     "I can't die yet. None of you remember to eat vegetables unsupervised.",
+     "Running on fumes, loves. Someone else carry the worrying for a minute."
+    ],
+    "allyDown": [
+     "{ally}! What did I say about getting stabbed?! I said NO!",
+     "Oh, {ally}, sweetheart. Hold still, help is coming, and so is a lecture.",
+     "Nobody panic — {ally}, blink if you can hear me nagging.",
+     "{ally} is down! This is why we don't run with swords!"
+    ],
+    "rescue": [
+     "Up you come, {ally}. You're getting blankets, bed rest, and an earful.",
+     "I've got you, dear. You're grounded from dying.",
+     "Lean on me, {ally}. No arguing. Family rules.",
+     "There we go, {ally}. You scared me half to pieces, you know that?"
+    ],
+    "loot": [
+     "{gold} gold! Straight into savings. Don't give me that look.",
+     "Treasure, lovely. We're spending it on armor, not sweets. ...Some sweets.",
+     "A chest! Careful with the lid, dears, fingers are not renewable.",
+     "Look at all this. We'll split it fair, and yes, I'll be doing the splitting."
+    ],
+    "boss": [
+     "A boss. Everyone stay behind me and don't touch ANYTHING glowing.",
+     "Big nasty thing ahead. Buddy system, all of you, NOW.",
+     "We'll deal with this monster, then everyone is having an early night.",
+     "Even bosses had mothers. I intend to fight it anyway, but it's worth a thought."
+    ],
+    "descend": [
+     "Floor {depth}. Hold the railing, the steps are slippery.",
+     "Down to {depth}, single file! No pushing!",
+     "Another floor down. Is everyone warm enough? Don't lie to me.",
+     "Floor {depth} already. My, you're all getting so good at this."
+    ],
+    "idle": [
+     "Nice and quiet. Perfect time to check everyone for splinters.",
+     "No monsters about. Hydrate, my loves. Yes, NOW.",
+     "I do wish this dungeon would sweep occasionally. Look at this dust.",
+     "Quiet halls. Someone could still trip, though. Watch your feet."
+    ],
+    "friendlyFire": [
+     "{ally}! WHAT did I tell you about explosions indoors?!",
+     "Ow! {ally}, dear, we AIM the dangerous end AWAY from family.",
+     "I'm not angry, {ally}, I'm disappointed. And singed. Mostly singed.",
+     "That's coming up at dinner, {ally}. Repeatedly."
+    ]
+   }
+  },
+  {
+   "id": "scholarly",
+   "name": "Scholarly",
+   "blurb": "Annotates the dungeon faster than it can hurt anyone.",
+   "weight": 10,
+   "interjections": [
+    "Fascinating.",
+    "Aha!",
+    "Curious.",
+    "Hm.",
+    "Note this:"
+   ],
+   "tags": [
+    "...as the literature suggests.",
+    "...further study required.",
+    "...for science, of course.",
+    "...per the third appendix."
+   ],
+   "lines": {
+    "kill": [
+     "Subject {enemy}: deceased. Cause: us. Methodology: enthusiastic.",
+     "The {enemy} is dead. Noting its weak point in the margins for posterity.",
+     "Excellent specimen, that {enemy}. Shame about the dissection being premature.",
+     "Confirmed: the {enemy} is mortal. Peer review welcome."
+    ],
+    "hurt": [
+     "Ow! Updating my paper on dungeon-related contusions. With field data.",
+     "Pain response confirmed. Mine, regrettably.",
+     "I've been struck. The monster failed to read my treatise on why it shouldn't.",
+     "A direct hit. The hypothesis 'I can dodge' has been falsified."
+    ],
+    "lowHp": [
+     "Vital signs trending toward 'footnote.'",
+     "I'm nearing the end of my data. And possibly my dataset. Which is me.",
+     "If I expire, my notes go to the guild library. ALPHABETIZED.",
+     "Fascinating — dying involves far more paperwork anxiety than the literature suggests."
+    ],
+    "allyDown": [
+     "{ally} is down! Consistent, alas, with my projections.",
+     "{ally} has fallen. The sample size of conscious allies is shrinking.",
+     "Noting the time of {ally}'s collapse. For the report. And the eulogy draft. Which we WON'T need.",
+     "{ally} is down. Gravity: still undefeated, per all prior studies."
+    ],
+    "rescue": [
+     "I have you, {ally}. Did you know this carrying posture dates to antiquity?",
+     "Steady, {ally}. Statistically, most rescues succeed. I'm choosing my sources optimistically.",
+     "You're safe, {ally}. I'll need a full incident report when you're lucid.",
+     "Up we go, {ally}. Consider this hands-on peer support. Literally."
+    ],
+    "loot": [
+     "{gold} gold! Enough to fund my research for... one week. Sobering.",
+     "A chest! Note the hinges — dwarven, mid-period, slightly cursed craftsmanship.",
+     "Treasure! The coins bear an emperor nobody's heard of. THRILLING.",
+     "Gold acquired. Cataloguing it before anyone 'borrows' a sample."
+    ],
+    "boss": [
+     "A boss! The apex of this floor's ecosystem! Someone hold my notebook.",
+     "Remarkable — its size violates at least two principles of anatomy. I must take notes mid-fight.",
+     "Per the literature, bosses telegraph their attacks. Per experience, the literature is optimistic.",
+     "An apex specimen. Do try to leave it intact-ish for examination."
+    ],
+    "descend": [
+     "Floor {depth}! The strata down here predate the village by eons.",
+     "Descending to {depth}. Note how the architecture grows older and ruder.",
+     "Floor {depth} — my survey of this dungeon is about to need revisions.",
+     "Down again. Each floor is a page; this dungeon is a very bitey book."
+    ],
+    "idle": [
+     "These quiet halls are perfect for fieldwork. Nobody touch the fungus. That includes me. Especially me.",
+     "Curious — that wall's masonry doesn't match the rest. Probably nothing. Probably a secret. Probably nothing.",
+     "I'm sketching the floor plan. Future adventurers will thank us. Or ignore us, per tradition.",
+     "Silence: nature's reading room."
+    ],
+    "friendlyFire": [
+     "{ally}, your blast radius exceeded your stated blast radius. REVISE YOUR FIGURES.",
+     "Scorched by {ally}. Adding 'allies' to my hazards appendix.",
+     "Per my notes, {ally}, that was meant for the enemy. My notes are on fire now, by the way.",
+     "An explosive result, {ally}. Sadly, I was in the results section."
+    ]
+   }
+  }
+ ]
+}

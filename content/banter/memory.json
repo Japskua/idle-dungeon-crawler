@@ -1,0 +1,92 @@
+{
+ "conditions": [
+  {
+   "id": "greenhorn",
+   "when": "first ever run, runs <= 1",
+   "lines": [
+    "So this is the famous dungeon. Damper than the poster implied.",
+    "Everyone back home said I'd know what to do when the moment came. Still waiting on the knowing.",
+    "I sharpened everything twice last night. Turns out the dungeon doesn't check.",
+    "First run. I wrote my name in my boots, in case. In case of what, I didn't finish thinking.",
+    "The veterans don't look back when they walk in. I'm going to practice that part."
+   ]
+  },
+  {
+   "id": "veteran",
+   "when": "kills >= 50; {kills} available",
+   "lines": [
+    "{kills} kills. Somewhere back there I stopped counting and started tallying.",
+    "The first one kept me up all night. Now it's {kills}, and I sleep fine. That's its own thing to sit with.",
+    "After {kills}, you learn the trick: there is no trick. You keep your feet under you and you keep moving.",
+    "Fifty felt like a milestone. {kills} feels like a Tuesday.",
+    "{ally} asked how many. I said {kills} like it was nothing. It wasn't nothing. None of them were."
+   ]
+  },
+  {
+   "id": "legend",
+   "when": "kills >= 200; {kills}",
+   "lines": [
+    "{kills}. They tell stories about numbers like that. The stories leave out the laundry.",
+    "At {kills} kills, the monsters have started to recognize me. Hard to say if it's an honor or a warning.",
+    "There's a song about me in the tavern now. It rhymes 'slayer' with 'mayor'. I didn't ask for any of this.",
+    "{kills} and counting. The dungeon and I are less enemies than longtime colleagues.",
+    "I checked whether legends get to retire. Twice. They don't."
+   ]
+  },
+  {
+   "id": "survivor",
+   "when": "downs >= 3; {downs}",
+   "lines": [
+    "Down {downs} times now. The floor and I have an understanding.",
+    "What doesn't kill you mostly makes you very familiar with ceilings.",
+    "{downs} times down, {downs} times back up. It's the only score I keep anymore.",
+    "You learn things lying there waiting for help. Mainly patience. Mainly who comes.",
+    "My knees deliver a speech every morning about all {downs} occasions. I've stopped arguing."
+   ]
+  },
+  {
+   "id": "grateful",
+   "when": "was carried out at least once; {rescuer}",
+   "lines": [
+    "{rescuer} carried me the whole way out. I keep meaning to say something real. I keep saying 'nice weather' instead.",
+    "You remember odd things from being carried. I remember {rescuer} humming. Off-key. Best sound I've heard.",
+    "I owe {rescuer} a life. Nobody explains the repayment plan, so I've started carrying their bags.",
+    "{rescuer} claims I'm heavier than I look. Fine. They're stronger than they look.",
+    "Some debts you don't settle. You just keep {rescuer}'s mug full and never mention why."
+   ]
+  },
+  {
+   "id": "haunted",
+   "when": "has a recorded worst hit; {worst}",
+   "lines": [
+    "Sometimes in the quiet I hear that {worst} again. It's just the wind. I check anyway.",
+    "Everyone carries a number in their head. Mine has a shape, and the shape is {worst}.",
+    "I don't dream about treasure anymore. I dream about one half-second, me, and that {worst}. I'd like the half-second back.",
+    "Ask about my scars and I'll tell you a funny story. The one from the {worst} doesn't have a funny version yet.",
+    "My armor forgave the {worst} a long time ago. Armor's quicker about these things."
+   ]
+  },
+  {
+   "id": "protector",
+   "when": "carried someone else out at least twice",
+   "lines": [
+    "I've carried friends out twice now. They apologize the whole way home. I wish they'd save the breath for breathing.",
+    "Carrying someone out is simple. You just don't put them down. It's everything else in this job that's hard.",
+    "My shoulders are mostly knots now. Good knots. They mean everyone came home.",
+    "{ally} asked once if they were heavy. Everyone asks. No one is. Not when it counts.",
+    "Twice I've walked out slower than I walked in. Those are the walks I remember."
+   ]
+  },
+  {
+   "id": "deathless",
+   "when": "10+ runs, never downed",
+   "lines": [
+    "Ten runs without going down once. I knock on wood so often the bartender thinks it's a greeting.",
+    "Never been downed. I don't say that out loud anymore. The dungeon listens.",
+    "The secret to staying up is simple: be terrified at all times, professionally.",
+    "Everyone's got a story about the time they nearly died. I'm starting to feel left out. Starting to.",
+    "Either I'm careful or the dungeon is saving me for something. I don't love either option."
+   ]
+  }
+ ]
+}

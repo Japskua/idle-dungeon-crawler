@@ -211,7 +211,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.village.gold < cost) return;
       state.village.gold -= cost;
       state.village.hiredToday.push(cmd.recruitKey);
-      const hero = makeHero(state, recruit.classId, recruit.name, recruit.level, recruit.perks);
+      const hero = makeHero(state, recruit.classId, recruit.name, recruit.level, recruit.perks, recruit.traits);
       state.roster[hero.id] = hero;
       state.rosterOrder.push(hero.id);
       events.push({ t: 'hire', heroId: hero.id, name: hero.name, cost });

@@ -57,6 +57,8 @@ export class Renderer {
   private fxTexts: FxText[] = [];
   private fxFlashes: FxFlash[] = [];
   private fxProjectiles: FxProjectile[] = [];
+  /** one speech bubble per hero, word-wrapped, fades at the end */
+  private bubbles = new Map<Id, { lines: string[]; ttlMs: number }>();
   private facing = new Map<Id, number>(); // 1 = right, -1 = left
   private lastDrawMs = 0;
 
@@ -183,6 +185,23 @@ export class Renderer {
   }
 
   /** alpha: fraction of the next tick already accumulated (0..1) */
+  /** show a speech bubble above a hero (banter is render-side only) */
+  say(heroId: Id, text: string, durationMs: number) {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let cur = '';
+    for (const w of words) {
+      if ((cur + ' ' + w).trim().length > 24 && cur) {
+        lines.push(cur);
+        cur = w;
+      } else {
+        cur = (cur + ' ' + w).trim();
+      }
+    }
+    if (cur) lines.push(cur);
+    this.bubbles.set(heroId, { lines: lines.slice(0, 5), ttlMs: durationMs });
+  }
+
   draw(state: GameState, alpha: number) {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || !this.atlas) return;
@@ -412,6 +431,34 @@ export class Renderer {
     this.fxTexts = this.fxTexts.filter((f) => f.ttlMs > 0);
     for (const f of this.fxFlashes) f.ttlMs -= dtMs;
     this.fxFlashes = this.fxFlashes.filter((f) => f.ttlMs > 0);
+
+    // speech bubbles, above everything but the HUD
+    ctx.textAlign = 'center';
+    ctx.font = '7px monospace';
+    for (const [id, b] of this.bubbles) {
+      b.ttlMs -= dtMs;
+      const px = heroPx.get(id);
+      if (b.ttlMs <= 0 || !px) {
+        this.bubbles.delete(id);
+        continue;
+      }
+      const w = Math.max(...b.lines.map((l) => l.length)) * 4.3 + 8;
+      const h = b.lines.length * 8 + 4;
+      let bx = ox + px.x + 8;
+      let by = oy + px.y - 8 - h;
+      bx = Math.max(w / 2 + 2, Math.min(this.viewW - w / 2 - 2, bx));
+      by = Math.max(2, by);
+      ctx.globalAlpha = Math.max(0, Math.min(1, b.ttlMs / 300));
+      ctx.fillStyle = 'rgba(13,10,15,0.88)';
+      ctx.fillRect(bx - w / 2, by, w, h);
+      ctx.strokeStyle = '#8a87a8';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx - w / 2 + 0.5, by + 0.5, w - 1, h - 1);
+      ctx.fillStyle = '#e8e6f0';
+      b.lines.forEach((l, i) => ctx.fillText(l, bx, by + 8 + i * 8));
+      ctx.globalAlpha = 1;
+    }
+    ctx.textAlign = 'left';
 
     // depth tag
     ctx.fillStyle = 'rgba(13,10,15,0.7)';

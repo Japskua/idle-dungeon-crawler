@@ -6,7 +6,7 @@ import type { GameState } from '../types';
 import { SAVE_VERSION } from '../newGame';
 import { ITEMS } from '../content';
 import { defaultTactics } from '../tactics/defaults';
-import { emptyStats } from '../hero/create';
+import { TRAIT_IDS, emptyStats } from '../hero/create';
 
 function u8ToBase64(u8: Uint8Array): string {
   let bin = '';
@@ -81,6 +81,18 @@ function reconcileContent(state: GameState) {
     // heroes saved before lifetime statistics get a blank story arc
     if (!hero.stats) hero.stats = emptyStats();
     if (typeof hero.bombs !== 'number') hero.bombs = 0;
+    if (!Array.isArray(hero.traits) || hero.traits.length === 0) {
+      // pre-banter heroes get a stable personality from their id, no rng burned
+      let h = 0x811c9dc5;
+      for (let i = 0; i < hero.id.length; i++) {
+        h ^= hero.id.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      h = h >>> 0;
+      const a = h % TRAIT_IDS.length;
+      const b = (a + 1 + ((h >>> 8) % (TRAIT_IDS.length - 1))) % TRAIT_IDS.length;
+      hero.traits = [TRAIT_IDS[a]!, TRAIT_IDS[b]!];
+    }
   }
   if (state.run) {
     state.run.party.lootBag = state.run.party.lootBag.filter((i) => ITEMS[i.defId]);

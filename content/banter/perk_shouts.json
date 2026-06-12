@@ -1,0 +1,264 @@
+{
+ "perks": [
+  {
+   "id": "afraid_of_the_dark",
+   "lines": {
+    "idle": [
+     "Is it just me, or did the torchlight shrink?",
+     "Who designed this place? Not one window in it.",
+     "I'm fine. The shadows and I have an understanding. The understanding is that I hate them.",
+     "Counting torches. Four between here and the exit. Four is not enough."
+    ],
+    "descend": [
+     "Down means darker. Why does down always mean darker?",
+     "New floor, same dark. I'm keeping a tally of grievances.",
+     "If anything touches me from a shadow, I am legally allowed to scream."
+    ],
+    "chest": [
+     "Open it fast — {gold} gold spends better in daylight.",
+     "{gold} gold! Enough to buy a lantern. Or forty lanterns. Forty seems right.",
+     "Grab the {gold} and stand near the torch. The torch is my friend."
+    ],
+    "combat": [
+     "It came from the DARK, of course it came from the dark!",
+     "I'll fight better if everyone agrees the shadows started it.",
+     "Stay in the light and swing! That's my whole strategy!"
+    ]
+   }
+  },
+  {
+   "id": "brave",
+   "lines": {
+    "idle": [
+     "Standing still is just losing slowly.",
+     "Anyone else hear danger? No? I'll go find some.",
+     "I've scouted ahead. And ahead of that. And a bit further.",
+     "Plans are what you make up afterward to explain the charge."
+    ],
+    "descend": [
+     "Last one down fights whatever's left over!",
+     "Stairs! Finally, a direction I approve of.",
+     "Deeper means scarier means BETTER."
+    ],
+    "chest": [
+     "{gold} gold! I'd have charged it even if it were empty.",
+     "I opened it before checking for traps. That's called efficiency.",
+     "Stand back — I'll defend this {gold} gold with my whole body."
+    ],
+    "combat": [
+     "CHAAARGE! Details later!",
+     "I counted the enemies on the way in. Mid-swing. Roughly.",
+     "First one in, last one to think about it!"
+    ]
+   }
+  },
+  {
+   "id": "clumsy",
+   "lines": {
+    "idle": [
+     "I didn't trip. The floor moved. It does that around me.",
+     "Has anyone seen my left boot? It was on my foot a minute ago.",
+     "This is me walking carefully. Watch— whoops.",
+     "Whatever shattered back there was already broken. Spiritually."
+    ],
+    "descend": [
+     "Stairs and I have history. Bad history.",
+     "I'll go down the dignified way: mostly on purpose.",
+     "Count one extra step for the one I'm about to miss."
+    ],
+    "chest": [
+     "{gold} gold! Caught most of it on the first bounce.",
+     "The lid landed on my foot, but look — {gold} gold!",
+     "Don't hand it to me. Pour the {gold} directly into the bag."
+    ],
+    "combat": [
+     "I meant to swing there! The enemy walked into it!",
+     "If I fall over, it's a tactic. A surprise tactic.",
+     "Dropped my weapon — no wait, that's THEIR weapon now. Huh."
+    ]
+   }
+  },
+  {
+   "id": "collects_spoons",
+   "lines": {
+    "idle": [
+     "There are spoons somewhere in this dungeon. I can feel it.",
+     "Forty-one dungeons, forty-one spoons. The streak holds.",
+     "A fork would be worthless, obviously. Spoons have soul.",
+     "My newest spoon is labeled 'probably haunted.' It's my favorite."
+    ],
+    "descend": [
+     "Deeper floors, rarer spoons. Everyone knows this.",
+     "Somewhere down there is a teaspoon I haven't met yet.",
+     "Eyes open, everyone — cutlery hides where you least expect."
+    ],
+    "chest": [
+     "{gold} gold and... no spoon? Who STOCKS these things?",
+     "Yes, yes, {gold} gold. But check under the coins. Sometimes there's a ladle.",
+     "{gold} gold buys a lot of spoons I could have found for free."
+    ],
+    "combat": [
+     "Careful! Don't let it bleed on the loot — tarnish is forever!",
+     "You're standing between me and potential silverware. Bad choice.",
+     "I've taken down bigger things with a sturdy serving spoon!"
+    ]
+   }
+  },
+  {
+   "id": "fast_learner",
+   "lines": {
+    "idle": [
+     "I read one book about dungeons and honestly? Got the gist.",
+     "Watched the knight parry once. I do it better now. Don't tell the knight.",
+     "Picked up three new skills since breakfast. Slow morning.",
+     "Teach me something. Anything. I'm getting twitchy."
+    ],
+    "descend": [
+     "New floor, new curriculum.",
+     "Last floor taught me plenty. This one had better keep up.",
+     "Memorized the layout on the way down. Both layouts. All of them."
+    ],
+    "chest": [
+     "{gold} gold. Also memorized the lock — next one's getting picked blindfolded.",
+     "Fascinating hinge mechanism. Anyway, {gold} gold.",
+     "I've opened a chest before this one, so technically I'm a veteran."
+    ],
+    "combat": [
+     "I've seen this move before. Once. Which is plenty.",
+     "It telegraphs the lunge with its left foot. Learned that two seconds ago.",
+     "Same trick twice? On ME?"
+    ]
+   }
+  },
+  {
+   "id": "frying_pan_owner",
+   "lines": {
+    "idle": [
+     "Grandma fed six children and fought off two burglars with this pan. Same week.",
+     "Cast iron doesn't break. Cast iron breaks OTHER things.",
+     "I oil the pan every night. Grandma's watching. Approvingly. From somewhere.",
+     "Show me a sword that can also make eggs. I'll wait."
+    ],
+    "descend": [
+     "Grandma always said: never go downstairs without your pan.",
+     "Hear that echo? The pan likes this floor.",
+     "The deeper we go, the more I appreciate proper cookware."
+    ],
+    "chest": [
+     "{gold} gold! Grandma would say to spend it on a backup pan.",
+     "No skillet inside? Fine. {gold} gold will do.",
+     "{gold} gold. The pan and I will guard it. Mostly the pan."
+    ],
+    "combat": [
+     "BONNNG. That's the sound of heritage.",
+     "Grandma's recipe: one swing, well seasoned, served cold!",
+     "This pan has flattened pancakes and worse!"
+    ]
+   }
+  },
+  {
+   "id": "heirloom_ring",
+   "lines": {
+    "idle": [
+     "Still on my finger. Just checking. Still there.",
+     "Great-grandfather wore this ring through three wars and one very bad wedding.",
+     "It's not magic. Probably not magic. It hums a little, but sentimentally.",
+     "I polish it when I'm nervous. It's very polished today."
+    ],
+    "descend": [
+     "The ring feels heavier down here. That's fine. That's normal.",
+     "Family tradition: one twist of the ring per floor, for luck.",
+     "Great-grandfather went this deep once. The ring remembers. I assume."
+    ],
+    "chest": [
+     "{gold} gold and not one ring among it. Good. Mine doesn't like competition.",
+     "You can't buy sentiment, but {gold} gold is a decent consolation.",
+     "Checking the {gold} for family crests. You never know."
+    ],
+    "combat": [
+     "Touch the ring and the funeral is YOURS.",
+     "This fist has the ring on it. Family-strength punch incoming!",
+     "Great-grandfather is watching this fight through the ring. No pressure."
+    ]
+   }
+  },
+  {
+   "id": "lucky",
+   "lines": {
+    "idle": [
+     "Found a coin in my boot again. Third one today. I've stopped asking questions.",
+     "Statistically, something good should happen to me in the next... oh, there it is.",
+     "I don't walk under ladders. Ladders walk under me.",
+     "The last trap misfired and the one before rusted shut. I'm sure it's nothing."
+    ],
+    "descend": [
+     "I have a good feeling about this floor. I always do. I'm always right.",
+     "Watch — the stairs won't even creak for me.",
+     "Whatever's down there has terrible luck. It has to balance out somehow."
+    ],
+    "chest": [
+     "{gold} gold. Was anyone surprised? Be honest.",
+     "The lock just... fell open. Anyway, {gold} gold, everyone.",
+     "For most people {gold} gold is a windfall. For me it's a Tuesday."
+    ],
+    "combat": [
+     "It'll swing, it'll miss, I'll act surprised. Watch.",
+     "Don't worry about me. Worry about what fate has planned for THEM.",
+     "An arrow just parted my hair. See? Lucky."
+    ]
+   }
+  },
+  {
+   "id": "snores_loudly",
+   "lines": {
+    "idle": [
+     "I do NOT snore. I produce ambient defensive noise.",
+     "The party voted on watch order again. I'm 'permanent first watch.' Weird.",
+     "One little nap and suddenly the bats relocated. Cowards.",
+     "I slept great last night. Strange how no one else did."
+    ],
+    "descend": [
+     "If we camp down here, I call the far corner. For your sakes. Allegedly.",
+     "These caves have great acoustics. The party looks worried for some reason.",
+     "Deeper floors muffle sound, right? RIGHT?"
+    ],
+    "chest": [
+     "{gold} gold! Enough for an inn with thick walls. Everyone's suddenly very keen on thick walls.",
+     "{gold} gold? The party's already budgeting for separate rooms.",
+     "Split the {gold} however you like — just leave earplug money. Not for me. For you."
+    ],
+    "combat": [
+     "I'll roar! It's like my snore, but on purpose!",
+     "You think THIS is loud? You should hear me sleep!",
+     "Half the dungeon already knew we were coming. You're welcome for the warning."
+    ]
+   }
+  },
+  {
+   "id": "thick_skull",
+   "lines": {
+    "idle": [
+     "The door and I have settled out of court.",
+     "Helmets are for people whose heads are the soft part.",
+     "Headaches? No. I deliver those.",
+     "Knock knock. Not a joke — that's my forehead's resume."
+    ],
+    "descend": [
+     "Low ceiling ahead. The ceiling's problem.",
+     "If the stairs collapse, aim me headfirst. We'll be fine.",
+     "I sense a locked door down there. Warming up the forehead."
+    ],
+    "chest": [
+     "Locked? Hold my— actually, hold everything. THUNK. {gold} gold, you're welcome.",
+     "{gold} gold! And the chest barely dented my hairline.",
+     "Who needs keys? {gold} gold, acquired headfirst."
+    ],
+    "combat": [
+     "My skull is a weapon. My weapon is a backup skull.",
+     "Go ahead, aim for my head. Things break on it for free.",
+     "HEADBUTT! It's a tactic AND a lifestyle!"
+    ]
+   }
+  }
+ ]
+}

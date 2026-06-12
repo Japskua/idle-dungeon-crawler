@@ -225,6 +225,112 @@ if (banks.firstSyllables.length === 0 || banks.lastSyllables.length === 0) {
   err('content/names/', 'need at least one file providing firstSyllables and lastSyllables');
 }
 
+// ---------- banter (traits, voices, exchanges, quirk shouts, memories) ----------
+const CLASS_IDS = [
+  'knight', 'cleric', 'ranger', 'mage', 'necromancer', 'barbarian', 'monk',
+  'paladin', 'druid', 'bard', 'chef', 'beekeeper', 'thief', 'mime',
+];
+const ROLE_IDS = ['tank', 'healer', 'ranged_dps', 'caster', 'melee_dps', 'support'];
+const FAMILY_IDS = ['beast', 'slime', 'goblinoid', 'undead', 'cultist', 'fungus', 'landlord', 'generic'];
+const BANTER_CONTEXTS = ['kill', 'hurt', 'lowHp', 'allyDown', 'rescue', 'loot', 'boss', 'descend', 'idle', 'friendlyFire'];
+const PLACEHOLDERS = new Set(['enemy', 'ally', 'hero', 'depth', 'gold', 'kills', 'downs', 'rescuer', 'worst']);
+
+async function readBanterFile(name: string): Promise<any> {
+  const path = join(ROOT, 'content', 'banter', name);
+  if (!(await Bun.file(path).exists())) {
+    err(`content/banter/${name}`, 'missing');
+    return null;
+  }
+  try {
+    return JSON.parse(await Bun.file(path).text());
+  } catch (e) {
+    err(`content/banter/${name}`, `invalid JSON: ${(e as Error).message}`);
+    return null;
+  }
+}
+
+function checkLines(file: string, where: string, lines: unknown) {
+  if (!Array.isArray(lines) || lines.length === 0 || lines.some((l) => typeof l !== 'string')) {
+    err(file, `${where}: must be a non-empty array of strings`);
+    return;
+  }
+  for (const line of lines as string[]) {
+    for (const m of line.matchAll(/\{(\w+)\}/g)) {
+      if (!PLACEHOLDERS.has(m[1]!)) err(file, `${where}: unknown placeholder {${m[1]}} in "${line}"`);
+    }
+    if (line.length > 130) err(file, `${where}: line too long for a speech bubble (${line.length} chars): "${line.slice(0, 40)}…"`);
+  }
+}
+
+const banterTraits = await readBanterFile('traits.json');
+if (banterTraits) {
+  const f = 'content/banter/traits.json';
+  if (!Array.isArray(banterTraits.traits)) err(f, 'traits must be an array');
+  for (const trait of banterTraits.traits ?? []) {
+    if (!trait.id || !trait.name || typeof trait.weight !== 'number') err(f, `trait ${trait.id ?? '?'}: needs id, name, weight`);
+    checkLines(f, `${trait.id}.interjections`, trait.interjections);
+    checkLines(f, `${trait.id}.tags`, trait.tags);
+    for (const ctx of BANTER_CONTEXTS) checkLines(f, `${trait.id}.lines.${ctx}`, trait.lines?.[ctx]);
+  }
+}
+
+const banterVoices = await readBanterFile('voices.json');
+if (banterVoices) {
+  const f = 'content/banter/voices.json';
+  const seen = new Set<string>();
+  for (const voice of banterVoices.classes ?? []) {
+    seen.add(voice.id);
+    if (!CLASS_IDS.includes(voice.id)) err(f, `unknown class id ${voice.id}`);
+    for (const fam of FAMILY_IDS) checkLines(f, `${voice.id}.taunts.${fam}`, voice.taunts?.[fam]);
+    checkLines(f, `${voice.id}.kill`, voice.kill);
+    checkLines(f, `${voice.id}.idle`, voice.idle);
+  }
+  for (const cid of CLASS_IDS) if (!seen.has(cid)) err(f, `class ${cid} has no voice`);
+}
+
+const banterPairs = await readBanterFile('pairs.json');
+if (banterPairs) {
+  const f = 'content/banter/pairs.json';
+  for (const pair of banterPairs.rolePairs ?? []) {
+    if (!ROLE_IDS.includes(pair.a) || !ROLE_IDS.includes(pair.b)) err(f, `rolePair ${pair.a}|${pair.b}: unknown role`);
+    for (const ex of pair.exchanges ?? []) checkLines(f, `rolePair ${pair.a}|${pair.b}`, ex);
+  }
+  for (const pair of banterPairs.classPairs ?? []) {
+    if (!CLASS_IDS.includes(pair.a) || !CLASS_IDS.includes(pair.b)) err(f, `classPair ${pair.a}|${pair.b}: unknown class`);
+    for (const ex of pair.exchanges ?? []) checkLines(f, `classPair ${pair.a}|${pair.b}`, ex);
+  }
+}
+
+const banterPerks = await readBanterFile('perk_shouts.json');
+if (banterPerks) {
+  const f = 'content/banter/perk_shouts.json';
+  const perkIds = new Set(perkFiles.map((x) => x.data.id));
+  for (const perk of banterPerks.perks ?? []) {
+    if (!perkIds.has(perk.id)) err(f, `unknown perk id ${perk.id}`);
+    for (const ctx of ['idle', 'descend', 'chest', 'combat']) checkLines(f, `${perk.id}.${ctx}`, perk.lines?.[ctx]);
+  }
+}
+
+const banterMemory = await readBanterFile('memory.json');
+if (banterMemory) {
+  const f = 'content/banter/memory.json';
+  for (const cond of banterMemory.conditions ?? []) {
+    if (!cond.id || !cond.when) err(f, `condition ${cond.id ?? '?'}: needs id and when`);
+    checkLines(f, `${cond.id}.lines`, cond.lines);
+  }
+}
+
+const banterFamilies = await readBanterFile('families.json');
+if (banterFamilies) {
+  const f = 'content/banter/families.json';
+  for (const { data } of monsterFiles) {
+    if (!banterFamilies[data.id]) err(f, `monster ${data.id} has no enemy family`);
+  }
+  for (const [mid, fam] of Object.entries(banterFamilies)) {
+    if (!FAMILY_IDS.includes(fam as string)) err(f, `${mid}: unknown family ${fam}`);
+  }
+}
+
 // ---------- bail on errors ----------
 if (errors.length > 0) {
   console.error(`\ncontent validation failed (${errors.length} error${errors.length > 1 ? 's' : ''}):\n`);
@@ -264,6 +370,25 @@ const files: Record<string, string> = {
   'perks.gen.ts': emitRecord('PerkDef', 'PERKS', perkFiles),
   'tiles.gen.ts': emitRecord('TileDef', 'TILES', tileFiles),
   'village.gen.ts': emitRecord('TileDef', 'VILLAGE_SPRITES', villageFiles),
+  'banter.gen.ts': [
+    `// AUTO-GENERATED by tools/gen-content.ts — DO NOT EDIT. Source: content/banter/`,
+    `import type { BanterContent } from '../../types';`,
+    ``,
+    `export const BANTER: BanterContent = ${JSON.stringify(
+      {
+        traits: banterTraits?.traits ?? [],
+        voices: Object.fromEntries(((banterVoices?.classes ?? []) as any[]).map((v) => [v.id, v])),
+        rolePairs: banterPairs?.rolePairs ?? [],
+        classPairs: banterPairs?.classPairs ?? [],
+        perkShouts: Object.fromEntries(((banterPerks?.perks ?? []) as any[]).map((p) => [p.id, p])),
+        memory: banterMemory?.conditions ?? [],
+        families: banterFamilies ?? {},
+      },
+      null,
+      1,
+    )};`,
+    ``,
+  ].join('\n'),
   'names.gen.ts': [
     `// AUTO-GENERATED by tools/gen-content.ts — DO NOT EDIT. Source: content/names/`,
     `import type { NameBanks } from '../../types';`,
@@ -283,5 +408,5 @@ for (const [name, text] of Object.entries(files)) {
   }
 }
 
-const counts = `${monsterFiles.length} monsters, ${neutralFiles.length} neutrals, ${itemFiles.length} items, ${perkFiles.length} perks, ${tileFiles.length} tiles, ${villageFiles.length} village sprites`;
+const counts = `${monsterFiles.length} monsters, ${neutralFiles.length} neutrals, ${itemFiles.length} items, ${perkFiles.length} perks, ${tileFiles.length} tiles, ${villageFiles.length} village sprites, ${(banterTraits?.traits ?? []).length} banter traits`;
 console.log(`content ok (${counts})${wrote ? ` — regenerated ${wrote} file(s)` : ' — up to date'}`);

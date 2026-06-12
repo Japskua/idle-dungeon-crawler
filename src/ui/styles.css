@@ -759,6 +759,15 @@ body {
   color: var(--muted);
 }
 
+.log-say {
+  color: #c9a0e8;
+  font-style: italic;
+}
+
+.personality {
+  color: #c9a0e8;
+}
+
 select,
 input[type='number'] {
   background: var(--bg-panel2);

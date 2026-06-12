@@ -37,6 +37,12 @@ bun run balance    # headless balance harness (CSV of simulated runs)
    random perks ("Grimbeard Souphands — Owns a Frying Pan"), treat injuries at the
    temple, and put benched heroes on **chores** — they keep earning gold and XP even
    while the tab is closed (up to 12 h).
+6. **Personalities**: every hero rolls 2-3 personality traits (Boastful, Gloomy,
+   Hungry…) that shape what they say. Heroes banter in the dungeon — taunting
+   enemies by class, chatting with each other, blurting quirk-driven nonsense, and
+   occasionally reflecting on their own story ("Down {downs} times now. The floor
+   and I have an understanding."). The mime never speaks. All dialogue lives in
+   `content/banter/*.json` — add lines by editing JSON.
 
 ## Adding content (no code required)
 

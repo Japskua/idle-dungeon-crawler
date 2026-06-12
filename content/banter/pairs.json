@@ -1,0 +1,720 @@
+{
+ "rolePairs": [
+  {
+   "a": "tank",
+   "b": "tank",
+   "exchanges": [
+    [
+     "You take the doorway, I'll take the other doorway. There is only one doorway, isn't there.",
+     "We'll share it. Shoulder to shoulder. Nothing gets past two of us and a stuck hinge."
+    ],
+    [
+     "Sometimes I wonder about life in the back row. The view. The safety. The not being bitten.",
+     "I tried it once, {ally}. My hands kept reaching for something to block. Never again."
+    ]
+   ]
+  },
+  {
+   "a": "tank",
+   "b": "healer",
+   "exchanges": [
+    [
+     "On a scale of one to ten, how upset would you be if I stood in front of that thing?",
+     "Standing in front of things is your entire job. Just stop apologizing mid-bandage, it ruins my stitching."
+    ],
+    [
+     "You've patched this same shoulder four times today. I counted.",
+     "I'm considering installing a hinge there. Save us both the ceremony."
+    ]
+   ]
+  },
+  {
+   "a": "tank",
+   "b": "ranged_dps",
+   "exchanges": [
+    [
+     "Whatever you're aiming at is three inches from my ear.",
+     "Three inches is a generous margin. Most days you get one."
+    ],
+    [
+     "It must be peaceful back there.",
+     "Very. I can hear everything that's about to happen to you."
+    ]
+   ]
+  },
+  {
+   "a": "tank",
+   "b": "caster",
+   "exchanges": [
+    [
+     "The back of my neck got warm during that last spell. Just letting you know.",
+     "Warm is the system working. Crispy is the complaint threshold."
+    ],
+    [
+     "What's the plan if something gets past me and reaches you?",
+     "Screaming, then a spell. The order is non-negotiable."
+    ]
+   ]
+  },
+  {
+   "a": "tank",
+   "b": "melee_dps",
+   "exchanges": [
+    [
+     "Stay behind my shoulder. Things with teeth go for the closest snack.",
+     "Behind your shoulder is where the boring happens. I'll take my chances at tooth range."
+    ],
+    [
+     "You ran past me again. The formation has exactly one rule.",
+     "And I bend it lovingly every floor, because the enemy is over there and I am not."
+    ]
+   ]
+  },
+  {
+   "a": "tank",
+   "b": "support",
+   "exchanges": [
+    [
+     "Whatever you did back there, my arms stopped being tired. I don't ask questions, but thank you.",
+     "Wise policy. The explanation has never once helped anyone."
+    ],
+    [
+     "Do you ever feel bad, hanging back while I take every hit?",
+     "Terribly. I cope by making you slightly better at taking them."
+    ]
+   ]
+  },
+  {
+   "a": "healer",
+   "b": "healer",
+   "exchanges": [
+    [
+     "Be honest. Do you ever just not heal someone for a moment? As a lesson?",
+     "A moment is a lesson. Two moments is a grudge. I keep strictly to lessons."
+    ],
+    [
+     "Floor {depth}, and not one of them has said thank you.",
+     "They thank us by surviving. Worst currency in the kingdom."
+    ]
+   ]
+  },
+  {
+   "a": "healer",
+   "b": "ranged_dps",
+   "exchanges": [
+    [
+     "You're the only one who never needs patching. I almost miss you.",
+     "That's the nicest threat I've had all week."
+    ],
+    [
+     "If you ever do get hurt back here, yell in a clear, distinct tone. I triage by volume.",
+     "Understood. I've been practicing a very dignified yelp."
+    ]
+   ]
+  },
+  {
+   "a": "healer",
+   "b": "caster",
+   "exchanges": [
+    [
+     "Your mana comes back if you rest. My patience does not. Pace yourself.",
+     "I pace myself perfectly. One enormous spell, then a tasteful collapse."
+    ],
+    [
+     "You're pale, and nothing has hit you yet.",
+     "The big spells take something out of you. Mostly the part that holds me upright."
+    ]
+   ]
+  },
+  {
+   "a": "healer",
+   "b": "melee_dps",
+   "exchanges": [
+    [
+     "Every wound on you is on the front. Brave, I'll grant. Also a billing nightmare.",
+     "Front wounds are honest wounds. Bill me."
+    ],
+    [
+     "What if — and stay with me, {ally} — you dodged?",
+     "Dodging is admitting the enemy gets a say."
+    ]
+   ]
+  },
+  {
+   "a": "healer",
+   "b": "support",
+   "exchanges": [
+    [
+     "You make them faster, I put them back together. We're an assembly line with feelings.",
+     "An efficient one. They barely have time to be ungrateful between us."
+    ],
+    [
+     "Does anyone thank you? They never thank me.",
+     "Constantly. I make their numbers go up. You merely save their lives."
+    ]
+   ]
+  },
+  {
+   "a": "ranged_dps",
+   "b": "ranged_dps",
+   "exchanges": [
+    [
+     "Called it. Left eye, forty paces.",
+     "You called it after it landed. I heard you call it."
+    ],
+    [
+     "The back row is getting crowded. One of us should stand slightly more to the back.",
+     "Seniority says the rear is mine. You may have the prestigious slightly-forward position."
+    ]
+   ]
+  },
+  {
+   "a": "ranged_dps",
+   "b": "caster",
+   "exchanges": [
+    [
+     "I have to account for every shot I loose. What do spells cost you?",
+     "A nap, a headache, and three years of my youth per casting. Magic invoices later."
+    ],
+    [
+     "Your last spell parted my hair, and I was standing behind you.",
+     "Power radiates. I can't be held responsible for which direction."
+    ]
+   ]
+  },
+  {
+   "a": "ranged_dps",
+   "b": "melee_dps",
+   "exchanges": [
+    [
+     "You stood directly between me and the target again.",
+     "The target and I had something to settle. Closely."
+    ],
+    [
+     "From back here, your fighting style looks like falling down stairs on purpose.",
+     "From up close, yours looks like polite littering. We all have our craft."
+    ]
+   ]
+  },
+  {
+   "a": "ranged_dps",
+   "b": "support",
+   "exchanges": [
+    [
+     "Whatever you did, I haven't missed since breakfast.",
+     "That one wasn't me. That was all you. Mine kicks in after lunch."
+    ],
+    [
+     "You watch everyone's backs. Who watches yours?",
+     "You do, from a hundred feet away. I think about that more than I say."
+    ]
+   ]
+  },
+  {
+   "a": "caster",
+   "b": "caster",
+   "exchanges": [
+    [
+     "You named the new spell after yourself, didn't you.",
+     "It's called attribution. When it misfires, I'm renaming it after you."
+    ],
+    [
+     "Do you ever miss the days when we knew one spell and it barely worked?",
+     "Every day. It fizzled beautifully, and nobody expected anything of us."
+    ]
+   ]
+  },
+  {
+   "a": "caster",
+   "b": "melee_dps",
+   "exchanges": [
+    [
+     "Kindly stop standing where I'm about to put the explosion.",
+     "Put the explosion where I'm not. I was there first."
+    ],
+    [
+     "How do you stand it? Being close enough to smell them?",
+     "The smell is information. You learn a lot about a slime in the last six inches."
+    ]
+   ]
+  },
+  {
+   "a": "caster",
+   "b": "support",
+   "exchanges": [
+    [
+     "Whatever you did back there doubled my spell. I want it permanently.",
+     "Then keep me alive. The effect wears off dramatically when I'm unconscious."
+    ],
+    [
+     "Your job confuses me. You don't hit things, you don't mend things. What do you do?",
+     "You know that feeling when everything goes slightly right? That's me. I'm the feeling."
+    ]
+   ]
+  },
+  {
+   "a": "melee_dps",
+   "b": "melee_dps",
+   "exchanges": [
+    [
+     "Race you to the next thing with teeth.",
+     "Loser takes the thing after it, which is always bigger. So I win either way — wait."
+    ],
+    [
+     "My count is eleven today. Yours?",
+     "Twelve, but who's counting. Me. I am. It's twelve."
+    ]
+   ]
+  },
+  {
+   "a": "melee_dps",
+   "b": "support",
+   "exchanges": [
+    [
+     "I felt unstoppable for ten glorious seconds back there. Then extremely stoppable. Explain.",
+     "It wears off. That's the business model."
+    ],
+    [
+     "You just stand there while I do all the hitting.",
+     "I stand there meaningfully. You haven't lost once while I was standing there, {ally}."
+    ]
+   ]
+  },
+  {
+   "a": "support",
+   "b": "support",
+   "exchanges": [
+    [
+     "No healer today. Just us and the power of positive thinking.",
+     "Positivity is load-bearing. Nobody notices until the ceiling is on them."
+    ],
+    [
+     "If we both buff the same person, do they get twice as brave or just insufferable?",
+     "We did it to the tank once. They challenged a locked door to a duel and lost on points."
+    ]
+   ]
+  }
+ ],
+ "classPairs": [
+  {
+   "a": "cleric",
+   "b": "necromancer",
+   "exchanges": [
+    [
+     "Your skeleton has been staring at me all morning.",
+     "He admires you. You're the reason his department gets no new hires."
+    ],
+    [
+     "I bless the living and bury the dead, and I genuinely don't know which form your friends go under.",
+     "File them as returning staff. They love the recognition."
+    ],
+    [
+     "If you die down here, do I heal you or onboard you?",
+     "Heal me, obviously. Management is a living position."
+    ]
+   ]
+  },
+  {
+   "a": "chef",
+   "b": "barbarian",
+   "exchanges": [
+    [
+     "Chew. The ration has layers. I laminated that jerky by hand.",
+     "Tastes better fast. Speed is a seasoning."
+    ],
+    [
+     "You ate the emergency soup. The soup labeled 'emergency.'",
+     "I was hungry. Hunger is an emergency. The label and I agreed."
+    ],
+    [
+     "Your diet is monster meat and whatever falls in your beard. I'm staging an intervention.",
+     "The beard is the pantry. Intervene and lose the hand."
+    ]
+   ]
+  },
+  {
+   "a": "bard",
+   "b": "mime",
+   "exchanges": [
+    [
+     "I'm writing a ballad about you. The trouble is your verses are all rests.",
+     "*conducts an invisible orchestra through four bars of silence, then bows*"
+    ],
+    [
+     "Give me one note. Just one. I'll transcribe it and we'll call it a duet.",
+     "*opens his mouth wide, plucks out an invisible note, polishes it, and pockets it unsung*"
+    ],
+    [
+     "You're the finest audience I've ever had. You never sing along.",
+     "*wipes away a single invisible tear and applauds without making a sound*"
+    ]
+   ]
+  },
+  {
+   "a": "beekeeper",
+   "b": "druid",
+   "exchanges": [
+    [
+     "The bees have concerns about this floor. Mostly the airflow. Some of it personal.",
+     "The mosses share them. Nobody down here has ever once consulted the mosses."
+    ],
+    [
+     "I offered the swarm overtime to scout ahead. They're holding out for better flowers.",
+     "There's a lichen two corridors back. Tell them it's no rose, but it's punctual."
+    ],
+    [
+     "Do your mosses ever talk back?",
+     "Do your bees ever stop?"
+    ]
+   ]
+  },
+  {
+   "a": "knight",
+   "b": "paladin",
+   "exchanges": [
+    [
+     "Regulation says we clear corners in pairs. I'll take the left.",
+     "Take both, friend. I'll stand in the middle and inspire."
+    ],
+    [
+     "Your armor is blinding me. Did you polish it again?",
+     "Polish? No. That's inner virtue surfacing. It does that."
+    ],
+    [
+     "I follow the code because it works. Why do you follow it?",
+     "Because it looks magnificent on me. We arrive at the same place."
+    ]
+   ]
+  },
+  {
+   "a": "thief",
+   "b": "paladin",
+   "exchanges": [
+    [
+     "Lovely fight back there. Shame about how fair it was.",
+     "Fairness is the point. The wicked deserve to see justice coming."
+    ],
+    [
+     "I checked that chest for traps. Also for contents. It's been handled.",
+     "Handled into your pockets, you mean. I'll be blessing the party ledger tonight."
+    ],
+    [
+     "You glow in the dark. Do you know what that does to a stealth approach?",
+     "It announces that righteousness has arrived. You're welcome."
+    ]
+   ]
+  },
+  {
+   "a": "barbarian",
+   "b": "monk",
+   "exchanges": [
+    [
+     "No weapons, no armor, no yelling. How do you even fight?",
+     "Calmly. Try it sometime. Enemies find it far more upsetting."
+    ],
+    [
+     "I rage so hard I forget my own name. What's your secret?",
+     "I remember mine very precisely. That's the entire technique."
+    ],
+    [
+     "Arm wrestle. Right now. Winner carries the gold.",
+     "I carry nothing. Possessions cloud the spirit. Best of three, though."
+    ]
+   ]
+  },
+  {
+   "a": "knight",
+   "b": "mime",
+   "exchanges": [
+    [
+     "Report. What did you see down that corridor?",
+     "*mimes a staircase, then an enormous spider, then climbs the invisible staircase at remarkable speed*"
+    ],
+    [
+     "Protocol requires a verbal all-clear. Can you give me anything?",
+     "*salutes crisply, fills out an invisible form in triplicate, and hands it over*"
+    ],
+    [
+     "I'll admit it. You're the only one who never argues with my orders.",
+     "*drags over an invisible soapbox, steps onto it, and says absolutely nothing at length*"
+    ]
+   ]
+  },
+  {
+   "a": "mage",
+   "b": "necromancer",
+   "exchanges": [
+    [
+     "Could you raise me a lab assistant? Something that holds beakers and doesn't gossip?",
+     "All of mine gossip. No lips, and somehow worse at keeping secrets."
+    ]
+   ]
+  },
+  {
+   "a": "cleric",
+   "b": "paladin",
+   "exchanges": [
+    [
+     "You did first aid on yourself again. There is an entire me for that.",
+     "I hate to be a bother. Also, my bandaging is more luminous."
+    ],
+    [
+     "Hold still. You're bleeding on your own radiance.",
+     "It's ambient virtue, and it's machine washable."
+    ],
+    [
+     "One day off. No miracles, no triage, just a chair.",
+     "I'll cover for you. How hard can healing be? I radiate wellness recreationally."
+    ]
+   ]
+  },
+  {
+   "a": "bard",
+   "b": "barbarian",
+   "exchanges": [
+    [
+     "That rampage had a time signature. Did you know you rage in three-four?",
+     "I don't know what that means, but I want it angrier."
+    ],
+    [
+     "I need a rhyme for 'headbutt.'",
+     "'Dead, but.' As in, he's dead, but the wall got worse."
+    ],
+    [
+     "Your battle cry — what is it, actually? Words? A name?",
+     "Started as a grocery list. Now it's tradition."
+    ]
+   ]
+  },
+  {
+   "a": "chef",
+   "b": "beekeeper",
+   "exchanges": [
+    [
+     "I need honey for the glaze. What are the bees asking?",
+     "Two flower beds and a formal apology about the lavender. They remember the lavender."
+    ],
+    [
+     "Tonight is roast rat with a honey crust. Don't tell the swarm what it's for.",
+     "They know. They always know. Serve it indoors and don't make eye contact with the scouts."
+    ],
+    [
+     "Is the swarm union or freelance?",
+     "Seasonal contractors with strong opinions. Why, is the kitchen hiring?"
+    ]
+   ]
+  },
+  {
+   "a": "druid",
+   "b": "necromancer",
+   "exchanges": [
+    [
+     "Everything you raise was supposed to be soil by now. You're robbing my compost.",
+     "Borrowing. It all decomposes eventually. I just add a layover."
+    ],
+    [
+     "The mosses won't grow where your skeletons walk.",
+     "Professional courtesy. They're waiting for the moss to pass. Mostly."
+    ],
+    [
+     "Moss grows even down here, you know. Encouraging.",
+     "So does death. Mine just keeps better hours."
+    ]
+   ]
+  },
+  {
+   "a": "ranger",
+   "b": "thief",
+   "exchanges": [
+    [
+     "That goblin walked into my arrow. All according to plan.",
+     "Funny. The plan I watched involved you apologizing to a wall."
+    ],
+    [
+     "I had eyes on that chest the whole time. I was letting you open it.",
+     "And I'd emptied it a room earlier. We're both excellent liars."
+    ],
+    [
+     "I never miss. Arrows that miss are scouting.",
+     "Naturally. And the things in my pockets are evidence I'm safekeeping."
+    ]
+   ]
+  },
+  {
+   "a": "ranger",
+   "b": "mage",
+   "exchanges": [
+    [
+     "Your fireball took my shot, my target, and most of my eyebrows.",
+     "It was pointed away from all friends at the moment of casting. Eyebrows travel at their own risk."
+    ],
+    [
+     "I aim. You wave your arms and the room ends. It feels unearned.",
+     "Twelve years of study so I could wave my arms. It is extremely earned."
+    ],
+    [
+     "One quiet shot, one target, no fuss. That's craftsmanship.",
+     "Adorable. I deleted a corridor this morning."
+    ]
+   ]
+  },
+  {
+   "a": "knight",
+   "b": "barbarian",
+   "exchanges": [
+    [
+     "Where is your armor? We're {depth} floors down and you're in trousers.",
+     "Sold it. It was slowing down the parts of me that win fights. All of the parts."
+    ],
+    [
+     "There are protocols for breaching a door.",
+     "Agreed. My forehead. Protocol complete."
+    ],
+    [
+     "You charged before my signal again.",
+     "Your signal takes forever. The enemy was just standing there, completely uncharged-at."
+    ]
+   ]
+  },
+  {
+   "a": "bard",
+   "b": "cleric",
+   "exchanges": [
+    [
+     "I'm composing an epic about your healing. Working title, 'Hold Still, You Idiot.'",
+     "Finally, art that reflects my clinical experience."
+    ],
+    [
+     "Every hero gets a verse. You get the chorus, since you're in every fight.",
+     "Make the chorus a sigh. One long sigh. That's accurate."
+    ],
+    [
+     "You saved my life twice today. What rhymes with 'eternally indebted'?",
+     "'Regularly regretted.' Now hold still."
+    ]
+   ]
+  },
+  {
+   "a": "chef",
+   "b": "druid",
+   "exchanges": [
+    [
+     "Is this moss edible?",
+     "That's Gerald. We've discussed this. You don't ask whether Gerald is edible."
+    ],
+    [
+     "I foraged these mushrooms. Rate them for soup.",
+     "Two are friends of mine, and the speckled one screams when boiled. Your call, as a professional."
+    ]
+   ]
+  },
+  {
+   "a": "mage",
+   "b": "monk",
+   "exchanges": [
+    [
+     "No staff, no wand, no focus crystal. What channels your power?",
+     "Breakfast, and a clear conscience."
+    ],
+    [
+     "I could enchant your fists. Imagine the sparks.",
+     "My fists are at peace with their current settings."
+    ],
+    [
+     "Doesn't it hurt, punching a skeleton?",
+     "Pain is a teacher. The skeleton and I are classmates."
+    ]
+   ]
+  },
+  {
+   "a": "thief",
+   "b": "bard",
+   "exchanges": [
+    [
+     "Stop narrating my heists in real time. The verse about the lockpick had witnesses.",
+     "Art demands an audience. Crime is just art that runs."
+    ],
+    [
+     "Half the loot is mine, and so is half of whatever that song earns.",
+     "You can't steal royalties. ...You can, can't you. You already have."
+    ],
+    [
+     "I work best unseen, unheard, and unsung. You threaten all three.",
+     "Unsung? Darling, you're getting a trilogy whether you attend or not."
+    ]
+   ]
+  },
+  {
+   "a": "beekeeper",
+   "b": "mage",
+   "exchanges": [
+    [
+     "The fireball clause is clear. No casting within thirty feet of the swarm.",
+     "I signed nothing. Although the small print did sting, now that you mention it."
+    ],
+    [
+     "Smoke calms them. Explosions do the opposite. Today we learned that together.",
+     "In my defense, nobody briefed the explosion."
+    ],
+    [
+     "The hive calls you 'the warm one.' It is not a compliment.",
+     "I'll take it. Last week I was 'the reason we live in a bucket now.'"
+    ]
+   ]
+  },
+  {
+   "a": "paladin",
+   "b": "necromancer",
+   "exchanges": [
+    [
+     "My light is consecrated. Your minions can't even look at me.",
+     "Nobody can look at you. That's not holiness, that's wattage."
+    ],
+    [
+     "Have you considered redemption? It comes with benefits.",
+     "I tried it once. The skeletons staged a walkout. I'm needed."
+    ],
+    [
+     "When you fall, I will personally see you given a blessed burial.",
+     "Sweet of you. I've arranged to be picked up afterward. Don't linger."
+    ]
+   ]
+  },
+  {
+   "a": "chef",
+   "b": "monk",
+   "exchanges": [
+    [
+     "One bowl of rice and you punch through walls. Explain it to me slowly, as a recipe.",
+     "Gratitude, mostly. And exactly enough rice."
+    ],
+    [
+     "My soup heals wounds. What does inner peace do, nutritionally?",
+     "Fewer wounds to soup. We're colleagues, really."
+    ],
+    [
+     "Garlic. Or have you renounced flavor as well?",
+     "We renounce weapons, not garlic. Double the garlic. The vow insists."
+    ]
+   ]
+  },
+  {
+   "a": "thief",
+   "b": "mime",
+   "exchanges": [
+    [
+     "Finally, a partner who appreciates silence. Watch the lock. Tap twice if there's trouble.",
+     "*taps twice immediately, then mimes an enormous something looming in the doorway behind them*"
+    ],
+    [
+     "You'd make a brilliant burglar. No alarm could hear you. Ever consider a career change?",
+     "*mimes climbing out of an invisible box, considers the open air, then locks himself back inside*"
+    ],
+    [
+     "The split is sixty-forty, and you can't argue. That's why I love working with you.",
+     "*counts invisible coins, weighs the two piles, and silently slides one across until they match*"
+    ]
+   ]
+  }
+ ]
+}

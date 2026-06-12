@@ -1,0 +1,16 @@
+{
+  "rat": "beast",
+  "cave_bat": "beast",
+  "giant_spider": "beast",
+  "slime": "slime",
+  "slime_king": "slime",
+  "goblin": "goblinoid",
+  "goblin_archer": "goblinoid",
+  "skeleton": "undead",
+  "skeleton_archer": "undead",
+  "zombie": "undead",
+  "bone_colossus": "undead",
+  "cultist": "cultist",
+  "fungal_tyrant": "fungus",
+  "the_landlord": "landlord"
+}
