@@ -129,7 +129,7 @@ describe('necromancy (and beekeeping)', () => {
   });
 
   test('hostiles will turn on minions (bodyguards by design)', () => {
-    const { state, hero } = soloRun(73, 'beekeeper', 2);
+    const { state, hero } = soloRun(75, 'beekeeper', 2);
     const run = state.run!;
     run.monsters = {};
     run.monsterOrder = [];

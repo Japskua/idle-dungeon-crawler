@@ -357,6 +357,8 @@ export interface Hero {
   bombs: number;
   skills: SkillId[];
   perks: PerkId[];
+  /** 2-3 personality trait ids — they shape what this hero says */
+  traits: string[];
   injuries: InjuryId[];
   statuses: StatusInstance[];
   cooldowns: Record<SkillId, number>;
@@ -366,6 +368,69 @@ export interface Hero {
   choreXpCarry?: number;
   tactics: { sets: TacticSet[]; activeSetId: Id };
   stats: HeroStats;
+}
+
+// ---------- banter (what heroes say; pure presentation data) ----------
+export type BanterContext =
+  | 'kill'
+  | 'hurt'
+  | 'lowHp'
+  | 'allyDown'
+  | 'rescue'
+  | 'loot'
+  | 'boss'
+  | 'descend'
+  | 'idle'
+  | 'friendlyFire';
+
+export interface BanterTrait {
+  id: string;
+  name: string;
+  blurb: string;
+  weight: number;
+  /** short openers spliced before a line */
+  interjections: string[];
+  /** short closers appended after a line */
+  tags: string[];
+  lines: Record<BanterContext, string[]>;
+}
+
+export interface BanterVoice {
+  id: ClassId;
+  /** shouted at enemies, keyed by enemy family (+ 'generic') */
+  taunts: Record<string, string[]>;
+  kill: string[];
+  idle: string[];
+}
+
+export interface BanterPair {
+  /** class ids for classPairs, role names for rolePairs */
+  a: string;
+  b: string;
+  /** [opener by a, reply by b] */
+  exchanges: [string, string][];
+}
+
+export interface BanterPerkLines {
+  id: PerkId;
+  lines: { idle: string[]; descend: string[]; chest: string[]; combat: string[] };
+}
+
+export interface BanterMemoryLines {
+  id: string;
+  when: string;
+  lines: string[];
+}
+
+export interface BanterContent {
+  traits: BanterTrait[];
+  voices: Record<string, BanterVoice>;
+  rolePairs: BanterPair[];
+  classPairs: BanterPair[];
+  perkShouts: Record<string, BanterPerkLines>;
+  memory: BanterMemoryLines[];
+  /** monster defId -> enemy family used by taunt tables */
+  families: Record<string, string>;
 }
 
 // ---------- dungeon ----------

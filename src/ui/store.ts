@@ -13,7 +13,7 @@ import { CLASSES, INJURIES, ITEMS, creatureDef } from '../game/content';
 export interface LogEntry {
   id: number;
   text: string;
-  cls: 'dmg' | 'heal' | 'loot' | 'gold' | 'level' | 'bad' | 'info';
+  cls: 'dmg' | 'heal' | 'loot' | 'gold' | 'level' | 'bad' | 'info' | 'say';
 }
 
 export type VillageView =
@@ -171,6 +171,17 @@ export function publish(game: GameState, events: GameEvent[]) {
     // coming home from a run always lands on the village overview
     const cameHome = events.some((e) => e.t === 'runEnded');
     return { game, rev: s.rev + 1, log, ...(cameHome ? { villageView: 'scene' as const } : {}) };
+  });
+}
+
+/** banter lines come from the app-side director, not GameEvents */
+export function pushBanter(game: GameState, heroId: string, text: string) {
+  const name = game.roster[heroId]?.name ?? 'Someone';
+  const line = text.startsWith('*') ? `${name} ${text}` : `${name}: “${text}”`;
+  useUi.setState((s) => {
+    let log = [...s.log, { id: logId++, text: line, cls: 'say' as const }];
+    if (log.length > 200) log = log.slice(log.length - 200);
+    return { log };
   });
 }
 

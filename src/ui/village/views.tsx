@@ -17,7 +17,7 @@ import {
   learnSkillCost,
   spellAmount,
 } from '../../game/balance';
-import { CHORES, CLASSES, INJURIES, ITEMS, PERKS, SKILLS } from '../../game/content';
+import { BANTER, CHORES, CLASSES, INJURIES, ITEMS, PERKS, SKILLS } from '../../game/content';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
@@ -168,6 +168,13 @@ function EquipSelect({ game, item }: { game: GameState; item: ItemInstance }) {
       })}
     </select>
   );
+}
+
+/** display names for personality traits, from the banter dictionary */
+function personalityLine(traitIds: string[]): string {
+  return traitIds
+    .map((id) => BANTER.traits.find((t) => t.id === id)?.name ?? id)
+    .join(' · ');
 }
 
 /** slot labels for gear, shared by filters and per-item badges */
@@ -622,6 +629,7 @@ export function TavernView({ game }: { game: GameState }) {
                     STR {attrs.str} · DEX {attrs.dex} · INT {attrs.int} · VIT {attrs.vit} ·{' '}
                     {heroMaxHp(cls.baseHp, attrs.vit)} HP · {heroMaxMp(cls.baseMp, attrs.int)} MP
                   </div>
+                  <div className="small personality">☘ {personalityLine(r.traits)}</div>
                 </div>
               </div>
               <div className="small" style={{ margin: '6px 0' }}>
@@ -811,6 +819,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
         carry: {d.carryUsed.toFixed(1)} / {d.carryMax.toFixed(1)} kg
         {d.moveTicks > 4 ? <span className="muted"> · heavy gear slows movement</span> : null}
       </div>
+      <div className="small personality">☘ {personalityLine(hero.traits)}</div>
       {hero.perks.length > 0 && (
         <div className="small">
           {hero.perks.map((pid) => {
@@ -964,6 +973,7 @@ function GateHeroCard({
         dmg {d.weaponDmg} · armor {d.armor} · speed {(40 / d.moveTicks).toFixed(1)} · carry{' '}
         {d.carryUsed.toFixed(1)}/{d.carryMax.toFixed(1)} kg
       </div>
+      <div className="small personality">☘ {personalityLine(hero.traits)}</div>
       {hero.injuries.length > 0 && (
         <div className="small">
           {hero.injuries.map((iid) => (

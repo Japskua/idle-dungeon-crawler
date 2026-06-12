@@ -3,6 +3,7 @@
  * All lookups go through here; validateContent() cross-checks every reference
  * and is asserted empty by a test.
  */
+import { BANTER } from './gen/banter.gen';
 import { MONSTERS } from './gen/monsters.gen';
 import { NEUTRALS } from './gen/neutrals.gen';
 import { ITEMS } from './gen/items.gen';
@@ -17,7 +18,7 @@ import { INJURIES } from './injuries';
 import { CHORES } from './chores';
 import type { ClassDef, ItemDef, MonsterDef, SkillDef, InjuryDef, PerkDef, ChoreDef, StatusDef } from '../types';
 
-export { MONSTERS, NEUTRALS, ITEMS, PERKS, TILES, NAME_BANKS, PALETTE, CLASSES, SKILLS, STATUSES, INJURIES, CHORES };
+export { MONSTERS, NEUTRALS, ITEMS, PERKS, TILES, NAME_BANKS, PALETTE, CLASSES, SKILLS, STATUSES, INJURIES, CHORES, BANTER };
 
 function lookup<T>(table: Record<string, T>, id: string, kind: string): T {
   const def = table[id];

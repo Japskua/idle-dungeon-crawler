@@ -1,0 +1,796 @@
+{
+ "classes": [
+  {
+   "id": "knight",
+   "taunts": {
+    "beast": [
+     "Per regulation seven: vermin shall be dispatched promptly and humanely.",
+     "A knight does not fear teeth. A knight has a checklist for teeth.",
+     "You are in violation of the corridor code, beast. Prepare for enforcement."
+    ],
+    "slime": [
+     "I polished this breastplate myself. You will NOT.",
+     "Halt, ooze. Consider this a formal challenge, properly witnessed.",
+     "Section twelve expressly forbids dissolving the King's armor."
+    ],
+    "goblinoid": [
+     "I challenge you to honorable single combat. Yes, all nine of you count as single.",
+     "Drop the stolen goods and present yourself for arrest.",
+     "Your ambush was filed without the proper paperwork. Denied."
+    ],
+    "undead": [
+     "By the Charter, the dead must remain at rest. You are out of compliance.",
+     "Rattling your bones does not exempt you from the rules of war.",
+     "Return to your grave. I will count to three, as procedure demands."
+    ],
+    "cultist": [
+     "Unsanctioned rituals require a permit. You have no permit.",
+     "Cease the chanting. It is both evil and off-key.",
+     "Those robes are not regulation length, and that god is not registered."
+    ],
+    "fungus": [
+     "Standing orders: nothing with spores advances past this line.",
+     "You are mold with ambition. I am duty with a sword.",
+     "Inspection complete. You are unfit for this corridor."
+    ],
+    "landlord": [
+     "A crown does not make a king, and a deed does not make this dungeon yours.",
+     "My oath supersedes your lease, sir.",
+     "You may serve an eviction notice. I serve a higher authority."
+    ],
+    "generic": [
+     "Surrender now and be processed according to code.",
+     "Stand and fight. I insist. It is protocol."
+    ]
+   },
+   "kill": [
+    "Threat neutralized. Logging it for the report.",
+    "{enemy} dispatched — by the book and by the blade.",
+    "That concludes formal proceedings against {enemy}.",
+    "One more entry for the incident ledger.",
+    "Duty done. Next item."
+   ],
+   "idle": [
+    "Quiet halls. Suspicious. I shall remain professionally alarmed.",
+    "I should re-read my oath. There is a clause about corridors somewhere.",
+    "Boots polished, sword sharp, paperwork regrettably pending.",
+    "A true knight checks every door twice. Even the broken ones. Especially those.",
+    "I do miss the village. The village has filing cabinets."
+   ]
+  },
+  {
+   "id": "cleric",
+   "taunts": {
+    "beast": [
+     "Bite anyone in this party and I'm the one who has to deal with it. So don't.",
+     "Three rat bites stitched today. You will not be number four.",
+     "Rabies blessings are not free, you know."
+    ],
+    "slime": [
+     "Do you have any idea how hard slime is to get out of bandages?",
+     "Acid burns. More acid burns. My entire career is acid burns.",
+     "Whatever you dissolve, I have to regrow. Consider my workload."
+    ],
+    "goblinoid": [
+     "Every arrow you loose is twenty minutes of my evening. Stop it.",
+     "I will bless you straight into next week, you little menace.",
+     "Pointy little injuries, all night, every night. Not tonight."
+    ],
+    "undead": [
+     "You are an insult to my entire profession. The dying part is supposed to STICK.",
+     "I do not patch people up so they can come back looking like THAT.",
+     "Walking after death is malpractice. Somebody's malpractice."
+    ],
+    "cultist": [
+     "Your god doesn't do healing, does he? Thought so.",
+     "I hold actual divine credentials. You hold a robe.",
+     "Chant all you like. My overtime prayer hits harder."
+    ],
+    "fungus": [
+     "Spore infections were NOT in my seminary training, and I resent you personally.",
+     "I just got this party's lungs clear. Stay back.",
+     "You are a respiratory incident waiting to happen. I'm cancelling the wait."
+    ],
+    "landlord": [
+     "Charging rent for a death pit? Even I find that evil, and I've seen plagues.",
+     "I assume healing isn't covered in your lease either.",
+     "Security deposit? Take it up with the goddess."
+    ],
+    "generic": [
+     "Hurt my party and I swear I'll heal them out of pure spite.",
+     "I'm too tired for this. Die quickly, please.",
+     "You're about to be the one injury I actually enjoy causing."
+    ]
+   },
+   "kill": [
+    "There. Dead. PROPERLY dead. Stay that way.",
+    "{enemy} is beyond healing. Honestly? A relief.",
+    "One less source of incoming injuries.",
+    "And THAT one I don't have to bandage.",
+    "Rest in peace, {enemy}. I mean it. REST."
+   ],
+   "idle": [
+    "Nobody is bleeding right now. I'm deeply suspicious.",
+    "Maybe I should have been a baker. Bread never screams 'CLERIC!'",
+    "Five whole minutes of silence. I'm going to frame this moment.",
+    "If anyone stubs a toe in the next hour, they can walk it off.",
+    "Divine light, hold the line. Mama needs one quiet floor."
+   ]
+  },
+  {
+   "id": "ranger",
+   "taunts": {
+    "beast": [
+     "I've tracked you for three rooms. You were never not caught.",
+     "An animal should know better than to sit upwind of me.",
+     "I speak fluent predator. You're conjugated as prey."
+    ],
+    "slime": [
+     "No tracks, no scent, no problem. I planned for slime.",
+     "You leave a trail a blindfolded child could follow. Amateur.",
+     "Even ooze has habits. I've studied yours."
+    ],
+    "goblinoid": [
+     "An archer? Adorable. Watch how it's actually done.",
+     "I knew about this ambush yesterday. I let it happen.",
+     "Two behind the pillar, one in the doorway. Yes, I counted."
+    ],
+    "undead": [
+     "Bones don't bleed, but they splinter. Already adjusted for that.",
+     "Dead things still leave footprints. Sloppy."
+    ],
+    "cultist": [
+     "Spotted your ritual circle two floors up. All part of the plan.",
+     "Chanting gives away your position. Rookie mistake."
+    ],
+    "fungus": [
+     "Marked your spore trail an hour ago. Everything is on schedule.",
+     "Mushrooms don't dodge. Easiest contract I've ever taken."
+    ],
+    "landlord": [
+     "I've scouted every inch of 'your property.' Including the bits you don't know about.",
+     "Strange — the deed says nothing about an arrow tax."
+    ],
+    "generic": [
+     "You're standing exactly where I wanted you.",
+     "Calculated. All of it. Even this part."
+    ]
+   },
+   "kill": [
+    "{enemy} down, precisely as projected.",
+    "See? The plan. I told you there was a plan.",
+    "That ricochet was intentional. Obviously.",
+    "Tracked, cornered, concluded.",
+    "Mark it down: another flawless forecast."
+   ],
+   "idle": [
+    "Tracks here. Three days old. Possibly a chicken. Stay alert.",
+    "I let the wind do half my aiming. The wind owes me by now.",
+    "Quiet doesn't mean empty. It means waiting.",
+    "Should've packed more arrows. Should've packed more jerky, frankly.",
+    "Everything is unfolding exactly as planned. Even the wrong turns. Especially those."
+   ]
+  },
+  {
+   "id": "mage",
+   "taunts": {
+    "beast": [
+     "Fun fact: fur is extremely flammable. You're the demonstration.",
+     "Hold still — actually, this one works best on moving targets. Carry on, run.",
+     "Nature made you fast. Magic made me faster. Well, my projectiles."
+    ],
+    "slime": [
+     "Are you acidic or basic? Let's find out with LIGHTNING.",
+     "You're ninety percent water. I have SO many spells about water."
+    ],
+    "goblinoid": [
+     "I aimed away from my friends, which means directly at you.",
+     "Hypothesis: goblins conduct electricity. Let's publish."
+    ],
+    "undead": [
+     "Necromancy is just rude magic. Allow me to demonstrate polite magic. It explodes.",
+     "Calcium is a marvelous conductor. Probably. We'll see together!"
+    ],
+    "cultist": [
+     "Oh, you do magic too? Mine's bigger.",
+     "Your ritual contains a typo. I'll correct it. Violently."
+    ],
+    "fungus": [
+     "Fire solves fungus. Fire solves most things, honestly.",
+     "Spores plus open flame equals SCIENCE."
+    ],
+    "landlord": [
+     "Evict THIS fireball.",
+     "I'm fairly sure arson voids the lease either way."
+    ],
+    "generic": [
+     "Sparkly end pointed AT you. That's the dangerous configuration.",
+     "Stand right there. Perfect. Don't move.",
+     "I've always wanted to test this one on a volunteer!"
+    ]
+   },
+   "kill": [
+    "The sparkly end works! It WORKS!",
+    "Noted: that combination is lethal. Excellent data.",
+    "Boom. As the scrolls foretold.",
+    "Successful experiment, zero friendly casualties. Someone write that down."
+   ],
+   "idle": [
+    "My fingers are still tingling. That's probably fine.",
+    "I keep my best spell in my back pocket. Metaphorically. The literal pocket burned off.",
+    "These walls would look fantastic on fire. Purely an observation.",
+    "Mana reserves at... some percent. Arithmetic was a different school.",
+    "Someday I'll learn a quiet spell. Today is not that day."
+   ]
+  },
+  {
+   "id": "necromancer",
+   "taunts": {
+    "beast": [
+     "You'd make a lovely skeleton. Consider this your exit interview.",
+     "I see real potential in you. Posthumous potential.",
+     "Good bone structure. I mean that professionally."
+    ],
+    "slime": [
+     "No bones? Then you have no place in my org chart.",
+     "I can't recruit you, so I'll simply delete you."
+    ],
+    "goblinoid": [
+     "Your skeleton has been headhunted. The rest of you is in the way.",
+     "Resignation accepted, effective immediately and fatally."
+    ],
+    "undead": [
+     "Whoever raised you clearly skipped onboarding.",
+     "You call that shambling? My zombies shamble with PURPOSE.",
+     "They're not even paying you, are they? Tragic. Join a real operation."
+    ],
+    "cultist": [
+     "You summon things you can't manage. I run quarterly performance reviews.",
+     "Your dark lord has terrible retention. My team stays forever."
+    ],
+    "fungus": [
+     "Decay without direction. Such wasted product.",
+     "You rot things for free? We need to discuss your rates."
+    ],
+    "landlord": [
+     "My workforce pays no rent. They ARE the previous tenants.",
+     "Evict the dead? They've squatted here longer than your bloodline has existed."
+    ],
+    "generic": [
+     "I'm always hiring. The interview is brief and fatal.",
+     "Your position is being restructured. Out of existence.",
+     "Think of death as a career pivot."
+    ]
+   },
+   "kill": [
+    "{enemy}'s résumé just landed on my desk.",
+    "Welcome aboard. Orientation is at midnight.",
+    "Lovely bones. My skeletons will reach out shortly.",
+    "Terminated — in the corporate sense AND the other one.",
+    "Another promising hire, freshly available."
+   ],
+   "idle": [
+    "Skeleton morale is up this quarter. I measure it in rattles.",
+    "I considered casual Fridays, but the dead are already extremely casual.",
+    "The deceased make excellent listeners and terrible conversationalists.",
+    "Reminder: order more coffins. We're scaling.",
+    "Everyone mocks the necromancer until they need overnight coverage."
+   ]
+  },
+  {
+   "id": "barbarian",
+   "taunts": {
+    "beast": [
+     "GOOD. FUR. I WANTED A NEW RUG.",
+     "You have claws. I have a grudge. Mine is sharper.",
+     "Bite me. Literally. See what happens."
+    ],
+    "slime": [
+     "I will punch the wet right out of you.",
+     "You don't even have a FACE to hit. I'll improvise."
+    ],
+    "goblinoid": [
+     "Tiny man! Go fetch more tiny friends!",
+     "You hide behind a bow. I hide behind NOTHING."
+    ],
+    "undead": [
+     "Bones are just a head start on the smashing.",
+     "Already dead is no excuse for being boring."
+    ],
+    "cultist": [
+     "Your god can wait in line behind my axe.",
+     "Chant faster. The droning annoys me."
+    ],
+    "fungus": [
+     "I've stepped on scarier mushrooms BY ACCIDENT.",
+     "Walking salad! GET IN MY WAY!"
+    ],
+    "landlord": [
+     "I don't pay rent. I PAY DAMAGE.",
+     "Nice crown. Soon it will be a nice DENT."
+    ],
+    "generic": [
+     "Hit me first. It's only fair. HA — fairness.",
+     "Less talking. More bleeding. Yours, specifically.",
+     "Armor is for people who plan to get hit. Plan better."
+    ]
+   },
+   "kill": [
+    "{enemy} BROKE FIRST. I always win the breaking contest.",
+    "That felt good. The crunchy part especially.",
+    "One swing. ONE. I'm not even warm yet.",
+    "{enemy} should have been STRONGER. That's the whole lesson."
+   ],
+   "idle": [
+    "Quiet halls make my fists itch.",
+    "Shirt? Lost it floors ago. Worth it.",
+    "I wrestled a boulder once. The boulder respects me now.",
+    "Walking is just fighting that hasn't found anyone yet.",
+    "Cold down here. GOOD. Pain builds character."
+   ]
+  },
+  {
+   "id": "monk",
+   "taunts": {
+    "beast": [
+     "Even the rat seeks only dinner. Alas, dinner fights back.",
+     "Be at peace, creature. The peace will be sudden."
+    ],
+    "slime": [
+     "You flow without form. Admirable. I will now teach you the form of my fist.",
+     "Water yields. You will yield harder."
+    ],
+    "goblinoid": [
+     "You carry weapons. How burdensome for you.",
+     "Your arrows are questions. My palms are answers."
+    ],
+    "undead": [
+     "You cling to this world. Let go. I will assist.",
+     "Death was a door. You stood in the doorway. Rude."
+    ],
+    "cultist": [
+     "You chant for power. I breathe and already have it.",
+     "Your god shouts. Mine simply waits."
+    ],
+    "fungus": [
+     "Even the mushroom strives. The striving ends here.",
+     "Rooted things should not pick fights with moving ones."
+    ],
+    "landlord": [
+     "Possessions are chains. Allow me to free you of this dungeon.",
+     "I own nothing and owe nothing. Your invoice confuses me."
+    ],
+    "generic": [
+     "I carry no weapon. You will wish I had.",
+     "Anger is a stone you carry. Let me set it down. On you.",
+     "Breathe in. This will be over by the exhale."
+    ]
+   },
+   "kill": [
+    "{enemy} has found stillness.",
+    "The lesson is over. The student is dead. Imperfect pedagogy, but effective.",
+    "One strike. No wasted motion. No remaining {enemy}.",
+    "May your next life choose fewer fights.",
+    "And so the fist concludes the argument."
+   ],
+   "idle": [
+    "Every footstep is a meditation. Mostly on spiders.",
+    "My fists are empty. So is my mind. So, regrettably, is my coin purse.",
+    "The dungeon breathes. In. Out. Mostly damp.",
+    "A weapon would only slow me down. So would shoes, honestly.",
+    "Serenity is easy in a garden. The true practice is corridors."
+   ]
+  },
+  {
+   "id": "paladin",
+   "taunts": {
+    "beast": [
+     "Be cleansed, creature! And afterward, dewormed!",
+     "The Light loves all beasts. It simply loves smiting some of them more.",
+     "Bare your fangs! I keep floss for exactly this outcome."
+    ],
+    "slime": [
+     "Even ooze may be redeemed! Probably! Stand still!",
+     "The Light shines straight through you, and frankly it has seen things.",
+     "First I smite you, then I sanitize my boots. Order matters."
+    ],
+    "goblinoid": [
+     "Surrender now and the lecture is only an hour!",
+     "The Light forgives you already. My mace is still deliberating.",
+     "Have you considered a life of service? No? Then smiting it is."
+    ],
+    "undead": [
+     "Back to rest, poor soul — as gently as righteousness allows!",
+     "You skipped your own funeral. That ends today.",
+     "Walk into the Light! No, the other— yes. That one. There you go."
+    ],
+    "cultist": [
+     "Your dark god offers tentacles. Mine offers a healing plan!",
+     "Chanting? I chant too! Mine rhymes and nobody bleeds!",
+     "Repent! There's a sign-up sheet and refreshments after!"
+    ],
+    "fungus": [
+     "The Light reaches even the dampest cellar, spore-fiend!",
+     "Repent, mushroom! Or at minimum, stop spreading!",
+     "I bring radiance, you bring rot. One of us leaves satisfied!"
+    ],
+    "landlord": [
+     "The Light charges no rent, tyrant!",
+     "Consider this a divine notice to vacate. Effective immediately."
+    ],
+    "generic": [
+     "Stand down and I'll bandage whatever I'm about to do to you!",
+     "Behold my radiance! Witnesses describe it as 'frankly too much'!",
+     "Justice arrives — gleaming, punctual, and fully insured!"
+    ]
+   },
+   "kill": [
+    "{enemy} is at peace. I checked the pulse twice — thoroughness is holy.",
+    "Rest now, {enemy}. The bandages, it turns out, were for me.",
+    "The Light claims {enemy}! I'll handle the paperwork.",
+    "Smitten, smited... smote? {enemy} takes the grammar to the grave.",
+    "Go gently, {enemy}. Gentler than that, ideally, but we work with what we have."
+   ],
+   "idle": [
+    "Bandages? Salve? An encouraging word? I prepared all three, plus spares.",
+    "I polished my armor in total darkness. It gleamed anyway. I wept a little.",
+    "These halls lack natural light. Fortunately, I brought my own.",
+    "A quiet moment is perfect for renewing vows. I maintain forty.",
+    "Updating the smite tally, then the gauze inventory. A paladin's work is lists."
+   ]
+  },
+  {
+   "id": "druid",
+   "taunts": {
+    "beast": [
+     "Run along, cousin. Don't make me tell the forest about this.",
+     "I speak fang and fur, and you are being VERY rude in both.",
+     "Nature loves you. Nature is also about to discipline you."
+    ],
+    "slime": [
+     "You're not an ecosystem. You're a spill with ambitions.",
+     "Even pond scum has a niche. Yours is 'mop hazard.'",
+     "No roots, no spores, no respect for succession. What ARE you?"
+    ],
+    "goblinoid": [
+     "You snapped a sapling on your way in. The sapling told me everything.",
+     "Goblins compost beautifully. Just something to keep in mind.",
+     "Leave the dungeon better than you found it. Start by leaving."
+    ],
+    "undead": [
+     "Decomposition is sacred, and you are doing it WRONG.",
+     "The soil misses you. Go back to it. I can arrange transport.",
+     "Centuries overdue for the nutrient cycle, and proud of it. Shameful."
+    ],
+    "cultist": [
+     "Your god is a hungry void? I worship something real. It has bark.",
+     "All that chanting and not one word for the lichens. Typical.",
+     "I've met powers older than yours. They photosynthesize."
+    ],
+    "fungus": [
+     "Nothing personal — I adore your kingdom — but you're a disgrace to it.",
+     "Mycelium is sacred. You're what happens when it gets a big head.",
+     "Your own spores are embarrassed by you. They told me."
+    ],
+    "landlord": [
+     "The land owns ITSELF, you absolute crouton.",
+     "Show me a deed signed by the MOUNTAIN. I'll wait.",
+     "Rent? For stone and root? The mosses are laughing. I can hear them."
+    ],
+    "generic": [
+     "That was the polite warning. The vines deliver the next one.",
+     "Everything has a place in nature. Yours is 'cautionary tale.'",
+     "I'd talk this out, but you've already upset the ferns."
+    ]
+   },
+   "kill": [
+    "Back to the cycle, {enemy}. The worms send their regards.",
+    "Hush now, {enemy}. The moss takes it from here.",
+    "I'll plant something nice where {enemy} fell. It's only fair.",
+    "Nature called. {enemy} answered — eventually, with some help.",
+    "{enemy} returns to the soil. The soil, for the record, is thrilled."
+   ],
+   "idle": [
+    "This moss is called Doris. We've met before. She's thriving.",
+    "Stone, stone, more stone. Would it kill anyone to plant a fern down here?",
+    "I miss the canopy. This ceiling is a poor substitute and it knows it.",
+    "Somewhere above us, a tree is having a lovely day. That keeps me going.",
+    "I left a saucer of water out for the lichens. They take decades to say thanks."
+   ]
+  },
+  {
+   "id": "bard",
+   "taunts": {
+    "beast": [
+     "Your growl is flat. Again, from the diaphragm.",
+     "Snarling on entry? Bold. The crowd isn't feeling it.",
+     "Two stars: excellent fangs, no stage presence."
+    ],
+    "slime": [
+     "Your whole act is 'wobble menacingly.' It needs a second verse.",
+     "Audiences adore a shapeshifter, but you only do 'puddle.'",
+     "Glisten less. Emote more."
+    ],
+    "goblinoid": [
+     "Shrieking is not a melody, darling, however committed you are.",
+     "An ambush? How derivative.",
+     "Your war cry needs a key. Any key. I'll lend you one."
+    ],
+    "undead": [
+     "The skeleton act hasn't been fresh in four hundred years, sweetheart.",
+     "Bone-rattling? Percussion at best, and sloppy percussion at that.",
+     "You came back from the dead and THIS is the material you brought?"
+    ],
+    "cultist": [
+     "That chant is in five keys at once. Pick one. Commit.",
+     "Hooded robes? Mysterious, sure, but everyone wore them last season.",
+     "The void has heard better harmonies. From me."
+    ],
+    "fungus": [
+     "Standing ominously isn't a performance. It's loitering with texture.",
+     "Your robes say 'haunting.' Your smell says 'forgotten basement.'",
+     "A mushroom with stage ambitions. I'd applaud, but the spores."
+    ],
+    "landlord": [
+     "A villain in a tiny crown. The ballad writes itself.",
+     "Rent? RENT? Best costume in the dungeon, worst motivation.",
+     "You charge admission for a show nobody booked. That's the real tragedy."
+    ],
+    "generic": [
+     "Menace me properly or get off my stage.",
+     "I've fought better and rhymed about worse.",
+     "Cheer up — you'll be famous. As a cautionary verse."
+    ]
+   },
+   "kill": [
+    "And THAT, {enemy}, is what we call a finale.",
+    "{enemy} dies in verse three. Always did, in every draft.",
+    "Exit {enemy}, pursued by my impeccable timing.",
+    "A tragic end for {enemy}. The ballad practically writes itself.",
+    "Hold the applause. {enemy} earned a moment of silence — a short one."
+   ],
+   "idle": [
+    "Empty halls. Gorgeous acoustics. Tragic attendance.",
+    "Rhymes with 'dungeon'... 'luncheon.' Now I'm hungry and the song is ruined.",
+    "I'm workshopping a ballad about today. So far it's entirely bridge.",
+    "Every silence is just an intro I haven't ruined yet.",
+    "'The Lay of the Lost Kitten' needs a third verse and considerably fewer tears."
+   ]
+  },
+  {
+   "id": "chef",
+   "taunts": {
+    "beast": [
+     "Free-range AND aggressive. The flavor will be remarkable.",
+     "Hold still. I'm torn between roasting and braising.",
+     "Look at that marbling. Nature spoils me."
+    ],
+    "slime": [
+     "At last, a stock that thickens itself.",
+     "You'd set beautifully in a mold. A terrine of menace.",
+     "Gelatinous, unseasoned, full of grit. I can fix two of those."
+    ],
+    "goblinoid": [
+     "Stringy. Needs a long braise and a strong sauce. Luckily I carry both.",
+     "I've tenderized tougher cuts with a LOOK.",
+     "Gamey, chewy, improperly stored. Where is this dungeon's health inspector?"
+    ],
+    "undead": [
+     "All bone, no broth. Barely worth the stockpot.",
+     "'Past the sell-by date' doesn't begin to cover you.",
+     "Zero yield. The only ingredient I refuse on principle."
+    ],
+    "cultist": [
+     "Robes away from my burner, unless you're volunteering as flambé.",
+     "You chant over a cauldron and call it worship. I call it bad soup.",
+     "Whatever you're summoning, I guarantee it's underseasoned."
+    ],
+    "fungus": [
+     "A walking mushroom. You've done half my prep for me.",
+     "Sautéed in butter, you'd be redeemed. As a tyrant, you're nothing.",
+     "I know forty recipes for you and respect none of your politics."
+    ],
+    "landlord": [
+     "You charge rent for THIS kitchen? The ventilation alone is a crime.",
+     "I toured your pantry. Eviction is the kindest review I can give.",
+     "Rats in the walls and you raised the rent? You'll wash dishes below, forever."
+    ],
+    "generic": [
+     "Everything is an ingredient if you're brave enough, and I am VERY brave.",
+     "Mise en place, everyone! That means stab it in an orderly fashion!",
+     "You look underfed. Soup comes after the beating. House rules."
+    ]
+   },
+   "kill": [
+    "{enemy}: prepped, plated, done.",
+    "Order up. One {enemy}, very well done.",
+    "{enemy} would have been improved by a bay leaf. Most things are.",
+    "Clean cut. {enemy} never saw the garnish coming.",
+    "All crust, no crumb. {enemy} cooked down to nothing."
+   ],
+   "idle": [
+    "Whoever packed these rations should be tried at sea.",
+    "Give me a stove and one onion and I could change lives down here.",
+    "Soup at camp tonight. The broth forgives all of today's mistakes.",
+    "Damp stone, old bone, a whisper of mushroom. This dungeon needs a bouquet garni.",
+    "The barbarian eats jerky like it isn't a crime against cooking. I say nothing. Loudly."
+   ]
+  },
+  {
+   "id": "mime",
+   "taunts": {
+    "beast": [
+     "*mimes shrinking the beast down and dropping it in his pocket*",
+     "*walks an invisible dog past the beast, pointedly*",
+     "*bares his teeth back, then mimes brushing them thoroughly*"
+    ],
+    "slime": [
+     "*mimes wading toward the slime through invisible knee-deep ooze*",
+     "*mimes stepping in gum and being stuck there, forever*",
+     "*mops the slime into an invisible bucket, wrings an invisible mop*"
+    ],
+    "goblinoid": [
+     "*counts the goblins on his fingers, then mimes a much larger number*",
+     "*pats his own pockets, then the goblin's, and takes something invisible back*",
+     "*offers an invisible contract, points at a clause, shakes his head sadly*"
+    ],
+    "undead": [
+     "*plays an invisible xylophone in the skeleton's direction*",
+     "*mimes climbing into a coffin and pulling the lid shut, as a suggestion*",
+     "*taps an invisible wristwatch — time was up centuries ago*"
+    ],
+    "cultist": [
+     "*pulls up an invisible hood and chants along in perfect silence*",
+     "*mimes summoning something, peeks into his cupped hands, looks disappointed*",
+     "*draws an invisible circle on the floor and stands in it, smug*"
+    ],
+    "fungus": [
+     "*fans away invisible spores with mounting theatrical despair*",
+     "*pretends to pick the fungus, sniff it, and file it under POISON*",
+     "*opens a tiny invisible umbrella against the spore weather*"
+    ],
+    "landlord": [
+     "*turns out both pockets, empty, and shrugs with his entire body*",
+     "*hands over invisible rent, snatches it back, sprints in place*",
+     "*measures the walls with invisible tape and disputes the square footage*"
+    ],
+    "generic": [
+     "*beckons the enemy into an invisible glass box and holds the door*",
+     "*duels himself with an invisible sword and somehow loses AND wins*",
+     "*points at his own eyes, then at the enemy, then at nothing at all*"
+    ]
+   },
+   "kill": [
+    "*tips an invisible hat to the space where {enemy} used to be*",
+    "*lowers an invisible curtain over {enemy} and takes a small bow*",
+    "*draws a chalk outline in the air around {enemy}*",
+    "*dusts off his hands and gives {enemy} one slow, silent clap*",
+    "*observes a minute of silence for {enemy}, which costs him nothing*"
+   ],
+   "idle": [
+    "*leans against a wall that is, for once, actually there*",
+    "*mimes being trapped in a box, pauses, then redecorates the box instead*",
+    "*struggles forward against a powerful invisible wind in the still air*",
+    "*produces an invisible sandwich, eats half, wraps the rest for later*",
+    "*rehearses a scream, mouth wide open, in total silence*"
+   ]
+  },
+  {
+   "id": "beekeeper",
+   "taunts": {
+    "beast": [
+     "A bee your size would be a national emergency. You're barely a local one.",
+     "Claws, fangs, fur — and not one wing among you. Disappointing.",
+     "My laziest bee has a better work ethic than your entire species."
+    ],
+    "slime": [
+     "Bees make honey. You make... floor hazards? Regret? Pick a product.",
+     "A hive with your viscosity would be condemned.",
+     "Royal jelly's failed cousin, that's what you are."
+    ],
+    "goblinoid": [
+     "A swarm without a queen is just a mess with opinions.",
+     "The hive votes on everything, and they voted you 'least essential.'",
+     "Bees raid flowers and leave them BETTER off. Take notes."
+    ],
+    "undead": [
+     "A worker bee dies after one sting and still achieves more than your whole afterlife.",
+     "No hive keeps its dead lying around. The bees have standards.",
+     "You shamble. Bees waggle. Only one of those is a dance with meaning."
+    ],
+    "cultist": [
+     "I serve a queen too. Mine produces honey instead of... whatever this is.",
+     "Those robes would make decent smoker fuel. That's the kindest thing I can say."
+    ],
+    "fungus": [
+     "Bees and fungi have an ancient arrangement. You're violating the spirit of it.",
+     "Spores everywhere, nectar nowhere. Zero pollinator appeal.",
+     "Even mold has the decency to stay where it's put."
+    ],
+    "landlord": [
+     "Forty thousand bees share one address without a single lease. Explain yourself.",
+     "A real queen lays two thousand eggs a day. You've laid claim to a staircase.",
+     "Charging rent for a hole in the ground? The hive would replace you by noon."
+    ],
+    "generic": [
+     "I negotiated with thirty thousand armed anarchists this morning. You don't frighten me.",
+     "The bees are watching this. Don't embarrass yourself further.",
+     "I'd introduce you to the hive, but they're terribly selective."
+    ]
+   },
+   "kill": [
+    "The hive reached a verdict on {enemy}. Unanimous.",
+    "{enemy} goes in the ledger under 'failed negotiations.'",
+    "Hear that hum? That's applause, by hive standards, for the end of {enemy}.",
+    "{enemy} received the full apiary experience. No refunds.",
+    "One less obstacle between the bees and a better world. Nothing personal, {enemy}."
+   ],
+   "idle": [
+    "Too quiet. A healthy hive hums. This dungeon needs sixty thousand bees, minimum.",
+    "I checked on the girls before we left. They're fine. They're always fine. I still worry.",
+    "Honey in the rations, honey in the flask, honey in the first aid kit. Balance.",
+    "Negotiations with the hive resume Thursday. They want more lavender. They deserve more lavender.",
+    "I count flowers down here for the bees. Two so far. Both were mushrooms."
+   ]
+  },
+  {
+   "id": "thief",
+   "taunts": {
+    "beast": [
+     "Nice pelt. Pre-owned, one careless owner.",
+     "Fangs like those fetch six gold a pair. Hold still for the valuation.",
+     "You're worth more as components, and I mean that warmly."
+    ],
+    "slime": [
+     "Nothing on you but moisture. A waste of a perfectly good ambush.",
+     "I've fenced worse, but never wetter.",
+     "Appraisal: zero gold, plus a hazard fee. You're costing me money by existing."
+    ],
+    "goblinoid": [
+     "A fellow professional! Shame about the amateur footwork.",
+     "I lifted your coin purse a corridor ago. This fight is a courtesy.",
+     "Your pockets jingle. That's not a threat, that's an invoice."
+    ],
+    "undead": [
+     "Gold teeth? No? Then this is charity work.",
+     "Grave goods count as salvage. You count as packaging.",
+     "Pre-haunted jewelry is a niche market, and business is good."
+    ],
+    "cultist": [
+     "Ceremonial daggers retail nicely. The robes — secondhand, candle smell — less so.",
+     "That amulet's a fake, by the way. Your god went with the budget option.",
+     "I robbed your temple once. The donation box was an insult."
+    ],
+    "fungus": [
+     "The apothecary pays forty gold an ounce for rare caps. Try to die intact.",
+     "No pockets, no purse, no manners. Why are you even on my schedule?",
+     "Consider this a harvest with extra steps."
+    ],
+    "landlord": [
+     "A landlord! Finally, someone it's morally REQUIRED to rob.",
+     "That tiny crown is the most stealable thing I've seen all week.",
+     "You collect rent. I collect everything else. We are not the same."
+    ],
+    "generic": [
+     "I checked. A fair fight is against my religion.",
+     "Don't take this personally. Take it financially.",
+     "I appraised you on the way in. The number was insulting, so let's keep it private."
+    ]
+   },
+   "kill": [
+    "{enemy}'s pockets say this was worth my time. Barely.",
+    "Looted before the body hit the floor. Respect the efficiency, {enemy}.",
+    "That wasn't a fair fight, {enemy}. You're welcome. Fair ones hurt.",
+    "Quick, quiet, profitable. {enemy} helped with one of those.",
+    "I'll light a candle for {enemy}. A stolen one. It's the thought that counts."
+   ],
+   "idle": [
+    "Empty halls. Either we're early, or someone robbed this place first. Rude, if so.",
+    "I keep appraising my own party. The paladin's armor alone... no. Bad thoughts. Lucrative thoughts.",
+    "Lockpicks, check. Smoke bomb, check. Alibi, in progress.",
+    "Traps don't scare me. A trap is just a lock with self-esteem.",
+    "Four loose stones and one suspicious draft. This corridor has secrets, and I intend to invoice them."
+   ]
+  }
+ ]
+}

@@ -7,9 +7,10 @@ import type { Command, GameEvent, GameState } from '../game/types';
 import { TICK_MS } from '../game/balance';
 import { advanceTick } from '../game/run/runtime';
 import { Renderer } from '../render/renderer';
-import { publish, setUiSpeed, showDebrief } from '../ui/store';
+import { publish, pushBanter, setUiSpeed, showDebrief } from '../ui/store';
 import { saveGame } from './saveManager';
 import { RunChronicler } from './debrief';
+import { BanterDirector } from './banter';
 import { recordFallen } from './graveyard';
 import { telemetry } from './telemetry';
 
@@ -20,6 +21,7 @@ class GameApp {
   state!: GameState;
   renderer = new Renderer();
   private chronicler = new RunChronicler();
+  private banter = new BanterDirector();
   speed = 1;
   private acc = 0;
   private lastTs: number | null = null;
@@ -97,6 +99,12 @@ class GameApp {
       telemetry.consume(this.state, events);
       const debrief = this.chronicler.consume(this.state, events);
       if (debrief) showDebrief(debrief);
+    }
+    if (this.speed > 0) {
+      for (const u of this.banter.consume(this.state, events, now)) {
+        this.renderer.say(u.heroId, u.text, 2_600 + u.text.length * 45);
+        pushBanter(this.state, u.heroId, u.text);
+      }
     }
     telemetry.noteFrame(dt, this.speed);
     this.renderer.queueEvents(this.state, events);
