@@ -937,7 +937,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
           </button>
           <select
             value={hero.choreId ?? ''}
-            title="Chores earn gold & xp around the clock, even offline"
+            title="Chores earn gold & xp while the tab is open"
             onChange={(e) => app.dispatch({ t: 'ASSIGN_CHORE', heroId: hero.id, choreId: e.target.value || null })}
           >
             <option value="">no chore</option>

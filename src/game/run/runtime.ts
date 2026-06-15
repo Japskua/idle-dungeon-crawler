@@ -38,7 +38,6 @@ import {
   BOMB_THROW_TICKS,
 } from '../balance';
 import { CHORES, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
-import { OFFLINE_CAP_MS } from '../balance';
 import { dayIndexFor } from '../village/shop';
 import { derive, type DerivedStats } from '../hero/derive';
 import { addXp } from '../hero/leveling';
@@ -170,11 +169,13 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   state.tick++;
 }
 
-// ---------- village upkeep (wall-clock, mode-independent, works offline) ----------
+// ---------- village upkeep (wall-clock, mode-independent) ----------
 /**
- * One analytic accrual path for recovery + chores, anchored on wall-clock time.
- * The same function serves "tab open for 10 minutes" and "tab closed overnight"
- * (capped at OFFLINE_CAP_MS). Game speed never touches this — no 4x-idle exploit.
+ * Pure analytic accrual for recovery + chores, anchored on wall-clock time. It
+ * accrues exactly the elapsed time it is handed — there is NO offline catch-up:
+ * the app loop only ever feeds it foreground time (it re-anchors the clock on
+ * boot and whenever the tab was inactive), so closed/backgrounded time never
+ * counts. Game speed never touches this — no 4x-idle exploit.
  */
 export function villageUpkeep(state: GameState, nowMs: number, events: GameEvent[]) {
   const last = state.village.lastChoreAccrualMs;
@@ -182,7 +183,7 @@ export function villageUpkeep(state: GameState, nowMs: number, events: GameEvent
     state.village.lastChoreAccrualMs = nowMs; // clock went backwards: re-anchor
     return;
   }
-  const dtMs = Math.min(nowMs - last, OFFLINE_CAP_MS);
+  const dtMs = nowMs - last;
   if (dtMs < 1000) return;
   state.village.lastChoreAccrualMs = nowMs;
   const dtSec = dtMs / 1000;

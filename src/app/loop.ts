@@ -25,6 +25,7 @@ class GameApp {
   speed = 1;
   private acc = 0;
   private lastTs: number | null = null;
+  private lastNow: number | null = null;
   private queue: Command[] = [];
   private pendingEvents: GameEvent[] = [];
   private lastPublish = 0;
@@ -80,6 +81,13 @@ class GameApp {
     this.lastTs = ts;
     const events: GameEvent[] = [];
     const now = Date.now();
+    // a big wall-clock gap between frames means the tab was inactive (background
+    // or asleep): re-anchor the village clock so that idle time never accrues —
+    // there is no offline progress, time only passes while the tab is foreground.
+    if (this.lastNow !== null && now - this.lastNow > 1500) {
+      this.state.village.lastChoreAccrualMs = now;
+    }
+    this.lastNow = now;
 
     if (this.speed > 0) this.acc += dt * this.speed;
     let steps = 0;

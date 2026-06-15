@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test';
 import type { GameEvent } from '../types';
 import { newGame } from '../newGame';
 import { villageUpkeep } from '../run/runtime';
-import { applyOfflineCatchUp } from './offline';
 import { derive } from '../hero/derive';
 
 const NOW = 1_750_000_000_000;
@@ -17,7 +16,7 @@ function gameWithChore(choreId: string) {
   return { state, hero };
 }
 
-describe('chores & offline accrual', () => {
+describe('village chore accrual (no offline progress — only the time the loop feeds it)', () => {
   test('farmhand: 2 hours = 60 gold and 20 xp', () => {
     const { state, hero } = gameWithChore('farmhand');
     const gold0 = state.village.gold;
@@ -27,7 +26,7 @@ describe('chores & offline accrual', () => {
     expect(hero.xp).toBe(20);
   });
 
-  test('analytic catch-up equals many small steps (no double counting)', () => {
+  test('accrual is purely additive over many small steps (no double counting)', () => {
     const a = gameWithChore('farmhand');
     const b = gameWithChore('farmhand');
     const events: GameEvent[] = [];
@@ -39,11 +38,12 @@ describe('chores & offline accrual', () => {
     expect(Math.abs(a.hero.xp - b.hero.xp)).toBeLessThanOrEqual(1);
   });
 
-  test('offline accrual is capped at 12 hours', () => {
+  test('accrual is uncapped — the loop, not this function, decides what time counts', () => {
     const { state } = gameWithChore('farmhand');
     const gold0 = state.village.gold;
+    // a 30h delta would only reach here if the loop allowed it; the math is linear
     villageUpkeep(state, NOW + 30 * HOUR, []);
-    expect(state.village.gold - gold0).toBe(12 * 30);
+    expect(state.village.gold - gold0).toBe(30 * 30);
   });
 
   test('clock moving backwards re-anchors and grants nothing', () => {
@@ -86,19 +86,5 @@ describe('chores & offline accrual', () => {
     villageUpkeep(state, NOW + 25 * HOUR, []);
     expect(state.village.purchasedToday).toEqual([]);
     expect(state.village.hiredToday).toEqual([]);
-  });
-
-  test('applyOfflineCatchUp produces a report for long absences, none for short ones', () => {
-    const { state } = gameWithChore('farmhand');
-    state.savedAtMs = NOW;
-    const report = applyOfflineCatchUp(state, NOW + 6 * HOUR);
-    expect(report).not.toBeNull();
-    expect(report!.goldEarned).toBe(180);
-    expect(report!.heroes.length).toBeGreaterThan(0);
-    expect(report!.capped).toBe(false);
-
-    const fresh = gameWithChore('farmhand');
-    fresh.state.savedAtMs = NOW;
-    expect(applyOfflineCatchUp(fresh.state, NOW + 60_000)).toBeNull();
   });
 });
