@@ -47,6 +47,28 @@ export type StatMod =
   | { kind: 'attr'; attr: keyof Attributes; add: number }
   | { kind: 'mult'; what: 'dmg' | 'xp' | 'gold' | 'maxhp' | 'speed'; mul: number };
 
+export interface RaceDef {
+  id: string;
+  name: string;
+  description: string;
+  /** declarative levers compiled into derive()'s StatMod engine */
+  mods: StatMod[];
+  /** flat additions read directly by derive() */
+  critBonus?: number;
+  armorFlat?: number;
+  carryMult?: number;
+  /** carried as data; the sim hooks land in a follow-up */
+  immune?: string[];
+  regenPerTick?: number;
+  flags?: string[];
+  personalityBias?: Record<string, number>;
+  racialTraits: { id: string; name: string; effect: string }[];
+  restrictions: string[];
+  quirks: string[];
+  /** tavern spawn weight — common 10, weird 2; never tied to power */
+  rarity: number;
+}
+
 // ---------- content: items ----------
 export type EquipSlot = 'weapon' | 'offhand' | 'armor' | 'trinket';
 export type ItemSlot = EquipSlot | 'potion' | 'junk';
@@ -374,6 +396,8 @@ export interface Hero {
   ownership?: OwnershipTraits;
   skills: SkillId[];
   perks: PerkId[];
+  /** ancestry — stat mods, racial traits, quirks (see content/races.ts) */
+  raceId: string;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];

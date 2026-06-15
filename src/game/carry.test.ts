@@ -12,15 +12,15 @@ const NOW = 1_750_000_000_000;
 describe('carry weight', () => {
   test('fighters out-haul wizards, and strength raises the cap', () => {
     const state = newGame(21, NOW);
-    const knight = makeHero(state, 'knight', 'Tank', 1, []);
-    const mage = makeHero(state, 'mage', 'Twig', 1, []);
+    const knight = makeHero(state, 'knight', 'Tank', 1, [], [], 'human');
+    const mage = makeHero(state, 'mage', 'Twig', 1, [], [], 'human');
     expect(derive(knight).carryMax).toBeGreaterThan(derive(mage).carryMax);
     expect(carryCapacity(30, 10)).toBeGreaterThan(carryCapacity(30, 7));
   });
 
   test('equipment and potions weigh the pack down', () => {
     const state = newGame(22, NOW);
-    const knight = makeHero(state, 'knight', 'Tank', 1, []);
+    const knight = makeHero(state, 'knight', 'Tank', 1, [], [], 'human');
     const base = derive(knight).carryUsed; // rusty sword 4 + cloth tunic 2
     expect(base).toBeCloseTo(6, 1);
     knight.potions = { hp: 3, mp: 2 };
@@ -29,7 +29,7 @@ describe('carry weight', () => {
 
   test('EQUIP refuses loads beyond capacity (swapped item counts as freed)', () => {
     const state = newGame(23, NOW);
-    const knight = makeHero(state, 'knight', 'Tank', 1, []);
+    const knight = makeHero(state, 'knight', 'Tank', 1, [], [], 'human');
     state.roster[knight.id] = knight;
     state.rosterOrder.push(knight.id);
     // knight: baseCarry 30 + str 7*2 = 44; rusty sword 4 + cloth 2 = 6 used.

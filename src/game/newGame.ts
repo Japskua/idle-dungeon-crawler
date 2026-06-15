@@ -45,9 +45,11 @@ export function newGame(seed: number, nowMs: number): GameState {
     chronicle: [],
   };
 
-  // the founding duo: a knight to get hit and a cleric to complain about it
-  const knight = makeHero(state, 'knight', generateName(state.rng.village));
-  const cleric = makeHero(state, 'cleric', generateName(state.rng.village));
+  // the founding duo: a knight to get hit and a cleric to complain about it —
+  // reliable human volunteers, so a brand-new game never opens on a frail race
+  // (the tavern is where the weird ancestries wander in)
+  const knight = makeHero(state, 'knight', generateName(state.rng.village), 1, [], undefined, 'human');
+  const cleric = makeHero(state, 'cleric', generateName(state.rng.village), 1, [], undefined, 'human');
   for (const hero of [knight, cleric]) {
     state.roster[hero.id] = hero;
     state.rosterOrder.push(hero.id);

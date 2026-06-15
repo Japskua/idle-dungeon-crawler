@@ -1,6 +1,6 @@
 /** Hero construction: classes, levels, starting gear, perks, generated names. */
 import type { GameState, Hero } from '../types';
-import { CLASSES, NAME_BANKS, PERKS, itemDef } from '../content';
+import { CLASSES, NAME_BANKS, PERKS, RACES, itemDef } from '../content';
 import { allocId, makeItem } from '../items/factory';
 import { chance, pick, pickWeighted, rand, randInt, type Rng } from '../core/rng';
 import { heroMaxHp, heroMaxMp } from '../balance';
@@ -56,6 +56,11 @@ export function rollTraits(rng: Rng): string[] {
   return out;
 }
 
+/** pick a race weighted by rarity off the village stream (frozen draw order) */
+export function rollRace(rng: Rng): string {
+  return pickWeighted(rng, Object.values(RACES), (r) => r.rarity).id;
+}
+
 export function makeHero(
   state: GameState,
   classId: string,
@@ -63,8 +68,11 @@ export function makeHero(
   level = 1,
   perks: string[] = [],
   traits?: string[],
+  raceId?: string,
 ): Hero {
   const cls = CLASSES[classId]!;
+  // rolled FIRST so the village-stream draw order stays reproducible
+  const race = raceId ?? rollRace(state.rng.village);
   const attrs = {
     str: cls.base.str + cls.growth.str * (level - 1),
     dex: cls.base.dex + cls.growth.dex * (level - 1),
@@ -85,6 +93,7 @@ export function makeHero(
     bombs: 0,
     gold: 0,
     satchel: [],
+    raceId: race,
     traits: traits ?? rollTraits(state.rng.village),
     skills: unlockedSkills(classId, level),
     perks,

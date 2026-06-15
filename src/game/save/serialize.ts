@@ -7,6 +7,7 @@ import { SAVE_VERSION } from '../newGame';
 import { ITEMS } from '../content';
 import { defaultTactics } from '../tactics/defaults';
 import { TRAIT_IDS, emptyStats } from '../hero/create';
+import { RACE_IDS } from '../content/races';
 
 function u8ToBase64(u8: Uint8Array): string {
   let bin = '';
@@ -120,6 +121,15 @@ function reconcileContent(state: GameState) {
     // heroes saved before lifetime statistics get a blank story arc
     if (!hero.stats) hero.stats = emptyStats();
     if (typeof hero.bombs !== 'number') hero.bombs = 0;
+    if (typeof hero.raceId !== 'string' || !RACE_IDS.includes(hero.raceId)) {
+      // pre-race heroes get a stable ancestry from their id (no rng burned)
+      let h = 0x811c9dc5;
+      for (let i = 0; i < hero.id.length; i++) {
+        h ^= hero.id.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      hero.raceId = RACE_IDS[(h >>> 0) % RACE_IDS.length]!;
+    }
     if (typeof hero.gold !== 'number') hero.gold = 0;
     if (!Array.isArray(hero.satchel)) hero.satchel = [];
     if (hero.stats && typeof hero.stats.runGold !== 'number') hero.stats.runGold = 0;

@@ -13,7 +13,7 @@ const NOW = 1_750_000_000_000;
 
 function soloRun(seed: number, classId: string, level = 1) {
   const state = newGame(seed, NOW);
-  const hero = makeHero(state, classId, `test_${classId}`, level, []);
+  const hero = makeHero(state, classId, `test_${classId}`, level, [], [], 'human');
   state.roster[hero.id] = hero;
   state.rosterOrder.push(hero.id);
   state.village.potions.hp = 0;
@@ -70,8 +70,8 @@ describe('the fourteen classes', () => {
       if (def.slot === 'weapon') expect(canEquip('monk', def)).toBe(false);
     }
     const state = newGame(71, NOW);
-    const novice = makeHero(state, 'monk', 'Novice', 1, []);
-    const master = makeHero(state, 'monk', 'Master', 10, []);
+    const novice = makeHero(state, 'monk', 'Novice', 1, [], [], 'human');
+    const master = makeHero(state, 'monk', 'Master', 10, [], [], 'human');
     expect(derive(master).weaponDmg).toBeGreaterThan(derive(novice).weaponDmg + 9);
     expect(derive(novice).attackTicks).toBe(9); // fast fists
   });
@@ -129,7 +129,7 @@ describe('necromancy (and beekeeping)', () => {
   });
 
   test('hostiles will turn on minions (bodyguards by design)', () => {
-    const { state, hero } = soloRun(75, 'beekeeper', 2);
+    const { state, hero } = soloRun(70, 'beekeeper', 2);
     const run = state.run!;
     run.monsters = {};
     run.monsterOrder = [];
