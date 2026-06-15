@@ -1456,9 +1456,14 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
       const killer = m.lastHitBy ? state.roster[m.lastHitBy] : undefined;
       const goldMult = killer ? derive(killer).goldMult : 1;
       const gold = Math.round(goldRoll * monsterGoldMult(m.level, def.tier === 'boss') * goldMult);
-      run.party.goldCarried += gold;
-      const killerHero = m.lastHitBy ? state.roster[m.lastHitBy] : undefined;
-      if (killerHero) killerHero.stats.kills++;
+      // gold goes to the killer's own purse; a minion/absent killer falls back
+      // to the first standing hero (deterministic by rosterOrder, weightless gold)
+      const goldTaker = killer ?? (standing[0] ? state.roster[standing[0]] : undefined);
+      if (goldTaker) {
+        goldTaker.gold += gold;
+        goldTaker.stats.runGold += gold;
+      }
+      if (killer) killer.stats.kills++;
       const xp = monsterXp(def.xpBase, m.level, m.elite, def.tier === 'boss');
       const share = xpShare(xp, Math.max(1, standing.length));
       for (const hid of standing) {
@@ -1508,22 +1513,20 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
   }
 }
 
-/** kg the standing party can still haul: Σ(capacity − pack) − loot bag weight */
-export function lootBagWeight(run: DungeonRun): number {
-  let w = 0;
-  for (const item of run.party.lootBag) w += ITEMS[item.defId]?.weight ?? 0;
-  return Math.round(w * 10) / 10;
+/** kg this hero can still haul (their satchel weight is already in carryUsed) */
+export function heroSpareCapacity(hero: Hero): number {
+  const d = derive(hero);
+  return Math.round(Math.max(0, d.carryMax - d.carryUsed) * 10) / 10;
 }
 
+/** kg the standing party can still haul, summed across members */
 export function partySpareCapacity(state: GameState, run: DungeonRun): number {
   let spare = 0;
   for (const id of standingIds(run)) {
     const hero = state.roster[id];
-    if (!hero) continue;
-    const d = derive(hero);
-    spare += Math.max(0, d.carryMax - d.carryUsed);
+    if (hero) spare += heroSpareCapacity(hero);
   }
-  return Math.round((spare - lootBagWeight(run)) * 10) / 10;
+  return Math.round(spare * 10) / 10;
 }
 
 // ---------- party logic: loot, chests, rooms, descend, withdraw exit ----------
@@ -1533,19 +1536,18 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
 
   // loot pickup (same tile) — limited by what the party can still carry
   if (run.groundLoot.length > 0) {
-    let spare = partySpareCapacity(state, run);
     const keep: typeof run.groundLoot = [];
     for (const loot of run.groundLoot) {
-      const taker = standing.find((hid) => {
+      const takerId = standing.find((hid) => {
         const p = run.party.pos[hid]!;
         return p.x === loot.pos.x && p.y === loot.pos.y;
       });
-      if (taker) {
+      const taker = takerId ? state.roster[takerId] : undefined;
+      if (taker && takerId) {
         const weight = ITEMS[loot.item.defId]?.weight ?? 0;
-        if (weight <= spare) {
-          spare -= weight;
-          run.party.lootBag.push(loot.item);
-          events.push({ t: 'lootPicked', defId: loot.item.defId, by: taker });
+        if (weight <= heroSpareCapacity(taker)) {
+          taker.satchel.push(loot.item); // loot stays with the hero who grabbed it
+          events.push({ t: 'lootPicked', defId: loot.item.defId, by: takerId });
           continue;
         }
         if (!loot.heavy) {
@@ -1561,17 +1563,19 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
   // chests (adjacent incl. diagonals — travel parks heroes at chebyshev 1)
   for (const chest of run.floor.chests) {
     if (chest.opened) continue;
-    const opener = standing.find((hid) => chebyshev(run.party.pos[hid]!, chest.pos) <= 1);
-    if (!opener) continue;
+    const openerId = standing.find((hid) => chebyshev(run.party.pos[hid]!, chest.pos) <= 1);
+    if (!openerId) continue;
     chest.opened = true;
+    const opener = state.roster[openerId];
     const loot = rollChestLoot(state, run.depth);
-    run.party.goldCarried += loot.gold;
-    let spare = partySpareCapacity(state, run);
+    if (opener) {
+      opener.gold += loot.gold;
+      opener.stats.runGold += loot.gold;
+    }
     for (const item of loot.items) {
       const weight = ITEMS[item.defId]?.weight ?? 0;
-      if (weight <= spare) {
-        spare -= weight;
-        run.party.lootBag.push(item);
+      if (opener && weight <= heroSpareCapacity(opener)) {
+        opener.satchel.push(item);
       } else {
         run.groundLoot.push({ id: allocId(state, 'g'), pos: { ...chest.pos }, item, heavy: true });
       }

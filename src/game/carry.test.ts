@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { GameEvent } from './types';
 import { newGame } from './newGame';
-import { advanceTick, lootBagWeight, partySpareCapacity } from './run/runtime';
+import { advanceTick, heroSpareCapacity } from './run/runtime';
 import { makeHero } from './hero/create';
 import { makeItem } from './items/factory';
 import { derive } from './hero/derive';
@@ -57,11 +57,12 @@ describe('carry weight', () => {
     const events: GameEvent[] = [];
     advanceTick(state, [{ t: 'EMBARK', memberIds: [...state.rosterOrder], startDepth: 1 }], NOW, events);
     const run = state.run!;
-    // stuff the bag until nothing fits
-    while (partySpareCapacity(state, run) > 0) {
-      run.party.lootBag.push(makeItem(state, 'chain_mail', 1));
+    // stuff every hero's pack until nothing more fits
+    for (const id of run.party.memberIds) {
+      const hero = state.roster[id]!;
+      while (heroSpareCapacity(hero) > 0) hero.satchel.push(makeItem(state, 'chain_mail', 1));
     }
-    expect(lootBagWeight(run)).toBeGreaterThan(0);
+    expect(state.roster[run.party.memberIds[0]!]!.satchel.length).toBeGreaterThan(0);
 
     const heroId = run.party.memberIds[0]!;
     const heavy = makeItem(state, 'war_axe', 1);

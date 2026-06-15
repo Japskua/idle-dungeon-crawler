@@ -43,7 +43,7 @@ function fnv1a(text: string): string {
 
 // Re-baseline deliberately when sim/balance/content changes: bun test --rerun
 // prints the new value in the failure message.
-const GOLDEN_STATE_HASH = 'a42f5a98';
+const GOLDEN_STATE_HASH = '694a0ee2';
 const GOLDEN_EVENT_HASH = '83ed882e';
 
 describe('determinism', () => {
@@ -100,7 +100,13 @@ describe('full loop (headless)', () => {
       } else {
         advanceTick(state, [], NOW, events);
       }
-      if (state.run) maxGoldCarried = Math.max(maxGoldCarried, state.run.party.goldCarried);
+      if (state.run) {
+        const carried = state.run.party.memberIds.reduce(
+          (s, id) => s + (state.roster[id]?.stats.runGold ?? 0),
+          0,
+        );
+        maxGoldCarried = Math.max(maxGoldCarried, carried);
+      }
       for (const e of events) {
         if (e.t === 'descend' && e.depth > 1) descended = true;
         if (e.t === 'damage') dealtDamage = true;

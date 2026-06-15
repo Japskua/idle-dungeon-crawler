@@ -42,8 +42,6 @@ export function startRun(state: GameState, memberIds: Id[], startDepth: number, 
       targetId: {},
       downed: {},
       carrying: {},
-      goldCarried: 0,
-      lootBag: [],
     },
     monsters: {},
     monsterOrder: [],
@@ -61,6 +59,7 @@ export function startRun(state: GameState, memberIds: Id[], startDepth: number, 
     hero.cooldowns = {};
     hero.stats.runs++;
     hero.stats.runDmg = 0;
+    hero.stats.runGold = 0;
     // top up to 3 hp / 2 mp from the village pool; bigger gate loadouts are kept
     const takeHp = Math.min(Math.max(0, 3 - hero.potions.hp), state.village.potions.hp);
     const takeMp = Math.min(Math.max(0, 2 - hero.potions.mp), state.village.potions.mp);
@@ -146,6 +145,8 @@ function heroReturnsToVillage(state: GameState, hero: Hero, hpFraction: number) 
 }
 
 function killHero(state: GameState, hero: Hero, depth: number, nowMs: number, events: GameEvent[], cause: string) {
+  // their pack passes to the village; the gold dies with them (the dungeon keeps it)
+  state.village.inventory.push(...hero.satchel);
   delete state.roster[hero.id];
   state.rosterOrder = state.rosterOrder.filter((id) => id !== hero.id);
   state.progress.totalPermadeaths++;
@@ -196,16 +197,15 @@ export function endRunWithdrawn(state: GameState, nowMs: number, events: GameEve
     }
   }
 
-  state.village.gold += party.goldCarried;
-  state.village.inventory.push(...party.lootBag);
+  const goldKept = party.memberIds.reduce((sum, id) => sum + (state.roster[id]?.stats.runGold ?? 0), 0);
   events.push({
     t: 'runEnded',
     outcome: 'withdrawn',
     depth: run.depth,
-    goldKept: party.goldCarried,
+    goldKept,
     goldLost: 0,
   });
-  chronicle(state, nowMs, `The party returned from depth ${run.depth} with ${party.goldCarried} gold.`, run.depth);
+  chronicle(state, nowMs, `The party returned from depth ${run.depth} with ${goldKept} gold.`, run.depth);
   state.progress.runsCompleted++;
   state.run = null;
   state.mode = 'village';
@@ -216,7 +216,7 @@ export function endRunWiped(state: GameState, nowMs: number, events: GameEvent[]
   const run = state.run;
   if (!run) return;
   const party = run.party;
-  const goldLost = party.goldCarried;
+  const goldLost = party.memberIds.reduce((sum, id) => sum + (state.roster[id]?.stats.runGold ?? 0), 0);
 
   events.push({ t: 'wipe', depth: run.depth, goldLost });
   for (const id of [...party.memberIds]) {
@@ -229,11 +229,12 @@ export function endRunWiped(state: GameState, nowMs: number, events: GameEvent[]
       killHero(state, hero, run.depth, nowMs, events, cause);
       continue;
     }
+    // the gold found this run is lost in the dark; the satchel rides home
+    hero.gold = Math.max(0, hero.gold - hero.stats.runGold);
     for (let i = 0; i < INJURIES_ON_WIPE; i++) rollInjury(state, hero, run.depth, events);
     heroReturnsToVillage(state, hero, 0.1);
   }
 
-  state.village.inventory.push(...party.lootBag);
   state.progress.totalWipes++;
   events.push({ t: 'runEnded', outcome: 'wiped', depth: run.depth, goldKept: 0, goldLost });
   chronicle(

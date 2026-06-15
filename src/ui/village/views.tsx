@@ -97,12 +97,18 @@ function equipCandidates(game: GameState, hero: Hero, slot: EquipSlot): ItemInst
   const d = derive(hero);
   const replaced = hero.equipment[slot];
   const freed = replaced ? ITEMS[replaced.defId]?.weight ?? 0 : 0;
-  return game.village.inventory.filter((it) => {
+  // the hero's own satchel (already on them → weight-neutral) plus fitting village storage
+  const fromSatchel = hero.satchel.filter((it) => {
+    const def = ITEMS[it.defId];
+    return !!def && def.slot === slot && canEquip(hero.classId, def);
+  });
+  const fromVillage = game.village.inventory.filter((it) => {
     const def = ITEMS[it.defId];
     if (!def || def.slot !== slot) return false;
     if (!canEquip(hero.classId, def)) return false;
     return d.carryUsed - freed + def.weight <= d.carryMax;
   });
+  return [...fromSatchel, ...fromVillage];
 }
 
 function BuildingShell({
@@ -872,6 +878,47 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
           );
         })}
       </div>
+      <div className="row small satchel-head">
+        <span>
+          <span className="gold">{hero.gold}g</span>
+          {hero.satchel.length > 0 ? <span className="muted"> · 🎒 {hero.satchel.length} in pack</span> : null}
+        </span>
+        {hero.gold > 0 && (
+          <button
+            className="btn btn-tiny"
+            title="move this hero's gold into the village treasury"
+            onClick={() => app.dispatch({ t: 'DEPOSIT_GOLD', heroId: hero.id, amount: hero.gold })}
+          >
+            bank {hero.gold}g
+          </button>
+        )}
+      </div>
+      {hero.satchel.length > 0 && (
+        <div className="small satchel">
+          {hero.satchel.slice(0, 8).map((it) => (
+            <div key={it.id} className="row">
+              <ItemName item={it} />
+              <span className="row-buttons">
+                <button
+                  className="btn btn-tiny"
+                  title="move into shared village storage"
+                  onClick={() => app.dispatch({ t: 'DEPOSIT_ITEM', heroId: hero.id, itemId: it.id })}
+                >
+                  stash
+                </button>
+                <button
+                  className="btn btn-tiny"
+                  title="sell for this hero's own gold"
+                  onClick={() => app.dispatch({ t: 'SELL_SATCHEL_ITEM', heroId: hero.id, itemId: it.id })}
+                >
+                  sell
+                </button>
+              </span>
+            </div>
+          ))}
+          {hero.satchel.length > 8 && <div className="muted">…and {hero.satchel.length - 8} more</div>}
+        </div>
+      )}
       <StoryBlock hero={hero} />
       {hero.injuries.length > 0 && (
         <div className="small">

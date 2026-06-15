@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { app } from '../app/loop';
 import { telemetry } from '../app/telemetry';
 import { CLASSES } from '../game/content';
-import { lootBagWeight, partySpareCapacity } from '../game/run/runtime';
+import { partySpareCapacity } from '../game/run/runtime';
 import type { Hero } from '../game/types';
 import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
@@ -111,6 +111,9 @@ export function DungeonScreen() {
                     <span className="muted small">
                       potions: {hero.potions.hp}hp / {hero.potions.mp}mp
                       {hero.bombs > 0 ? ` · 💣 ${hero.bombs}` : ''}
+                      {' · '}
+                      <span className="gold">{hero.gold}g</span>
+                      {hero.satchel.length > 0 ? ` · 🎒${hero.satchel.length}` : ''}
                     </span>
                     <TacticSwitch hero={hero} />
                   </div>
@@ -134,13 +137,16 @@ export function DungeonScreen() {
         <div className="panel">
           <div className="row">
             <span>
-              Carried gold: <b className="gold">{party.goldCarried}g</b>
+              Party purse:{' '}
+              <b className="gold">
+                {party.memberIds.reduce((sum, id) => sum + (game.roster[id]?.gold ?? 0), 0)}g
+              </b>
             </span>
             <span className="muted">
-              loot: {party.lootBag.length} ({lootBagWeight(run).toFixed(1)}kg
-              {(() => {
+              loot: {party.memberIds.reduce((n, id) => n + (game.roster[id]?.satchel.length ?? 0), 0)}{' '}
+              ({(() => {
                 const spare = partySpareCapacity(app.state, run);
-                return spare <= 2 ? ', bags full!' : `, ${spare.toFixed(0)}kg spare`;
+                return spare <= 2 ? 'bags full!' : `${spare.toFixed(0)}kg spare`;
               })()}
               )
             </span>

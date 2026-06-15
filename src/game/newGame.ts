@@ -5,7 +5,7 @@ import { STARTING_GOLD } from './balance';
 import { makeHero, generateName } from './hero/create';
 import { dayIndexFor } from './village/shop';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function newGame(seed: number, nowMs: number): GameState {
   const state: GameState = {

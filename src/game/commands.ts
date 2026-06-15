@@ -2,7 +2,7 @@
  * Command application — the only way the UI mutates the sim, applied at tick
  * boundaries. Village commands may use wall-clock time; dungeon ones never do.
  */
-import type { Command, GameEvent, GameState } from './types';
+import type { Command, GameEvent, GameState, ItemInstance } from './types';
 import { startRun, chronicle } from './run/lifecycle';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE,
 } from './balance';
@@ -132,22 +132,32 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
     case 'EQUIP': {
       if (state.mode !== 'village') return;
       const hero = state.roster[cmd.heroId];
-      const i = state.village.inventory.findIndex((it) => it.id === cmd.itemId);
-      if (!hero || i === -1) return;
-      const item = state.village.inventory[i]!;
+      if (!hero) return;
+      // the item may live in shared village storage OR in the hero's own satchel
+      let from: ItemInstance[] = state.village.inventory;
+      let i = state.village.inventory.findIndex((it) => it.id === cmd.itemId);
+      if (i === -1) {
+        from = hero.satchel;
+        i = hero.satchel.findIndex((it) => it.id === cmd.itemId);
+      }
+      if (i === -1) return;
+      const item = from[i]!;
       const def = itemDef(item.defId);
       const slot = def.slot;
       if (slot !== 'weapon' && slot !== 'offhand' && slot !== 'armor' && slot !== 'trinket') return;
       if (!canEquip(hero.classId, def)) return; // a mage holding a warhammer is a comedy, not a build
-      // carry capacity: swapping counts the replaced item's weight as freed
+      // carry capacity: equipping from the satchel is weight-neutral (it was already on them);
+      // swapping frees the replaced item, which returns to the same place the new one came from
+      const fromSatchel = from === hero.satchel;
       const d = derive(hero);
       const replaced = hero.equipment[slot];
       const replacedWeight = replaced ? itemDef(replaced.defId).weight : 0;
-      if (d.carryUsed - replacedWeight + def.weight > d.carryMax + 1e-9) return; // too heavy
-      state.village.inventory.splice(i, 1);
+      const addedWeight = fromSatchel ? 0 : def.weight; // satchel weight is already counted
+      if (d.carryUsed - replacedWeight + addedWeight > d.carryMax + 1e-9) return; // too heavy
+      from.splice(i, 1);
       const old = hero.equipment[slot];
       hero.equipment[slot] = item;
-      if (old) state.village.inventory.push(old);
+      if (old) from.push(old);
       return;
     }
     case 'UNEQUIP': {
@@ -156,7 +166,79 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const item = hero?.equipment[cmd.slot];
       if (!hero || !item) return;
       delete hero.equipment[cmd.slot];
-      state.village.inventory.push(item);
+      hero.satchel.push(item); // they keep what they earned, in their own pack
+      return;
+    }
+    // ---- per-hero economy: gold and items move between heroes and the village ----
+    case 'DEPOSIT_GOLD': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero) return;
+      const amt = Math.min(Math.max(0, Math.floor(cmd.amount)), hero.gold);
+      hero.gold -= amt;
+      state.village.gold += amt;
+      return;
+    }
+    case 'WITHDRAW_GOLD': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero) return;
+      const amt = Math.min(Math.max(0, Math.floor(cmd.amount)), state.village.gold);
+      state.village.gold -= amt;
+      hero.gold += amt;
+      return;
+    }
+    case 'TRANSFER_GOLD': {
+      if (state.mode !== 'village') return;
+      const from = state.roster[cmd.fromHeroId];
+      const to = state.roster[cmd.toHeroId];
+      if (!from || !to || from === to) return;
+      if (from.ownership?.greedy) return; // a greedy hero never hands gold to another
+      const amt = Math.min(Math.max(0, Math.floor(cmd.amount)), from.gold);
+      from.gold -= amt;
+      to.gold += amt;
+      return;
+    }
+    case 'DEPOSIT_ITEM': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero) return;
+      const i = hero.satchel.findIndex((it) => it.id === cmd.itemId);
+      if (i === -1) return;
+      if (hero.ownership?.loneWolf && chance(state.rng.village, 0.5)) {
+        events.push({ t: 'transferRefused', heroId: hero.id, itemId: cmd.itemId });
+        return; // they won't give it up this time
+      }
+      const [item] = hero.satchel.splice(i, 1);
+      state.village.inventory.push(item!);
+      return;
+    }
+    case 'TRANSFER_ITEM': {
+      if (state.mode !== 'village') return;
+      const from = state.roster[cmd.fromHeroId];
+      const to = state.roster[cmd.toHeroId];
+      if (!from || !to || from === to) return;
+      const i = from.satchel.findIndex((it) => it.id === cmd.itemId);
+      if (i === -1) return;
+      if (from.ownership?.loneWolf && chance(state.rng.village, 0.5)) {
+        events.push({ t: 'transferRefused', heroId: from.id, itemId: cmd.itemId });
+        return;
+      }
+      const [item] = from.satchel.splice(i, 1);
+      to.satchel.push(item!);
+      return;
+    }
+    case 'SELL_SATCHEL_ITEM': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero) return;
+      const i = hero.satchel.findIndex((it) => it.id === cmd.itemId);
+      if (i === -1) return;
+      const item = hero.satchel[i]!;
+      const gold = Math.max(1, Math.round(itemDef(item.defId).value * SELL_VALUE_FRACTION));
+      hero.satchel.splice(i, 1);
+      hero.gold += gold; // their loot, their coin
+      events.push({ t: 'sold', what: itemDef(item.defId).name, gold });
       return;
     }
     case 'BUY_BOMB': {

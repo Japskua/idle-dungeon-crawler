@@ -39,6 +39,7 @@ export function derive(hero: Hero): DerivedStats {
   let attackTicks = cls.unarmed ? cls.unarmed.attackTicks : UNARMED.attackTicks;
   let attackRange = UNARMED.range;
   let carryUsed = (hero.potions.hp + hero.potions.mp) * POTION_WEIGHT + hero.bombs * BOMB_WEIGHT;
+  for (const it of hero.satchel) carryUsed += itemDef(it.defId).weight ?? 0;
   let gearMoveTicks = 0;
 
   for (const slot of EQUIP_SLOTS) {
