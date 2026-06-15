@@ -28,11 +28,13 @@ interface BuildingSpot {
   smoke?: { x: number; y: number };
 }
 
+// back row (5, indices 0-4) get path stubs to the main street; front row (4) line the street.
 const BUILDINGS: BuildingSpot[] = [
-  { id: 'tavern', name: 'Tavern', desc: '(hire heroes)', sprite: 'village/bld_tavern', x: 24, y: 24, view: 'tavern', smoke: { x: 66, y: 14 } },
-  { id: 'armorer', name: 'Armorer', desc: '(weapons & armor)', sprite: 'village/bld_armorer', x: 136, y: 24, view: 'armorer', smoke: { x: 178, y: 14 } },
-  { id: 'store', name: 'General Store', desc: '(potions & sundries)', sprite: 'village/bld_store', x: 248, y: 24, view: 'store' },
-  { id: 'guild', name: "Magician's Guild", desc: '(learn spells)', sprite: 'village/bld_guild', x: 360, y: 24, view: 'guild' },
+  { id: 'tavern', name: 'Tavern', desc: '(hire heroes)', sprite: 'village/bld_tavern', x: 20, y: 24, view: 'tavern', smoke: { x: 62, y: 14 } },
+  { id: 'armorer', name: 'Armorer', desc: '(weapons & armor)', sprite: 'village/bld_armorer', x: 114, y: 24, view: 'armorer', smoke: { x: 156, y: 14 } },
+  { id: 'store', name: 'General Store', desc: '(potions & sundries)', sprite: 'village/bld_store', x: 208, y: 24, view: 'store' },
+  { id: 'guild', name: "Magician's Guild", desc: '(learn spells)', sprite: 'village/bld_guild', x: 302, y: 24, view: 'guild' },
+  { id: 'cove', name: "Gambler's Cove", desc: '(games of chance)', sprite: 'village/bld_cove', x: 396, y: 24, view: 'cove' },
   { id: 'hall', name: 'Guild Hall', desc: '(manage heroes)', sprite: 'village/bld_hall', x: 24, y: 152, view: 'hall' },
   { id: 'hospital', name: 'Hospital', desc: '(treat injuries)', sprite: 'village/bld_hospital', x: 136, y: 152, view: 'hospital' },
   { id: 'graveyard', name: 'Graveyard', desc: '(honor the dead)', sprite: 'village/bld_graveyard', x: 248, y: 152, view: 'graveyard' },
@@ -139,7 +141,7 @@ export function VillageScene() {
         atlasDraw(ctx, atlas, 'village/path', 0, x, oy + 120);
         atlasDraw(ctx, atlas, 'village/path', 0, x, oy + 136);
       }
-      for (const b of BUILDINGS.slice(0, 4)) {
+      for (const b of BUILDINGS.slice(0, 5)) {
         atlasDraw(ctx, atlas, 'village/path', 0, ox + b.x + 24, oy + 88);
         atlasDraw(ctx, atlas, 'village/path', 0, ox + b.x + 24, oy + 104);
       }

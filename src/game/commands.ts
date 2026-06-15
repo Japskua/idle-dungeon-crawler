@@ -8,7 +8,7 @@ import { resolveEvent } from './run/runtime';
 import { applyFavor } from './hero/faith';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE,
 } from './balance';
-import { CHORES, INJURIES, RELIGIONS, SKILLS, classDef, itemDef } from './content';
+import { CHORES, COVE_GAMES, INJURIES, RELIGIONS, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
 import { canEquip } from './hero/equipment';
 import { makeItem } from './items/factory';
@@ -55,6 +55,20 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (run?.pendingEvent && run.pendingEvent.eventId === cmd.eventId && run.pendingEvent.choiceKeys.includes(cmd.choiceKey)) {
         resolveEvent(state, run, cmd.choiceKey, events);
       }
+      return;
+    }
+    case 'GAMBLE': {
+      // a single explicit wager at the Cove — one rng.village draw, village bank
+      if (state.mode !== 'village') return;
+      const game = COVE_GAMES[cmd.gameId];
+      if (!game) return;
+      const stake = Math.min(Math.max(game.minStake, Math.floor(cmd.stake)), game.maxStake, state.village.gold);
+      if (stake < game.minStake) return; // can't cover the table minimum
+      const won = chance(state.rng.village, game.winChance);
+      // win: keep the stake and add the profit; lose: forfeit the stake
+      const delta = won ? Math.round(stake * (game.payoutMult - 1)) : -stake;
+      state.village.gold = Math.max(0, state.village.gold + delta);
+      events.push({ t: 'gamble', gameId: game.id, stake, won, delta });
       return;
     }
     case 'WITHDRAW': {

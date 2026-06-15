@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import type { GameEvent, GameState } from '../game/types';
 import type { DebriefReport } from '../app/debrief';
-import { CLASSES, DUNGEON_EVENTS, INJURIES, ITEMS, creatureDef } from '../game/content';
+import { CLASSES, COVE_GAMES, DUNGEON_EVENTS, INJURIES, ITEMS, creatureDef } from '../game/content';
 
 export interface LogEntry {
   id: number;
@@ -21,6 +21,7 @@ export type VillageView =
   | 'armorer'
   | 'store'
   | 'guild'
+  | 'cove'
   | 'hall'
   | 'hospital'
   | 'graveyard'
@@ -62,6 +63,10 @@ let logId = 1;
 
 function heroName(game: GameState, id: string): string {
   return game.roster[id]?.name ?? 'A hero';
+}
+
+function coveName(id: string): string {
+  return COVE_GAMES[id]?.name ?? 'The Cove';
 }
 
 function mobName(id: string): string {
@@ -146,6 +151,10 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`A ${mobName(e.defId).toLowerCase()} crumbles away.`, 'info');
     case 'coinFlip':
       return entry(`${heroName(game, e.heroId)} flips a coin… ${e.heads ? 'Heads! 🪙' : 'Tails. 💀'}`, e.heads ? 'level' : 'info');
+    case 'gamble':
+      return e.won
+        ? entry(`🎲 ${coveName(e.gameId)}: won ${e.delta}g!`, 'gold')
+        : entry(`🎲 ${coveName(e.gameId)}: lost ${e.stake}g.`, 'bad');
     case 'neutralSighted':
       return entry(`A wild ${mobName(e.defId)} minds its own business nearby.`, 'info');
     case 'neutralKilled':

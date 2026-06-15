@@ -897,3 +897,29 @@ input[type='number'] {
 .favor-wary { color: var(--muted); }
 .favor-scorned { color: #ff9c6e; }
 .favor-forsaken { color: var(--red); }
+
+/* ---------- gambler's cove ---------- */
+.cove { display: flex; flex-direction: column; gap: 12px; }
+.cove-bank {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--panel, #1b1426); border: 1px solid var(--border, #2b213a);
+  border-radius: 6px; padding: 8px 12px;
+}
+.cove-stake { display: flex; align-items: center; gap: 6px; }
+.cove-stake input[type='range'] { width: 140px; }
+.cove-stake input[type='number'] { width: 64px; }
+.cove-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.cove-game {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--panel, #1b1426); border: 1px solid var(--border, #2b213a);
+  border-radius: 6px; padding: 10px;
+}
+.cove-game-head { display: flex; justify-content: space-between; align-items: baseline; }
+.cove-mult { color: var(--gold, #f2c94c); font-weight: bold; }
+.cove-blurb { min-height: 2.4em; }
+.cove-odds { display: flex; gap: 6px; color: var(--muted, #8a87a8); }
+.cove-bet { margin-top: 2px; }
+.cove-results {
+  border-top: 1px dotted var(--border, #2b213a); padding-top: 8px;
+  display: flex; flex-direction: column; gap: 2px; min-height: 60px;
+}
