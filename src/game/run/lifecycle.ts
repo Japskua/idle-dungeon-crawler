@@ -42,6 +42,8 @@ export function startRun(
     floor: undefined as never, // set by enterFloor
     intent: 'explore',
     behavior,
+    morale: 50,
+    favor: 0,
     party: {
       memberIds: members,
       pos: {},

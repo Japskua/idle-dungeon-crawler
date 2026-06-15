@@ -15,7 +15,7 @@ import type {
   Vec2,
 } from '../types';
 import { TILE, type Command } from '../types';
-import { chance, hash2, makeRng, pick, rand, randInt, randRange, shuffle } from '../core/rng';
+import { chance, hash2, makeRng, pick, pickWeighted, rand, randInt, randRange, shuffle } from '../core/rng';
 import {
   AUTO_WITHDRAW_ON_DOWNED,
   CARRY_MOVE_PENALTY,
@@ -36,8 +36,11 @@ import {
   BOMB_RADIUS,
   BOMB_RANGE,
   BOMB_THROW_TICKS,
+  EVENT_ROOM_CHANCE,
+  EVENT_TIMEOUT_TICKS,
 } from '../balance';
-import { CHORES, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
+import { CHORES, DUNGEON_EVENTS, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
+import type { EventEffect } from '../types';
 import { dayIndexFor } from '../village/shop';
 import { behaviorKnobs } from '../tactics/behaviors';
 import { derive, type DerivedStats } from '../hero/derive';
@@ -176,6 +179,7 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   resolveActions(state, run, events);
   processDeaths(state, run, nowMs, events);
   if (state.run) partyLogic(state, run, nowMs, events);
+  if (state.run && run.pendingEvent) tickPendingEvent(state, run, events);
   if (state.run && standingIds(run).length === 0) {
     endRunWiped(state, nowMs, events);
   }
@@ -854,6 +858,9 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
       }
       continue;
     }
+    // an open event pauses exploration: heroes hold position and wait for the
+    // player's choice (they still fight/heal above; only wandering off is paused)
+    if (run.pendingEvent) continue;
     const objective = computeObjective(run);
     const cells = regroupCells(run, objective, standing.length);
     const myCell = cells[Math.min(myIndex, cells.length - 1)] ?? objective;
@@ -1574,6 +1581,204 @@ export function partySpareCapacity(state: GameState, run: DungeonRun): number {
 }
 
 // ---------- party logic: loot, chests, rooms, descend, withdraw exit ----------
+// ---------- interactive dungeon events ----------
+function maybeTriggerEvent(state: GameState, run: DungeonRun, ri: number, events: GameEvent[]) {
+  if (run.intent !== 'explore' || run.pendingEvent) return;
+  if (Object.keys(run.party.downed).length > 0) return;
+  // pure function of (seed, depth, room): re-deriving never double-fires
+  const r = makeRng(hash2(run.runSeed, 0xe7e7 ^ (run.depth * 131 + ri)));
+  if (!chance(r, EVENT_ROOM_CHANCE)) return;
+  const pool = Object.values(DUNGEON_EVENTS).filter((e) => run.depth >= e.minDepth);
+  if (pool.length === 0) return;
+  const ev = pickWeighted(r, pool, (e) => e.rarity);
+  const def = ev.choices.find((c) => c.default) ?? ev.choices[ev.choices.length - 1]!;
+  run.pendingEvent = {
+    eventId: ev.id,
+    roomIndex: ri,
+    choiceKeys: ev.choices.map((c) => c.key),
+    defaultChoice: def.key,
+    deadlineTick: state.tick + EVENT_TIMEOUT_TICKS,
+  };
+  events.push({ t: 'eventOpened', eventId: ev.id });
+}
+
+/** deadline reached with no player choice → the cautious default fires */
+function tickPendingEvent(state: GameState, run: DungeonRun, events: GameEvent[]) {
+  const pe = run.pendingEvent;
+  if (pe && state.tick >= pe.deadlineTick) resolveEvent(state, run, pe.defaultChoice, events);
+}
+
+/** BFS the nearest free, passable, unoccupied tile from `from` and drop a monster there */
+function placeMonsterNear(
+  state: GameState,
+  run: DungeonRun,
+  from: Vec2,
+  defId: string,
+  level: number,
+  elite: boolean,
+  aggro: boolean,
+  summonedBy?: Id,
+  ttl?: number,
+): void {
+  const def = creatureDef(defId);
+  const seen = new Set<string>([`${from.x},${from.y}`]);
+  const queue: Vec2[] = [from];
+  const heroCells = heroesByPos(state, run);
+  const occupied = monsterOccupancy(run);
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    const key = `${cur.x},${cur.y}`;
+    if (!(cur.x === from.x && cur.y === from.y) && !heroCells.has(key) && !occupied.has(key)) {
+      const m: MonsterInstance = {
+        id: allocId(state, summonedBy ? 'mn' : 'm'),
+        defId,
+        level,
+        elite,
+        hp: monsterMaxHp(def.base.hp, level, elite, false),
+        pos: { ...cur },
+        move: null,
+        targetId: null,
+        aggro,
+        packId: 0,
+        action: null,
+        statuses: [],
+        cooldowns: {},
+        ...(summonedBy ? { summonedBy, ttlTicks: ttl } : {}),
+      };
+      run.monsters[m.id] = m;
+      run.monsterOrder.push(m.id);
+      return;
+    }
+    for (const dir of DIRS) {
+      const x = cur.x + dir.x;
+      const y = cur.y + dir.y;
+      const nk = `${x},${y}`;
+      if (!seen.has(nk) && isPassable(run.floor, x, y)) {
+        seen.add(nk);
+        queue.push({ x, y });
+      }
+    }
+  }
+}
+
+function spendPartyGold(state: GameState, run: DungeonRun, amount: number) {
+  let left = amount;
+  for (const hid of standingIds(run)) {
+    if (left <= 0) break;
+    const h = state.roster[hid];
+    if (!h) continue;
+    const take = Math.min(h.gold, left);
+    h.gold -= take;
+    left -= take;
+  }
+}
+
+function applyEventEffect(state: GameState, run: DungeonRun, eff: EventEffect, events: GameEvent[]) {
+  const standing = standingIds(run);
+  const leader = standing[0] ? state.roster[standing[0]] : undefined;
+  const leaderPos = (standing[0] ? run.party.pos[standing[0]] : undefined) ?? run.floor.entrance;
+  switch (eff.k) {
+    case 'loot': {
+      const loot = rollChestLoot(state, run.depth + (eff.depthBonus ?? 0));
+      if (leader) {
+        leader.gold += loot.gold;
+        leader.stats.runGold += loot.gold;
+      }
+      for (const item of loot.items) {
+        const weight = ITEMS[item.defId]?.weight ?? 0;
+        if (leader && weight <= heroSpareCapacity(leader)) leader.satchel.push(item);
+        else run.groundLoot.push({ id: allocId(state, 'g'), pos: { ...leaderPos }, item, heavy: true });
+      }
+      events.push({ t: 'chestOpened', gold: loot.gold, items: loot.items.map((i) => i.defId), pos: { ...leaderPos } });
+      break;
+    }
+    case 'gold':
+      if (leader) {
+        if (eff.amount >= 0) {
+          leader.gold += eff.amount;
+          leader.stats.runGold += eff.amount;
+        } else spendPartyGold(state, run, -eff.amount);
+      }
+      break;
+    case 'goldDepth':
+      if (leader) {
+        const v = Math.round(run.depth * eff.mult);
+        leader.gold += v;
+        leader.stats.runGold += v;
+      }
+      break;
+    case 'spendGold':
+      spendPartyGold(state, run, eff.amount);
+      break;
+    case 'trap': {
+      const targets = eff.selfOnly && leader ? [leader.id] : standing;
+      for (const hid of targets) {
+        const h = state.roster[hid];
+        if (!h) continue;
+        const d = derive(h);
+        const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
+        const dmg = Math.max(1, Math.round(mitigate(monsterDmg(eff.dmgBase, run.depth, false, false) * variance, d.armor)));
+        h.hp -= dmg;
+        recordHitTaken(h, dmg, 'a dungeon hazard');
+        events.push({ t: 'damage', src: hid, dst: hid, amount: dmg, crit: false, pos: { ...run.party.pos[hid]! } });
+        if (eff.status) h.statuses.push({ statusId: eff.status, ticksLeft: eff.statusTicks ?? 50, sourceId: hid });
+      }
+      break;
+    }
+    case 'spawnEnemy': {
+      const n = eff.count ?? 1;
+      for (let i = 0; i < n; i++) placeMonsterNear(state, run, leaderPos, eff.defId, run.depth, !!eff.elite, true);
+      break;
+    }
+    case 'spawnAlly':
+      if (leader) placeMonsterNear(state, run, leaderPos, eff.defId, leader.level, false, false, leader.id, eff.ttl);
+      break;
+    case 'heal':
+      for (const hid of standing) {
+        const h = state.roster[hid];
+        if (!h) continue;
+        const d = derive(h);
+        h.hp = Math.min(d.maxHp, h.hp + eff.amount);
+        events.push({ t: 'heal', src: hid, dst: hid, amount: eff.amount, pos: { ...run.party.pos[hid]! } });
+      }
+      break;
+    case 'grantPotion':
+      if (leader) leader.potions[eff.kind] += eff.n;
+      break;
+    case 'spendPotion': {
+      const h = standing.map((id) => state.roster[id]).find((x) => !!x && x.potions[eff.kind] > 0);
+      if (h) h.potions[eff.kind]--;
+      break;
+    }
+    case 'bless':
+      for (const hid of standing) {
+        const h = state.roster[hid];
+        if (h) h.statuses.push({ statusId: 'blessed', ticksLeft: eff.ticks, sourceId: hid });
+      }
+      break;
+    case 'morale':
+      run.morale = Math.max(0, Math.min(100, run.morale + eff.delta));
+      break;
+    case 'favor':
+      run.favor += eff.delta;
+      break;
+  }
+}
+
+/** resolve the player's (or default) choice for the open event — exported for commands */
+export function resolveEvent(state: GameState, run: DungeonRun, choiceKey: string, events: GameEvent[]) {
+  const pe = run.pendingEvent;
+  if (!pe) return;
+  const ev = DUNGEON_EVENTS[pe.eventId];
+  run.pendingEvent = undefined;
+  if (!ev) return;
+  const choice =
+    ev.choices.find((c) => c.key === choiceKey) ?? ev.choices.find((c) => c.default) ?? ev.choices[ev.choices.length - 1]!;
+  const outcome = pickWeighted(state.rng.combat, choice.outcomes, (o) => o.weight);
+  for (const eff of outcome.effects) applyEventEffect(state, run, eff, events);
+  events.push({ t: 'eventResolved', eventId: ev.id, choiceKey: choice.key, resultText: outcome.text });
+}
+
 function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: GameEvent[]) {
   run.ticksOnFloor++;
   const standing = standingIds(run);
@@ -1641,6 +1846,7 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
           chronicle(state, nowMs, sightingText(def.name), run.depth);
         }
       }
+      maybeTriggerEvent(state, run, ri, events);
     }
   }
 

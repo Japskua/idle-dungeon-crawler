@@ -477,6 +477,41 @@ export interface BanterContent {
   families: Record<string, string>;
 }
 
+export type EventEffect =
+  | { k: 'loot'; depthBonus?: number }
+  | { k: 'gold'; amount: number }
+  | { k: 'goldDepth'; mult: number }
+  | { k: 'spendGold'; amount: number }
+  | { k: 'trap'; dmgBase: number; status?: string; statusTicks?: number; selfOnly?: boolean }
+  | { k: 'spawnEnemy'; defId: string; elite?: boolean; count?: number }
+  | { k: 'spawnAlly'; defId: string; ttl: number }
+  | { k: 'heal'; amount: number }
+  | { k: 'grantPotion'; kind: PotionKind; n: number }
+  | { k: 'spendPotion'; kind: PotionKind }
+  | { k: 'bless'; ticks: number }
+  | { k: 'morale'; delta: number }
+  | { k: 'favor'; delta: number };
+
+export interface EventOutcome { weight: number; effects: EventEffect[]; text: string }
+export interface EventChoice { key: string; label: string; default?: boolean; outcomes: EventOutcome[] }
+export interface DungeonEventDef {
+  id: string;
+  name: string;
+  prompt: string;
+  minDepth: number;
+  rarity: number;
+  choices: EventChoice[];
+}
+
+/** a dungeon event awaiting the player's choice — pauses exploration until resolved */
+export interface PendingEvent {
+  eventId: string;
+  roomIndex: number;
+  choiceKeys: string[];
+  defaultChoice: string;
+  deadlineTick: number;
+}
+
 export type PartyBehavior =
   | 'balanced'
   | 'together'
@@ -554,6 +589,12 @@ export interface DungeonRun {
   intent: 'explore' | 'withdraw';
   /** party-wide posture overlaying per-hero tactics (see tactics/behaviors.ts) */
   behavior: PartyBehavior;
+  /** an interactive event awaiting the player's choice (pauses exploration) */
+  pendingEvent?: PendingEvent;
+  /** party morale (0-100, starts 50) — scaffolding nudged by events */
+  morale: number;
+  /** divine favor (starts 0) — scaffolding nudged by events */
+  favor: number;
   party: PartyState;
   monsters: Record<Id, MonsterInstance>;
   monsterOrder: Id[];
@@ -621,6 +662,7 @@ export type Command =
   | { t: 'ABANDON_HERO'; heroId: Id }
   | { t: 'SWITCH_TACTIC_SET'; heroId: Id; setId: Id }
   | { t: 'SET_PARTY_BEHAVIOR'; behavior: PartyBehavior }
+  | { t: 'EVENT_CHOICE'; eventId: string; choiceKey: string }
   | { t: 'SET_TACTICS'; heroId: Id; sets: TacticSet[]; activeSetId: Id }
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
   | { t: 'BUY_POTION'; potion: PotionKind; qty: number }
@@ -652,6 +694,8 @@ export type GameEvent =
   | { t: 'potionUsed'; heroId: Id; potion: PotionKind; amount: number; pos: Vec2 }
   | { t: 'bombThrown'; heroId: Id; pos: Vec2 }
   | { t: 'transferRefused'; heroId: Id; itemId: Id }
+  | { t: 'eventOpened'; eventId: string }
+  | { t: 'eventResolved'; eventId: string; choiceKey: string; resultText: string }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }
