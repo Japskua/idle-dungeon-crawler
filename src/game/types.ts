@@ -398,6 +398,8 @@ export interface Hero {
   perks: PerkId[];
   /** ancestry — stat mods, racial traits, quirks (see content/races.ts) */
   raceId: string;
+  /** -100..+100, sim-owned; persists between runs, decays toward baseline in the village */
+  morale: number;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];
@@ -696,6 +698,8 @@ export type GameEvent =
   | { t: 'transferRefused'; heroId: Id; itemId: Id }
   | { t: 'eventOpened'; eventId: string }
   | { t: 'eventResolved'; eventId: string; choiceKey: string; resultText: string }
+  | { t: 'morale'; heroId: Id; delta: number; source: string }
+  | { t: 'moraleBeat'; from: Id; to: Id; valence: 'cheer' | 'jeer' }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }

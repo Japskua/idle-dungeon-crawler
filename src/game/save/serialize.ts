@@ -132,6 +132,7 @@ function reconcileContent(state: GameState) {
       hero.raceId = RACE_IDS[(h >>> 0) % RACE_IDS.length]!;
     }
     if (typeof hero.gold !== 'number') hero.gold = 0;
+    if (typeof hero.morale !== 'number') hero.morale = 10;
     if (!Array.isArray(hero.satchel)) hero.satchel = [];
     if (hero.stats && typeof hero.stats.runGold !== 'number') hero.stats.runGold = 0;
     hero.satchel = hero.satchel.filter((it: { defId: string }) => {

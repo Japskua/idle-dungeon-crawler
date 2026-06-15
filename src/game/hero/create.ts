@@ -3,7 +3,7 @@ import type { GameState, Hero } from '../types';
 import { CLASSES, NAME_BANKS, PERKS, RACES, itemDef } from '../content';
 import { allocId, makeItem } from '../items/factory';
 import { chance, pick, pickWeighted, rand, randInt, type Rng } from '../core/rng';
-import { heroMaxHp, heroMaxMp } from '../balance';
+import { heroMaxHp, heroMaxMp, MORALE_START } from '../balance';
 import { canEquip } from './equipment';
 import { defaultTactics } from '../tactics/defaults';
 
@@ -94,6 +94,7 @@ export function makeHero(
     gold: 0,
     satchel: [],
     raceId: race,
+    morale: MORALE_START,
     traits: traits ?? rollTraits(state.rng.village),
     skills: unlockedSkills(classId, level),
     perks,

@@ -4,6 +4,7 @@ import { CLASSES } from '../content';
 import { xpForNextLevel } from '../balance';
 import { derive } from './derive';
 import { unlockedSkills } from './create';
+import { applyMorale } from './morale';
 
 export function addXp(state: GameState, hero: Hero, amount: number, events: GameEvent[]) {
   const d = derive(hero);
@@ -26,6 +27,7 @@ export function addXp(state: GameState, hero: Hero, amount: number, events: Game
     }
     leveled = true;
     events.push({ t: 'levelUp', heroId: hero.id, level: hero.level });
+    applyMorale(hero, 4, 'levelup', events);
   }
   if (leveled) {
     const after = derive(hero);

@@ -38,11 +38,20 @@ import {
   BOMB_THROW_TICKS,
   EVENT_ROOM_CHANCE,
   EVENT_TIMEOUT_TICKS,
+  MORALE_BEAT_TICKS,
+  MORALE_FREEZE_CHANCE,
+  MORALE_RECOVERY_PER_SEC,
+  MORALE_RECOVERING_FLOOR,
+  moraleBand,
+  moraleBehavior,
+  moraleBaseline,
+  moraleCombatMods,
 } from '../balance';
 import { CHORES, DUNGEON_EVENTS, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
 import { dayIndexFor } from '../village/shop';
 import { behaviorKnobs } from '../tactics/behaviors';
+import { applyMorale } from '../hero/morale';
 import { derive, type DerivedStats } from '../hero/derive';
 import { addXp } from '../hero/leveling';
 import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '../tactics/evaluator';
@@ -180,6 +189,7 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   processDeaths(state, run, nowMs, events);
   if (state.run) partyLogic(state, run, nowMs, events);
   if (state.run && run.pendingEvent) tickPendingEvent(state, run, events);
+  if (state.run) moraleStep(state, run, events);
   if (state.run && standingIds(run).length === 0) {
     endRunWiped(state, nowMs, events);
   }
@@ -228,7 +238,15 @@ export function villageUpkeep(state: GameState, nowMs: number, events: GameEvent
     if (hero.mp < d.maxMp) {
       hero.mp = Math.min(d.maxMp, hero.mp + d.maxMp * RECOVERY_HP_FRACTION_PER_SEC * 2 * dtSec);
     }
-    if (hero.activity === 'recovering' && hero.hp >= d.maxHp) hero.activity = 'idle';
+    if (hero.activity === 'recovering' && hero.hp >= d.maxHp && hero.morale >= MORALE_RECOVERING_FLOOR) {
+      hero.activity = 'idle';
+    }
+    // morale decays toward the hero's trait baseline while resting in the village
+    const base = moraleBaseline(hero.traits);
+    if (hero.morale !== base) {
+      const drift = MORALE_RECOVERY_PER_SEC * dtSec;
+      hero.morale += Math.sign(base - hero.morale) * Math.min(drift, Math.abs(base - hero.morale));
+    }
 
     // chores
     if (hero.activity === 'chore' && hero.choreId) {
@@ -735,6 +753,8 @@ function performResolved(
         carriedBy.set(resolved.targetId, heroId);
         run.party.downed[resolved.targetId]!.pos = { ...myPos };
         events.push({ t: 'heroCarried', carrier: heroId, carried: resolved.targetId });
+        applyMorale(hero, 4, 'rescue', events);
+        { const c = state.roster[resolved.targetId]; if (c) applyMorale(c, 3, 'rescued', events); }
         return true;
       }
       const path = heroRoute(run, heroId, (blocked) => astarTo(run.floor, myPos, tPos, blocked));
@@ -780,6 +800,18 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
     const carrying = run.party.carrying[id];
     const moveTicks = d.moveTicks + (carrying ? CARRY_MOVE_PENALTY : 0);
 
+    // morale: a routed hero flees the fight; a rattled one sometimes freezes
+    const beh = moraleBehavior(moraleBand(hero.morale, hero.traits));
+    if (beh.panic && engaged.length > 0) {
+      const step = flowStep(run.floor, entranceField(run), myPos);
+      if (step) stepOrFight(run, id, d, step, moveTicks);
+      continue;
+    }
+    if (beh.timid && engaged.length > 0 && chance(state.rng.combat, MORALE_FREEZE_CHANCE)) {
+      run.party.action[id] = { kind: 'wait', ticksLeft: 5, total: 5 };
+      continue;
+    }
+
     // 1. built-in rescue (party cohesion): pick up a downed, un-carried ally —
     //    always during withdraw, during exploration only when nothing is engaged
     const unCarried = Object.keys(run.party.downed).filter((did) => !carriedBy.has(did));
@@ -791,6 +823,8 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
         carriedBy.set(target, id);
         run.party.downed[target]!.pos = { ...myPos };
         events.push({ t: 'heroCarried', carrier: id, carried: target });
+        applyMorale(hero, 4, 'rescue', events);
+        { const c = state.roster[target]; if (c) applyMorale(c, 3, 'rescued', events); }
         continue;
       }
       const path = heroRoute(run, id, (blocked) => astarTo(run.floor, myPos, tPos, blocked));
@@ -1257,6 +1291,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
           const dmg = Math.max(1, Math.round(mitigate(power * variance, ad.armor + (defending ? DEFEND_ARMOR_BONUS : 0))));
           ally.hp -= dmg;
           recordHitTaken(ally, dmg, `${hero.name}'s ${skill.name}`);
+          applyMorale(ally, -6, 'friendly_fire', events);
+          applyMorale(hero, -3, 'careless', events);
           events.push({ t: 'damage', src: hero.id, dst: hid, amount: dmg, crit: false, pos: { ...aPos }, srcPos: { ...myPos } });
         }
       }
@@ -1335,6 +1371,10 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       const dmg = Math.max(1, Math.round(mitigate(BOMB_DAMAGE * variance, ad.armor + (defending ? DEFEND_ARMOR_BONUS : 0))));
       ally.hp -= dmg;
       recordHitTaken(ally, dmg, hid === hero.id ? 'their own bomb' : `${hero.name}'s bomb`);
+      if (hid !== hero.id) {
+        applyMorale(ally, -6, 'friendly_fire', events);
+        applyMorale(hero, -3, 'careless', events);
+      }
       events.push({ t: 'damage', src: hero.id, dst: hid, amount: dmg, crit: false, pos: { ...aPos }, srcPos: { ...myPos } });
     }
     return;
@@ -1361,6 +1401,7 @@ function monsterSkillDamage(state: GameState, run: DungeonRun, m: MonsterInstanc
   const hero = state.roster[heroId];
   if (!hero || heroId in run.party.downed) return;
   if (isStealthed(hero)) return; // can't hit what you can't see
+  if (tryMoraleDodge(state, run, hero, m, events)) return;
   const d = derive(hero);
   const defending = run.party.action[heroId]?.kind === 'defend';
   const armor = d.armor + (defending ? DEFEND_ARMOR_BONUS : 0);
@@ -1451,6 +1492,7 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
   const hero = state.roster[action.targetId];
   if (!hero) return;
   if (isStealthed(hero)) return; // vanished mid-swing: the blade finds only shadow
+  if (tryMoraleDodge(state, run, hero, m, events)) return;
   const def = creatureDef(m.defId);
   const hPos = run.party.pos[hero.id]!;
   if (manhattan(m.pos, hPos) > def.base.range) return;
@@ -1515,6 +1557,13 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
         goldTaker.stats.runGold += gold;
       }
       if (killer) killer.stats.kills++;
+      // morale: the slayer is heartened (more for elites/bosses), the party cheered
+      const killMorale = def.tier === 'boss' ? 12 : m.elite ? 6 : 3;
+      if (killer) applyMorale(killer, killMorale, 'kill', events);
+      for (const hid of standing) {
+        const h = state.roster[hid];
+        if (h && h !== killer) applyMorale(h, 1, 'witnessed_kill', events);
+      }
       const xp = monsterXp(def.xpBase, m.level, m.elite, def.tier === 'boss');
       const share = xpShare(xp, Math.max(1, standing.length));
       for (const hid of standing) {
@@ -1561,6 +1610,11 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
       if (run.party.downed[carried]) run.party.downed[carried]!.pos = { ...run.party.pos[id]! };
     }
     events.push({ t: 'heroDowned', heroId: id, pos: { ...run.party.pos[id]! } });
+    applyMorale(hero, -15, 'downed', events); // they'll start next run shaken
+    for (const oid of standingIds(run)) {
+      const other = state.roster[oid];
+      if (other) applyMorale(other, -10, 'ally_down', events); // the headline trauma
+    }
   }
 }
 
@@ -1581,6 +1635,42 @@ export function partySpareCapacity(state: GameState, run: DungeonRun): number {
 }
 
 // ---------- party logic: loot, chests, rooms, descend, withdraw exit ----------
+// ---------- morale ----------
+/** Confident/Inspired heroes can fully dodge a hit. Determinism: the die is
+ * drawn ONLY when dodge > 0, so any party that never leaves Steady consumes the
+ * identical rng stream — do not 'tidy' this into an unconditional roll. */
+function tryMoraleDodge(state: GameState, run: DungeonRun, hero: Hero, m: MonsterInstance, events: GameEvent[]): boolean {
+  const dodge = moraleCombatMods(moraleBand(hero.morale, hero.traits)).dodge;
+  if (dodge <= 0 || !chance(state.rng.combat, dodge)) return false;
+  events.push({ t: 'damage', src: m.id, dst: hero.id, amount: 0, crit: false, pos: { ...run.party.pos[hero.id]! } });
+  return true;
+}
+
+/** periodic social cheer/jeer (banter voices it app-side) + the party-morale readout */
+function moraleStep(state: GameState, run: DungeonRun, events: GameEvent[]) {
+  const standing = standingIds(run);
+  if (state.tick % MORALE_BEAT_TICKS === 0 && !run.pendingEvent && standing.length >= 2 && chance(state.rng.combat, 0.35)) {
+    const heroes = standing.map((id) => state.roster[id]!).filter(Boolean);
+    let speaker = heroes[0]!;
+    let target = heroes[0]!;
+    for (const h of heroes) {
+      if (h.morale > speaker.morale) speaker = h;
+      if (h.morale < target.morale) target = h;
+    }
+    if (speaker.id !== target.id) {
+      const jeers = speaker.traits.includes('gloomy') || speaker.traits.includes('deadpan');
+      const valence: 'cheer' | 'jeer' = jeers ? 'jeer' : 'cheer';
+      applyMorale(target, valence === 'cheer' ? 4 : -3, 'social', events);
+      events.push({ t: 'moraleBeat', from: speaker.id, to: target.id, valence });
+    }
+  }
+  if (standing.length > 0) {
+    let sum = 0;
+    for (const id of standing) sum += state.roster[id]?.morale ?? 0;
+    run.morale = Math.round(sum / standing.length);
+  }
+}
+
 // ---------- interactive dungeon events ----------
 function maybeTriggerEvent(state: GameState, run: DungeonRun, ri: number, events: GameEvent[]) {
   if (run.intent !== 'explore' || run.pendingEvent) return;
@@ -1757,7 +1847,10 @@ function applyEventEffect(state: GameState, run: DungeonRun, eff: EventEffect, e
       }
       break;
     case 'morale':
-      run.morale = Math.max(0, Math.min(100, run.morale + eff.delta));
+      for (const hid of standing) {
+        const h = state.roster[hid];
+        if (h) applyMorale(h, eff.delta, 'event', events);
+      }
       break;
     case 'favor':
       run.favor += eff.delta;
