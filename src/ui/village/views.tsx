@@ -17,7 +17,7 @@ import {
   learnSkillCost,
   spellAmount,
 } from '../../game/balance';
-import { BANTER, CHORES, CLASSES, INJURIES, ITEMS, PERKS, SKILLS } from '../../game/content';
+import { BANTER, CHORES, CLASSES, INJURIES, ITEMS, PERKS, RACES, SKILLS } from '../../game/content';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
@@ -179,10 +179,17 @@ function EquipSelect({ game, item }: { game: GameState; item: ItemInstance }) {
 }
 
 /** display names for personality traits, from the banter dictionary */
-function personalityLine(traitIds: string[]): string {
-  return traitIds
-    .map((id) => BANTER.traits.find((t) => t.id === id)?.name ?? id)
-    .join(' · ');
+function personalityLine(traitIds: string[], raceId?: string): string {
+  const racial = raceId ? (RACES[raceId]?.racialTraits ?? []).map((t) => t.name) : [];
+  const personality = traitIds.map((id) => BANTER.traits.find((t) => t.id === id)?.name ?? id);
+  return [...racial, ...personality].join(' · ');
+}
+
+/** race attribute deltas, for previewing a recruit before they're a real Hero */
+function raceAttrDelta(raceId: string): { str: number; dex: number; int: number; vit: number } {
+  const d = { str: 0, dex: 0, int: 0, vit: 0 };
+  for (const m of RACES[raceId]?.mods ?? []) if (m.kind === 'attr') d[m.attr] += m.add;
+  return d;
 }
 
 /** slot labels for gear, shared by filters and per-item badges */
@@ -630,14 +637,18 @@ export function TavernView({ game }: { game: GameState }) {
                 <ClassSprite classId={r.classId} scale={4} />
                 <div>
                   <div className="panel-title">
-                    {r.name} <span className="muted">L{r.level} {cls.name}</span>
+                    {r.name}{' '}
+                    <span className="muted">
+                      L{r.level} {RACES[r.raceId]?.name} {cls.name}
+                    </span>
                   </div>
                   <div className="muted small">{cls.description}</div>
                   <div className="small recruit-stats">
-                    STR {attrs.str} · DEX {attrs.dex} · INT {attrs.int} · VIT {attrs.vit} ·{' '}
+                    STR {attrs.str + raceAttrDelta(r.raceId).str} · DEX {attrs.dex + raceAttrDelta(r.raceId).dex} · INT{' '}
+                    {attrs.int + raceAttrDelta(r.raceId).int} · VIT {attrs.vit + raceAttrDelta(r.raceId).vit} ·{' '}
                     {heroMaxHp(cls.baseHp, attrs.vit)} HP · {heroMaxMp(cls.baseMp, attrs.int)} MP
                   </div>
-                  <div className="small personality">☘ {personalityLine(r.traits)}</div>
+                  <div className="small personality">☘ {personalityLine(r.traits, r.raceId)}</div>
                 </div>
               </div>
               <div className="small" style={{ margin: '6px 0' }}>
@@ -690,7 +701,10 @@ export function HospitalView({ game }: { game: GameState }) {
           return (
             <div key={hero.id} className="panel">
               <div className="panel-title">
-                {hero.name} <span className="muted">L{hero.level} {CLASSES[hero.classId]?.name}</span>
+                {hero.name}{' '}
+                <span className="muted">
+                  L{hero.level} {RACES[hero.raceId]?.name} {CLASSES[hero.classId]?.name}
+                </span>
                 <span className={`tag tag-${hero.activity}`}>{hero.activity}</span>
               </div>
               <HeroVitals hero={hero} />
@@ -813,7 +827,10 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
         <ClassSprite classId={hero.classId} scale={4} />
         <div style={{ flex: 1 }}>
           <div className="panel-title">
-            {hero.name} <span className="muted">— L{hero.level} {CLASSES[hero.classId]?.name}</span>
+            {hero.name}{' '}
+            <span className="muted">
+              — L{hero.level} {RACES[hero.raceId]?.name} {CLASSES[hero.classId]?.name}
+            </span>
             <span className={`tag tag-${hero.activity}`}>{hero.activity}</span>
           </div>
           <HeroVitals hero={hero} />
@@ -827,7 +844,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
         carry: {d.carryUsed.toFixed(1)} / {d.carryMax.toFixed(1)} kg
         {d.moveTicks > 4 ? <span className="muted"> · heavy gear slows movement</span> : null}
       </div>
-      <div className="small personality">☘ {personalityLine(hero.traits)}</div>
+      <div className="small personality">☘ {personalityLine(hero.traits, hero.raceId)}</div>
       {hero.perks.length > 0 && (
         <div className="small">
           {hero.perks.map((pid) => {
@@ -1012,7 +1029,7 @@ function GateHeroCard({
           <div className="panel-title">
             {hero.name}{' '}
             <span className="muted">
-              — L{hero.level} {CLASSES[hero.classId]?.name}
+              — L{hero.level} {RACES[hero.raceId]?.name} {CLASSES[hero.classId]?.name}
             </span>
           </div>
           <HeroVitals hero={hero} />
@@ -1022,7 +1039,7 @@ function GateHeroCard({
         dmg {d.weaponDmg} · armor {d.armor} · speed {(40 / d.moveTicks).toFixed(1)} · carry{' '}
         {d.carryUsed.toFixed(1)}/{d.carryMax.toFixed(1)} kg
       </div>
-      <div className="small personality">☘ {personalityLine(hero.traits)}</div>
+      <div className="small personality">☘ {personalityLine(hero.traits, hero.raceId)}</div>
       {hero.injuries.length > 0 && (
         <div className="small">
           {hero.injuries.map((iid) => (

@@ -45,7 +45,7 @@ All extensible content is JSON under `content/` (monsters, neutrals, items, perk
 names, tiles, village scenery, banter dialogue) — one file per thing, including its pixel-art sprite
 as palette-char rows (`content/palette.json` holds the only palette). `tools/gen-content.ts`
 validates (grid sizes, palette chars, drop/item refs, spawn coverage) and emits
-committed typed modules into `src/game/content/gen/`. Classes/skills/statuses/
+committed typed modules into `src/game/content/gen/`. Classes/races/skills/statuses/
 injuries/chores stay as TS data in `src/game/content/`. Sprite conventions: 16×16,
 1px `0` outline, single frame (a bob frame is auto-generated), face RIGHT (renderer
 flips), bosses are 16×16 drawn at 2×.

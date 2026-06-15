@@ -8,7 +8,7 @@ import type { GameState } from '../types';
 import { hash2, makeRng, pick, randInt, shuffle } from '../core/rng';
 import { SHOP_STOCK_SIZE, TAVERN_RECRUITS, hireCost, tierForDepth } from '../balance';
 import { CLASSES, ITEMS } from '../content';
-import { generateName, perkValueAdjust, rollPerks, rollTraits } from '../hero/create';
+import { generateName, perkValueAdjust, rollPerks, rollRace, rollTraits } from '../hero/create';
 
 export function dayIndexFor(nowMs: number): number {
   return Math.floor(nowMs / 86_400_000);
@@ -49,6 +49,8 @@ export interface Recruit {
   perks: string[];
   /** personality trait ids — shown in the tavern, kept on hire */
   traits: string[];
+  /** ancestry — shown in the tavern, kept on hire */
+  raceId: string;
   cost: number;
 }
 
@@ -65,8 +67,9 @@ export function tavernRecruits(state: GameState): Recruit[] {
     const name = generateName(rng);
     const perks = rollPerks(rng);
     const traits = rollTraits(rng);
+    const raceId = rollRace(rng);
     const cost = hireCost(CLASSES[classId]!.hireCostBase, level, perkValueAdjust(perks));
-    out.push({ key: `d${dayIndex}c${crawl}r${i}`, classId, name, level, perks, traits, cost });
+    out.push({ key: `d${dayIndex}c${crawl}r${i}`, classId, name, level, perks, traits, raceId, cost });
   }
   return out;
 }

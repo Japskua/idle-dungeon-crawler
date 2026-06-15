@@ -13,6 +13,7 @@ function gameWithChore(choreId: string) {
   const hero = state.roster[heroId]!;
   hero.activity = 'chore';
   hero.choreId = choreId;
+  hero.raceId = 'dwarf'; // neutral for gold/xp — isolates the chore math from race
   return { state, hero };
 }
 

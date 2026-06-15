@@ -3,7 +3,7 @@
  * Computed on demand — never stored in GameState.
  */
 import type { Attributes, Hero, StatMod } from '../types';
-import { CLASSES, INJURIES, PERKS, STATUSES, itemDef } from '../content';
+import { CLASSES, INJURIES, PERKS, RACES, STATUSES, itemDef } from '../content';
 import { BOMB_WEIGHT, HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp } from '../balance';
 
 export interface DerivedStats {
@@ -61,6 +61,9 @@ export function derive(hero: Hero): DerivedStats {
     for (const affix of inst.affixes) mods.push(...affix.mods);
   }
 
+  const race = RACES[hero.raceId];
+  if (race) mods.push(...race.mods);
+  if (race?.armorFlat) armor += race.armorFlat;
   for (const pid of hero.perks) mods.push(...(PERKS[pid]?.mods ?? []));
   for (const iid of hero.injuries) mods.push(...(INJURIES[iid]?.mods ?? []));
   for (const st of hero.statuses) mods.push(...(STATUSES[st.statusId]?.mods ?? []));
@@ -96,9 +99,9 @@ export function derive(hero: Hero): DerivedStats {
     dmgMult,
     xpMult,
     goldMult,
-    critChance: critChance(attrs.dex),
+    critChance: critChance(attrs.dex) + (race?.critBonus ?? 0),
     moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult) + gearMoveTicks),
-    carryMax: carryCapacity(cls.baseCarry, attrs.str),
+    carryMax: carryCapacity(cls.baseCarry, attrs.str) * (race?.carryMult ?? 1),
     carryUsed: Math.round(carryUsed * 10) / 10,
   };
 }
