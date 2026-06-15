@@ -5,9 +5,10 @@
 import type { Command, GameEvent, GameState, ItemInstance } from './types';
 import { startRun, chronicle } from './run/lifecycle';
 import { resolveEvent } from './run/runtime';
+import { applyFavor } from './hero/faith';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE,
 } from './balance';
-import { CHORES, INJURIES, SKILLS, classDef, itemDef } from './content';
+import { CHORES, INJURIES, RELIGIONS, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
 import { canEquip } from './hero/equipment';
 import { makeItem } from './items/factory';
@@ -27,6 +28,27 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.run) state.run.behavior = cmd.behavior;
       return;
     }
+    case 'SET_HERO_FAITH': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero) return;
+      if (cmd.religionId === null) hero.faith = null;
+      else if (RELIGIONS[cmd.religionId]) hero.faith = { religionId: cmd.religionId, favor: 0 };
+      return;
+    }
+    case 'TITHE': {
+      if (state.mode !== 'village') return;
+      const hero = state.roster[cmd.heroId];
+      if (!hero || !hero.faith) return;
+      const rel = RELIGIONS[hero.faith.religionId];
+      if (!rel) return;
+      const spent = Math.min(Math.max(0, Math.floor(cmd.amount)), hero.gold);
+      const gained = Math.floor(spent / rel.titheRate);
+      if (gained <= 0) return;
+      hero.gold -= gained * rel.titheRate; // pay only for whole favor points
+      hero.faith.favor = Math.min(100, hero.faith.favor + gained);
+      return;
+    }
     case 'EVENT_CHOICE': {
       const run = state.run;
       // ignore stale clicks: the event must still be the one being shown
@@ -38,6 +60,10 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
     case 'WITHDRAW': {
       if (state.run && state.run.intent !== 'withdraw') {
         state.run.intent = 'withdraw';
+        for (const id of state.run.party.memberIds) {
+          const h = state.roster[id];
+          if (h && !(id in state.run.party.downed)) applyFavor(h, 'withdrawNear', events);
+        }
         events.push({ t: 'withdrawOrdered' });
         chronicle(state, nowMs, 'The order is given: fall back to the surface!', state.run.depth);
       }

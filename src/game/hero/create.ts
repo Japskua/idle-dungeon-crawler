@@ -95,6 +95,7 @@ export function makeHero(
     satchel: [],
     raceId: race,
     morale: MORALE_START,
+    faith: null,
     traits: traits ?? rollTraits(state.rng.village),
     skills: unlockedSkills(classId, level),
     perks,

@@ -46,12 +46,15 @@ import {
   moraleBehavior,
   moraleBaseline,
   moraleCombatMods,
+  favorTier,
+  resurrectP,
 } from '../balance';
-import { CHORES, DUNGEON_EVENTS, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
+import { CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
 import { dayIndexFor } from '../village/shop';
 import { behaviorKnobs } from '../tactics/behaviors';
 import { applyMorale } from '../hero/morale';
+import { applyFavor } from '../hero/faith';
 import { derive, type DerivedStats } from '../hero/derive';
 import { addXp } from '../hero/leveling';
 import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '../tactics/evaluator';
@@ -1544,6 +1547,13 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
     if (def.disposition === 'neutral') {
       events.push({ t: 'neutralKilled', defId: m.defId, pos: { ...m.pos } });
       chronicle(state, nowMs, `The party feels bad about the ${def.name.toLowerCase()}.`, run.depth);
+      if (m.defId === 'chicken') {
+        // a vengeful hen-goddess does not forgive this
+        for (const hid of standingIds(run)) {
+          const h = state.roster[hid];
+          if (h) applyFavor(h, 'chickenKilled', events);
+        }
+      }
     } else {
       const goldRoll = randInt(state.rng.loot, def.gold[0], def.gold[1]);
       const killer = m.lastHitBy ? state.roster[m.lastHitBy] : undefined;
@@ -1563,6 +1573,13 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
       for (const hid of standing) {
         const h = state.roster[hid];
         if (h && h !== killer) applyMorale(h, 1, 'witnessed_kill', events);
+      }
+      // religion: the slayer earns favor with their god (melee/elite/boss bonuses)
+      if (killer) {
+        applyFavor(killer, 'kill', events);
+        if (derive(killer).attackRange <= 1) applyFavor(killer, 'killMelee', events);
+        if (m.elite) applyFavor(killer, 'killElite', events);
+        if (def.tier === 'boss') applyFavor(killer, 'killBoss', events);
       }
       const xp = monsterXp(def.xpBase, m.level, m.elite, def.tier === 'boss');
       const share = xpShare(xp, Math.max(1, standing.length));
@@ -1596,6 +1613,18 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
     if (id in run.party.downed) continue;
     const hero = state.roster[id];
     if (!hero || hero.hp > 0) continue;
+    // DIVINE INTERVENTION: an Exalted believer may be hauled back from the brink
+    if (hero.faith) {
+      const rel = RELIGIONS[hero.faith.religionId];
+      if (rel && favorTier(hero.faith.favor) === 'exalted' && chance(state.rng.combat, resurrectP(rel.resurrectChance, hero.faith.favor))) {
+        const d = derive(hero);
+        hero.hp = Math.max(1, Math.round(d.maxHp * 0.5));
+        hero.faith.favor -= 25; // the blessing is spent — it cannot chain
+        applyMorale(hero, 20, 'divine_intervention', events);
+        events.push({ t: 'divineIntervention', heroId: id, religionId: hero.faith.religionId });
+        continue;
+      }
+    }
     hero.hp = 0;
     hero.stats.downs++;
     hero.stats.lastDownedHow = `at depth ${run.depth}, struck down by ${hero.stats.lastHitByName ?? 'sheer misadventure'}`;
@@ -1668,6 +1697,13 @@ function moraleStep(state: GameState, run: DungeonRun, events: GameEvent[]) {
     let sum = 0;
     for (const id of standing) sum += state.roster[id]?.morale ?? 0;
     run.morale = Math.round(sum / standing.length);
+  }
+  // favor drifts gently toward neutral so the extremes need tending
+  if (state.tick % 600 === 0) {
+    for (const id of standing) {
+      const h = state.roster[id];
+      if (h?.faith && h.faith.favor !== 0) h.faith.favor -= Math.sign(h.faith.favor);
+    }
   }
 }
 
@@ -1922,6 +1958,7 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
         run.groundLoot.push({ id: allocId(state, 'g'), pos: { ...chest.pos }, item, heavy: true });
       }
     }
+    if (opener) applyFavor(opener, 'chest', events);
     events.push({ t: 'chestOpened', gold: loot.gold, items: loot.items.map((i) => i.defId), pos: { ...chest.pos } });
   }
 

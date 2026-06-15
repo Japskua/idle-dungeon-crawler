@@ -888,3 +888,12 @@ input[type='number'] {
 .morale-steady { color: var(--muted); }
 .morale-confident { color: #95d65a; }
 .morale-inspired { color: var(--gold); }
+
+/* ---------- faith ---------- */
+.faith-row { border-top: 1px dotted var(--border); margin-top: 4px; padding-top: 4px; }
+.favor { font-weight: bold; }
+.favor-exalted { color: var(--gold); }
+.favor-faithful { color: #95d65a; }
+.favor-wary { color: var(--muted); }
+.favor-scorned { color: #ff9c6e; }
+.favor-forsaken { color: var(--red); }

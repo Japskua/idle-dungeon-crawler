@@ -102,6 +102,22 @@ export const MORALE_RECOVERING_FLOOR = -40; // come home below this → rest you
 
 export type MoraleBand = 'panicked' | 'shaken' | 'steady' | 'confident' | 'inspired';
 
+// ---------- religion (favor) ----------
+export const FAVOR_MIN = -100;
+export const FAVOR_MAX = 100;
+export type FavorTier = 'forsaken' | 'scorned' | 'wary' | 'faithful' | 'exalted';
+export function favorTier(favor: number): FavorTier {
+  if (favor <= -61) return 'forsaken';
+  if (favor <= -21) return 'scorned';
+  if (favor <= 20) return 'wary';
+  if (favor <= 60) return 'faithful';
+  return 'exalted';
+}
+/** divine-intervention chance: a religion's base at +61, scaling up toward +100 */
+export function resurrectP(base: number, favor: number): number {
+  return base + (Math.max(61, favor) - 61) / 39 * 0.08;
+}
+
 /** per-trait morale tuning: baseline shift, gain/loss mults, band shift (sums) */
 export const MORALE_TRAIT_MODS: Record<string, { baseline?: number; gainMult?: number; lossMult?: number; bandShift?: number }> = {
   cowardly: { lossMult: 1.4, bandShift: -15 }, // first to break

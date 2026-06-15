@@ -47,6 +47,25 @@ export type StatMod =
   | { kind: 'attr'; attr: keyof Attributes; add: number }
   | { kind: 'mult'; what: 'dmg' | 'xp' | 'gold' | 'maxhp' | 'speed'; mul: number };
 
+export interface ReligionDef {
+  id: string;
+  name: string;
+  deity: string;
+  domain: string;
+  description: string;
+  /** signature passive applied while favor is Faithful+ */
+  bonus: StatMod[];
+  /** event key -> favor delta (positive = devotion, negative = taboo) */
+  favorRules: Record<string, number>;
+  /** base divine-intervention chance at +61 favor (scales up toward +100) */
+  resurrectChance: number;
+  /** damage multiplier suffered while Forsaken */
+  wrathDmgMult: number;
+  /** gold per +1 favor when tithing */
+  titheRate: number;
+  blessing: string;
+}
+
 export interface RaceDef {
   id: string;
   name: string;
@@ -400,6 +419,8 @@ export interface Hero {
   raceId: string;
   /** -100..+100, sim-owned; persists between runs, decays toward baseline in the village */
   morale: number;
+  /** chosen god + per-hero favor (-100..+100); null = non-believer */
+  faith: { religionId: string; favor: number } | null;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];
@@ -664,6 +685,8 @@ export type Command =
   | { t: 'ABANDON_HERO'; heroId: Id }
   | { t: 'SWITCH_TACTIC_SET'; heroId: Id; setId: Id }
   | { t: 'SET_PARTY_BEHAVIOR'; behavior: PartyBehavior }
+  | { t: 'SET_HERO_FAITH'; heroId: Id; religionId: string | null }
+  | { t: 'TITHE'; heroId: Id; amount: number }
   | { t: 'EVENT_CHOICE'; eventId: string; choiceKey: string }
   | { t: 'SET_TACTICS'; heroId: Id; sets: TacticSet[]; activeSetId: Id }
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
@@ -700,6 +723,8 @@ export type GameEvent =
   | { t: 'eventResolved'; eventId: string; choiceKey: string; resultText: string }
   | { t: 'morale'; heroId: Id; delta: number; source: string }
   | { t: 'moraleBeat'; from: Id; to: Id; valence: 'cheer' | 'jeer' }
+  | { t: 'favor'; heroId: Id; delta: number; religionId: string }
+  | { t: 'divineIntervention'; heroId: Id; religionId: string }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }
