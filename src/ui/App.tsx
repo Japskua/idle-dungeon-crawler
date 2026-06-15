@@ -10,7 +10,7 @@ import {
 } from '../app/telemetry';
 import { exportSave, importSave } from '../game/save/serialize';
 import { newGame } from '../game/newGame';
-import { INJURIES } from '../game/content';
+import { DUNGEON_EVENTS, INJURIES } from '../game/content';
 import { DungeonScreen } from './DungeonScreen';
 import { VillageScreen } from './VillageScreen';
 import { ClassSprite } from './components';
@@ -99,6 +99,37 @@ function DebriefModal() {
             {wiped ? 'Mourn and move on' : 'Continue'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** an interactive dungeon event — the auto-crawl pauses until you choose (or it auto-picks) */
+function EventModal() {
+  useUi((s) => s.rev);
+  const game = useUi((s) => s.game);
+  const pending = game?.run?.pendingEvent;
+  if (!pending) return null;
+  const ev = DUNGEON_EVENTS[pending.eventId];
+  if (!ev) return null;
+  return (
+    <div className="modal-overlay">
+      <div className="modal panel event-modal">
+        <div className="debrief-title">✦ {ev.name}</div>
+        <p className="event-prompt">{ev.prompt}</p>
+        <div className="event-choices">
+          {ev.choices.map((c) => (
+            <button
+              key={c.key}
+              className={`btn wide ${c.default ? '' : 'btn-warn'}`}
+              onClick={() => app.dispatch({ t: 'EVENT_CHOICE', eventId: ev.id, choiceKey: c.key })}
+            >
+              {c.label}
+              {c.default ? ' (safe)' : ''}
+            </button>
+          ))}
+        </div>
+        <p className="muted small">If you don’t choose, the party takes the cautious option on its own.</p>
       </div>
     </div>
   );
@@ -301,6 +332,7 @@ export function App() {
       {inDungeon ? <DungeonScreen /> : <VillageScreen />}
       <DebriefModal />
       <WelcomeModal />
+      <EventModal />
       <TelemetryNotice />
     </div>
   );

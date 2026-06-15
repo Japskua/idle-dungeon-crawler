@@ -8,6 +8,7 @@ import { ITEMS } from '../content';
 import { defaultTactics } from '../tactics/defaults';
 import { TRAIT_IDS, emptyStats } from '../hero/create';
 import { RACE_IDS } from '../content/races';
+import { DUNGEON_EVENTS } from '../content/events';
 
 function u8ToBase64(u8: Uint8Array): string {
   let bin = '';
@@ -154,6 +155,10 @@ function reconcileContent(state: GameState) {
   if (state.run) {
     state.run.groundLoot = state.run.groundLoot.filter((g) => ITEMS[g.item.defId]);
     if (!state.run.behavior) state.run.behavior = 'balanced';
+    if (typeof state.run.morale !== 'number') state.run.morale = 50;
+    if (typeof state.run.favor !== 'number') state.run.favor = 0;
+    const pe = state.run.pendingEvent;
+    if (pe && !DUNGEON_EVENTS[pe.eventId]) state.run.pendingEvent = undefined;
   }
 }
 

@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import type { GameEvent, GameState } from '../game/types';
 import type { DebriefReport } from '../app/debrief';
-import { CLASSES, INJURIES, ITEMS, creatureDef } from '../game/content';
+import { CLASSES, DUNGEON_EVENTS, INJURIES, ITEMS, creatureDef } from '../game/content';
 
 export interface LogEntry {
   id: number;
@@ -96,6 +96,10 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
     }
     case 'bombThrown':
       return entry(`💣 ${heroName(game, e.heroId)} lobs a bomb!`, 'level');
+    case 'eventOpened':
+      return entry(`✦ ${DUNGEON_EVENTS[e.eventId]?.name ?? 'Something'} — the party pauses to consider.`, 'level');
+    case 'eventResolved':
+      return entry(`✦ ${e.resultText}`, 'info');
     case 'potionUsed':
       return entry(`${heroName(game, e.heroId)} drinks a ${e.potion === 'hp' ? 'healing' : 'mana'} potion (+${e.amount})`, 'heal');
     case 'heal':

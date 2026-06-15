@@ -4,6 +4,7 @@
  */
 import type { Command, GameEvent, GameState, ItemInstance } from './types';
 import { startRun, chronicle } from './run/lifecycle';
+import { resolveEvent } from './run/runtime';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE,
 } from './balance';
 import { CHORES, INJURIES, SKILLS, classDef, itemDef } from './content';
@@ -24,6 +25,14 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
     }
     case 'SET_PARTY_BEHAVIOR': {
       if (state.run) state.run.behavior = cmd.behavior;
+      return;
+    }
+    case 'EVENT_CHOICE': {
+      const run = state.run;
+      // ignore stale clicks: the event must still be the one being shown
+      if (run?.pendingEvent && run.pendingEvent.eventId === cmd.eventId && run.pendingEvent.choiceKeys.includes(cmd.choiceKey)) {
+        resolveEvent(state, run, cmd.choiceKey, events);
+      }
       return;
     }
     case 'WITHDRAW': {

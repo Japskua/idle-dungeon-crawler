@@ -858,3 +858,25 @@ input[type='number'] {
   border-left: 2px solid var(--border);
   margin: 2px 0 4px;
 }
+
+/* ---------- dungeon event modal ---------- */
+.event-modal {
+  width: min(560px, 94vw);
+  border-color: var(--gold);
+}
+
+.event-prompt {
+  line-height: 1.5;
+  margin: 8px 0 12px;
+}
+
+.event-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.event-choices .btn {
+  margin-top: 0;
+}

@@ -157,6 +157,10 @@ export const STARTING_GOLD = 60;
 export const POTION_PRICES: Record<'hp' | 'mp', number> = { hp: 12, mp: 15 };
 
 // ---------- bombs ----------
+// ---------- dungeon events ----------
+export const EVENT_ROOM_CHANCE = 0.16;    // chance a freshly-entered room sparks an event
+export const EVENT_TIMEOUT_TICKS = 150;   // 15s for the player to choose before the default auto-fires
+
 export const BOMB_PRICE = 25;
 export const BOMB_WEIGHT = 1.0;
 /** raw blast damage before armor; explosions spare NO ONE in the radius */
