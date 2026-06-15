@@ -91,6 +91,77 @@ export function critChance(dex: number): number {
 export const CRIT_MULT = 1.5;
 export const DMG_VARIANCE: [number, number] = [0.9, 1.1];
 
+// ---------- morale ----------
+export const MORALE_START = 10; // the optimism of a fresh contract
+export const MORALE_MIN = -100;
+export const MORALE_MAX = 100;
+export const MORALE_BEAT_TICKS = 100; // ~10s between social cheer/jeer beats
+export const MORALE_FREEZE_CHANCE = 0.15; // a Shaken hero hesitating
+export const MORALE_RECOVERY_PER_SEC = 0.5; // village decay toward baseline (~30/min)
+export const MORALE_RECOVERING_FLOOR = -40; // come home below this → rest your nerves
+
+export type MoraleBand = 'panicked' | 'shaken' | 'steady' | 'confident' | 'inspired';
+
+/** per-trait morale tuning: baseline shift, gain/loss mults, band shift (sums) */
+export const MORALE_TRAIT_MODS: Record<string, { baseline?: number; gainMult?: number; lossMult?: number; bandShift?: number }> = {
+  cowardly: { lossMult: 1.4, bandShift: -15 }, // first to break
+  bloodthirsty: { gainMult: 2.0, bandShift: 15 }, // killing streak → unstoppable
+  boastful: { gainMult: 1.3, lossMult: 1.3 }, // mercurial
+  gloomy: { baseline: -10, gainMult: 0.7 }, // idles a little down
+  cheerful: { baseline: 10, gainMult: 1.3, lossMult: 0.8 }, // the party's engine
+  deadpan: { gainMult: 0.6, lossMult: 0.6 }, // a stable anchor
+  superstitious: { lossMult: 1.2 }, // rattled by omens
+  motherly: { gainMult: 1.1 },
+};
+
+function moraleTraitSum(traits: string[], key: 'baseline' | 'bandShift'): number {
+  let v = 0;
+  for (const t of traits) v += MORALE_TRAIT_MODS[t]?.[key] ?? 0;
+  return v;
+}
+function moraleTraitMult(traits: string[], key: 'gainMult' | 'lossMult'): number {
+  let v = 1;
+  for (const t of traits) v *= MORALE_TRAIT_MODS[t]?.[key] ?? 1;
+  return v;
+}
+
+export function moraleBaseline(traits: string[]): number {
+  return moraleTraitSum(traits, 'baseline');
+}
+
+/** the hero's current band — pure, recomputed on demand (never stored) */
+export function moraleBand(morale: number, traits: string[] = []): MoraleBand {
+  const m = morale + moraleTraitSum(traits, 'bandShift'); // cowardly lowers, bloodthirsty raises
+  if (m < -60) return 'panicked';
+  if (m < -25) return 'shaken';
+  if (m <= 25) return 'steady';
+  if (m <= 60) return 'confident';
+  return 'inspired';
+}
+
+/** combat levers keyed off the band: additive crit, dodge chance, dmg & armor mult */
+export function moraleCombatMods(band: MoraleBand): { critAdd: number; dodge: number; dmgMult: number; armorMult: number } {
+  switch (band) {
+    case 'panicked': return { critAdd: -0.05, dodge: 0, dmgMult: 0.8, armorMult: 0.85 };
+    case 'shaken': return { critAdd: -0.02, dodge: 0, dmgMult: 0.92, armorMult: 0.95 };
+    case 'confident': return { critAdd: 0.04, dodge: 0.04, dmgMult: 1.08, armorMult: 1 };
+    case 'inspired': return { critAdd: 0.08, dodge: 0.08, dmgMult: 1.15, armorMult: 1.05 };
+    case 'steady':
+    default: return { critAdd: 0, dodge: 0, dmgMult: 1, armorMult: 1 };
+  }
+}
+
+export function moraleBehavior(band: MoraleBand): { panic: boolean; timid: boolean; fearless: boolean } {
+  return { panic: band === 'panicked', timid: band === 'shaken', fearless: band === 'inspired' };
+}
+
+/** scale a raw morale delta by the hero's trait gain/loss mults (and Inspired damping) */
+export function scaleMorale(base: number, traits: string[], fearless: boolean): number {
+  const mult = base >= 0 ? moraleTraitMult(traits, 'gainMult') : moraleTraitMult(traits, 'lossMult');
+  const damp = fearless && base < 0 ? 0.6 : 1; // momentum resists loss
+  return base * mult * damp;
+}
+
 export function mitigate(dmg: number, armor: number): number {
   return (dmg * 100) / (100 + Math.max(0, armor));
 }

@@ -60,7 +60,7 @@ describe('run chronicler', () => {
   });
 
   test('a withdrawal with downed heroes credits the carriers', () => {
-    const report = playUntil(11, (r) => r.outcome === 'withdrawn' && r.heroes.some((h) => h.outcome === 'carried'));
+    const report = playUntil(1, (r) => r.outcome === 'withdrawn' && r.heroes.some((h) => h.outcome === 'carried'));
     const carried = report.heroes.filter((h) => h.outcome === 'carried');
     for (const h of carried) {
       expect(h.carriedBy).toBeTruthy();

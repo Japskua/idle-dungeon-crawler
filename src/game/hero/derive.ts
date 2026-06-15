@@ -4,7 +4,10 @@
  */
 import type { Attributes, Hero, StatMod } from '../types';
 import { CLASSES, INJURIES, PERKS, RACES, STATUSES, itemDef } from '../content';
-import { BOMB_WEIGHT, HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp } from '../balance';
+import {
+  BOMB_WEIGHT, HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp,
+  moraleBand, moraleCombatMods,
+} from '../balance';
 
 export interface DerivedStats {
   attrs: Attributes;
@@ -68,7 +71,8 @@ export function derive(hero: Hero): DerivedStats {
   for (const iid of hero.injuries) mods.push(...(INJURIES[iid]?.mods ?? []));
   for (const st of hero.statuses) mods.push(...(STATUSES[st.statusId]?.mods ?? []));
 
-  let dmgMult = 1;
+  const mm = moraleCombatMods(moraleBand(hero.morale, hero.traits));
+  let dmgMult = mm.dmgMult;
   let xpMult = 1;
   let goldMult = 1;
   let maxhpMult = 1;
@@ -95,11 +99,11 @@ export function derive(hero: Hero): DerivedStats {
     weaponDmg: Math.round(weaponDmg * 10) / 10,
     attackTicks,
     attackRange,
-    armor,
+    armor: Math.round(armor * mm.armorMult),
     dmgMult,
     xpMult,
     goldMult,
-    critChance: critChance(attrs.dex) + (race?.critBonus ?? 0),
+    critChance: Math.max(0, critChance(attrs.dex) + (race?.critBonus ?? 0) + mm.critAdd),
     moveTicks: Math.max(1, Math.round(HERO_MOVE_TICKS / speedMult) + gearMoveTicks),
     carryMax: carryCapacity(cls.baseCarry, attrs.str) * (race?.carryMult ?? 1),
     carryUsed: Math.round(carryUsed * 10) / 10,

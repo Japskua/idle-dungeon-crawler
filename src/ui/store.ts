@@ -100,6 +100,10 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`✦ ${DUNGEON_EVENTS[e.eventId]?.name ?? 'Something'} — the party pauses to consider.`, 'level');
     case 'eventResolved':
       return entry(`✦ ${e.resultText}`, 'info');
+    case 'moraleBeat':
+      return e.valence === 'cheer'
+        ? entry(`${heroName(game, e.from)} rallies ${heroName(game, e.to)} — spirits lift.`, 'heal')
+        : entry(`${heroName(game, e.from)}'s gloom drags ${heroName(game, e.to)} down.`, 'bad');
     case 'potionUsed':
       return entry(`${heroName(game, e.heroId)} drinks a ${e.potion === 'hp' ? 'healing' : 'mana'} potion (+${e.amount})`, 'heal');
     case 'heal':

@@ -4,12 +4,21 @@ import { telemetry } from '../app/telemetry';
 import { CLASSES } from '../game/content';
 import { partySpareCapacity } from '../game/run/runtime';
 import { PARTY_BEHAVIORS } from '../game/tactics/behaviors';
+import { moraleBand } from '../game/balance';
 import type { Hero, PartyBehavior } from '../game/types';
 import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
 import { HeroVitals } from './components';
 import { TacticsEditor } from './TacticsEditor';
 import { useUi } from './store';
+
+const MORALE_LABEL: Record<string, string> = {
+  panicked: '☄ panicked',
+  shaken: 'shaken',
+  steady: 'steady',
+  confident: 'confident',
+  inspired: '★ inspired',
+};
 
 function TacticSwitch({ hero }: { hero: Hero }) {
   const [editing, setEditing] = useState(false);
@@ -115,6 +124,10 @@ export function DungeonScreen() {
                       {' · '}
                       <span className="gold">{hero.gold}g</span>
                       {hero.satchel.length > 0 ? ` · 🎒${hero.satchel.length}` : ''}
+                      {' · '}
+                      <span className={`morale morale-${moraleBand(hero.morale, hero.traits)}`}>
+                        {MORALE_LABEL[moraleBand(hero.morale, hero.traits)]}
+                      </span>
                     </span>
                     <TacticSwitch hero={hero} />
                   </div>

@@ -880,3 +880,11 @@ input[type='number'] {
 .event-choices .btn {
   margin-top: 0;
 }
+
+/* ---------- morale ---------- */
+.morale { font-weight: bold; }
+.morale-panicked { color: var(--red); }
+.morale-shaken { color: #ff9c6e; }
+.morale-steady { color: var(--muted); }
+.morale-confident { color: #95d65a; }
+.morale-inspired { color: var(--gold); }

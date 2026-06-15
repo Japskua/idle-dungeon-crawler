@@ -16,6 +16,8 @@ import {
 } from '../balance';
 import { INJURIES, classDef } from '../content';
 import { derive } from '../hero/derive';
+import { applyMorale } from '../hero/morale';
+import { MORALE_RECOVERING_FLOOR } from '../balance';
 
 export function chronicle(state: GameState, nowMs: number, text: string, depth?: number) {
   state.chronicle.push({ atMs: nowMs, depth, text });
@@ -147,7 +149,8 @@ function heroReturnsToVillage(state: GameState, hero: Hero, hpFraction: number) 
   hero.mp = Math.min(hero.mp, d.maxMp);
   hero.statuses = [];
   hero.cooldowns = {};
-  hero.activity = hero.hp < d.maxHp ? 'recovering' : 'idle';
+  // come home routed and you rest your nerves even at full HP
+  hero.activity = hero.hp < d.maxHp || hero.morale < MORALE_RECOVERING_FLOOR ? 'recovering' : 'idle';
   // leftover carried potions go back to the village pool
   state.village.potions.hp += hero.potions.hp;
   state.village.potions.mp += hero.potions.mp;
@@ -157,6 +160,12 @@ function heroReturnsToVillage(state: GameState, hero: Hero, hpFraction: number) 
 function killHero(state: GameState, hero: Hero, depth: number, nowMs: number, events: GameEvent[], cause: string) {
   // their pack passes to the village; the gold dies with them (the dungeon keeps it)
   state.village.inventory.push(...hero.satchel);
+  // losing a friend for good shakes the survivors
+  for (const mid of state.run?.party.memberIds ?? []) {
+    if (mid === hero.id) continue;
+    const m = state.roster[mid];
+    if (m) applyMorale(m, -8, 'friend_died', events);
+  }
   delete state.roster[hero.id];
   state.rosterOrder = state.rosterOrder.filter((id) => id !== hero.id);
   state.progress.totalPermadeaths++;
