@@ -15,7 +15,7 @@ import type {
   Vec2,
 } from '../types';
 import { TILE, type Command } from '../types';
-import { chance, pick, rand, randInt, randRange } from '../core/rng';
+import { chance, hash2, makeRng, pick, rand, randInt, randRange, shuffle } from '../core/rng';
 import {
   AUTO_WITHDRAW_ON_DOWNED,
   CARRY_MOVE_PENALTY,
@@ -39,6 +39,7 @@ import {
 } from '../balance';
 import { CHORES, ITEMS, SKILLS, STATUSES, creatureDef } from '../content';
 import { dayIndexFor } from '../village/shop';
+import { behaviorKnobs } from '../tactics/behaviors';
 import { derive, type DerivedStats } from '../hero/derive';
 import { addXp } from '../hero/leveling';
 import { defaultAction, evaluate, type BattleView, type ResolvedAction } from '../tactics/evaluator';
@@ -89,6 +90,18 @@ function roomOrder(run: DungeonRun): number[] {
   if (!order) {
     order = explorationOrder(run.floor);
     exploreOrderCache.set(run.floor, order);
+  }
+  return order;
+}
+
+const wanderOrderCache = new WeakMap<object, number[]>();
+/** a deterministic per-floor shuffle of the room order (stable across ticks) */
+function wanderOrder(run: DungeonRun): number[] {
+  let order = wanderOrderCache.get(run.floor);
+  if (!order) {
+    const rng = makeRng(hash2(run.runSeed, run.depth * 2654435761) ^ 0x5bd1e995);
+    order = shuffle(rng, [...roomOrder(run)]);
+    wanderOrderCache.set(run.floor, order);
   }
   return order;
 }
@@ -292,8 +305,10 @@ function engagedMonsterIds(state: GameState, run: DungeonRun): Id[] {
       out.push(id);
       continue;
     }
+    const r = ENGAGE_RADIUS * behaviorKnobs(run.behavior).engageMult;
+    const r2 = r * r;
     for (const hid of standing) {
-      if (euclid2(m.pos, run.party.pos[hid]!) <= ENGAGE_RADIUS * ENGAGE_RADIUS) {
+      if (euclid2(m.pos, run.party.pos[hid]!) <= r2) {
         out.push(id);
         break;
       }
@@ -369,8 +384,8 @@ function computeObjective(run: DungeonRun): Vec2 {
     }
   }
   if (bestChest) return bestChest;
-  // 2. next unvisited room in BFS order
-  for (const ri of roomOrder(run)) {
+  // 2. next unvisited room — in BFS order, or a shuffled wander order
+  for (const ri of behaviorKnobs(run.behavior).wander ? wanderOrder(run) : roomOrder(run)) {
     if (!run.visitedRooms.includes(ri)) {
       const room = run.floor.rooms[ri]!;
       return { x: room.x + Math.floor(room.w / 2), y: room.y + Math.floor(room.h / 2) };
@@ -733,8 +748,21 @@ function performResolved(
 
 function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
   const engaged = engagedMonsterIds(state, run);
+  const knobs = behaviorKnobs(run.behavior);
   const carriedBy = new Map<Id, Id>(); // downedId -> carrierId
   for (const [carrier, carried] of Object.entries(run.party.carrying)) carriedBy.set(carried, carrier);
+
+  // Focus Fire: the whole party piles onto one foe — the weakest engaged hostile
+  // (tie-break lowest id), so targets drop fast and stay shared across heroes.
+  let focusId: Id | null = null;
+  if (knobs.focus && run.intent !== 'withdraw') {
+    for (const mid of engaged) {
+      const m = run.monsters[mid];
+      if (!m || m.hp <= 0 || m.summonedBy) continue;
+      const best = focusId ? run.monsters[focusId] : undefined;
+      if (!best || m.hp < best.hp || (m.hp === best.hp && mid < focusId!)) focusId = mid;
+    }
+  }
 
   for (const id of run.party.memberIds) {
     if (id in run.party.downed) continue;
@@ -773,6 +801,17 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
     const activeSet =
       hero.tactics.sets.find((s) => s.id === hero.tactics.activeSetId) ?? hero.tactics.sets[0];
     let resolved = (activeSet ? evaluate(hero, d, view, activeSet) : null) ?? defaultAction(view);
+    // Stay Healthy: top off with a potion the moment HP dips below the floor
+    // (only mid-fight, only if a potion is on hand) — keeps the party topped up.
+    if (
+      knobs.healthFloor > 0 &&
+      engaged.length > 0 &&
+      view.selfHpFrac < knobs.healthFloor &&
+      hero.potions.hp > 0 &&
+      hero.hp < d.maxHp
+    ) {
+      resolved = { kind: 'potion', potion: 'hp' };
+    }
     // target stickiness: keep hammering the same foe while it lives and stays
     // within leash range — prevents re-targeting flip-flop at radius boundaries
     if (resolved?.kind === 'attack' && run.intent !== 'withdraw') {
@@ -782,10 +821,14 @@ function heroDecisions(state: GameState, run: DungeonRun, events: GameEvent[]) {
         sticky &&
         sticky.hp > 0 &&
         creatureDef(sticky.defId).disposition === 'hostile' &&
-        euclid2(myPos, sticky.pos) <= 144
+        euclid2(myPos, sticky.pos) <= knobs.leash
       ) {
         resolved = { kind: 'attack', targetId: stickyId! };
       }
+    }
+    // Focus Fire overrides the target: converge on the shared focus foe
+    if (focusId && resolved?.kind === 'attack' && run.monsters[focusId]) {
+      resolved = { kind: 'attack', targetId: focusId };
     }
     if (resolved && performResolved(state, run, id, d, resolved, moveTicks, carriedBy, events)) {
       continue;

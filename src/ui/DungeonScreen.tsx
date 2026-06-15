@@ -3,7 +3,8 @@ import { app } from '../app/loop';
 import { telemetry } from '../app/telemetry';
 import { CLASSES } from '../game/content';
 import { partySpareCapacity } from '../game/run/runtime';
-import type { Hero } from '../game/types';
+import { PARTY_BEHAVIORS } from '../game/tactics/behaviors';
+import type { Hero, PartyBehavior } from '../game/types';
 import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
 import { HeroVitals } from './components';
@@ -150,6 +151,20 @@ export function DungeonScreen() {
               })()}
               )
             </span>
+          </div>
+          <div className="row" style={{ marginTop: 6 }}>
+            <span className="muted small">party behavior</span>
+            <select
+              value={run.behavior}
+              title={PARTY_BEHAVIORS.find((b) => b.id === run.behavior)?.blurb}
+              onChange={(e) => app.dispatch({ t: 'SET_PARTY_BEHAVIOR', behavior: e.target.value as PartyBehavior })}
+            >
+              {PARTY_BEHAVIORS.map((b) => (
+                <option key={b.id} value={b.id} title={b.blurb}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             className="btn btn-warn wide"

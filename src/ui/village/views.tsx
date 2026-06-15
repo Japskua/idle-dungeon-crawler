@@ -24,6 +24,8 @@ import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village
 import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef } from '../../game/types';
 import { ClassSprite, HeroVitals, ItemName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
+import { PARTY_BEHAVIORS } from '../../game/tactics/behaviors';
+import type { PartyBehavior } from '../../game/types';
 import { setVillageView } from '../store';
 
 // ---------------------------------------------------------------- item browsing
@@ -1147,6 +1149,7 @@ function GateHeroCard({
 export function GateView({ game }: { game: GameState }) {
   const [selected, setSelected] = useState<Id[]>([]);
   const [depth, setDepth] = useState(1);
+  const [behavior, setBehavior] = useState<PartyBehavior>('balanced');
   const candidates = game.rosterOrder
     .map((id) => game.roster[id]!)
     .filter((h) => h && h.activity !== 'party' && h.hp > 0);
@@ -1172,6 +1175,18 @@ export function GateView({ game }: { game: GameState }) {
             Expedition party ({selected.length}/4)
           </span>
           <span className="row-buttons">
+            <span className="muted">behavior</span>
+            <select
+              value={behavior}
+              title={PARTY_BEHAVIORS.find((b) => b.id === behavior)?.blurb}
+              onChange={(e) => setBehavior(e.target.value as PartyBehavior)}
+            >
+              {PARTY_BEHAVIORS.map((b) => (
+                <option key={b.id} value={b.id} title={b.blurb}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
             <span className="muted">start at depth</span>
             <select value={depth} onChange={(e) => setDepth(Number(e.target.value))}>
               {depths.map((dd) => (
@@ -1184,7 +1199,7 @@ export function GateView({ game }: { game: GameState }) {
               className="btn btn-primary gate-descend"
               disabled={selected.length === 0}
               onClick={() => {
-                app.dispatch({ t: 'EMBARK', memberIds: selected, startDepth: depth });
+                app.dispatch({ t: 'EMBARK', memberIds: selected, startDepth: depth, behavior });
                 setSelected([]);
               }}
             >
@@ -1199,7 +1214,8 @@ export function GateView({ game }: { game: GameState }) {
           to 3 healing / 2 mana potions from the store shelf ({game.village.potions.hp} hp / {game.village.potions.mp}{' '}
           mp in stock); pack extra below if you like.
           {selected.length > 0 ? ` Party loot space: ${spare.toFixed(0)}kg.` : ''} A downed hero ends the expedition —
-          the others carry them home.
+          the others carry them home. <b>{PARTY_BEHAVIORS.find((b) => b.id === behavior)?.name}:</b>{' '}
+          {PARTY_BEHAVIORS.find((b) => b.id === behavior)?.blurb}
         </div>
       </div>
       {candidates.length === 0 && (

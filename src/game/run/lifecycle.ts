@@ -22,7 +22,14 @@ export function chronicle(state: GameState, nowMs: number, text: string, depth?:
   if (state.chronicle.length > 100) state.chronicle.splice(0, state.chronicle.length - 100);
 }
 
-export function startRun(state: GameState, memberIds: Id[], startDepth: number, nowMs: number, events: GameEvent[]) {
+export function startRun(
+  state: GameState,
+  memberIds: Id[],
+  startDepth: number,
+  nowMs: number,
+  events: GameEvent[],
+  behavior: import('../types').PartyBehavior = 'balanced',
+) {
   const members = memberIds
     .filter((id) => state.roster[id] && state.roster[id]!.activity !== 'party')
     .slice(0, 4);
@@ -34,6 +41,7 @@ export function startRun(state: GameState, memberIds: Id[], startDepth: number, 
     depth: startDepth,
     floor: undefined as never, // set by enterFloor
     intent: 'explore',
+    behavior,
     party: {
       memberIds: members,
       pos: {},

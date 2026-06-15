@@ -143,6 +143,7 @@ function reconcileContent(state: GameState) {
   }
   if (state.run) {
     state.run.groundLoot = state.run.groundLoot.filter((g) => ITEMS[g.item.defId]);
+    if (!state.run.behavior) state.run.behavior = 'balanced';
   }
 }
 
