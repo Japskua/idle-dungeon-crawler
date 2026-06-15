@@ -17,7 +17,8 @@ import {
   learnSkillCost,
   spellAmount,
 } from '../../game/balance';
-import { BANTER, CHORES, CLASSES, INJURIES, ITEMS, PERKS, RACES, SKILLS } from '../../game/content';
+import { BANTER, CHORES, CLASSES, INJURIES, ITEMS, PERKS, RACES, RELIGIONS, SKILLS } from '../../game/content';
+import { favorTier } from '../../game/balance';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
@@ -818,6 +819,53 @@ function StoryBlock({ hero }: { hero: Hero }) {
   );
 }
 
+/** per-hero faith management — convert to a god, tithe gold for favor (Guild Hall) */
+function FaithRow({ hero }: { hero: Hero }) {
+  const rel = hero.faith ? RELIGIONS[hero.faith.religionId] : undefined;
+  const tier = hero.faith ? favorTier(hero.faith.favor) : null;
+  return (
+    <div className="row small faith-row">
+      <span title={rel?.description}>
+        🛐{' '}
+        {rel ? (
+          <>
+            <b>{rel.name}</b>{' '}
+            <span className={`favor favor-${tier}`}>
+              {tier} ({hero.faith!.favor >= 0 ? '+' : ''}{hero.faith!.favor})
+            </span>
+          </>
+        ) : (
+          <span className="muted">Faithless</span>
+        )}
+      </span>
+      <span className="row-buttons">
+        <select
+          value={hero.faith?.religionId ?? ''}
+          title="convert (favor resets to 0)"
+          onChange={(e) => app.dispatch({ t: 'SET_HERO_FAITH', heroId: hero.id, religionId: e.target.value || null })}
+        >
+          <option value="">Faithless</option>
+          {Object.values(RELIGIONS).map((r) => (
+            <option key={r.id} value={r.id} title={r.description}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+        {hero.faith && (
+          <button
+            className="btn btn-tiny"
+            disabled={hero.gold < (rel?.titheRate ?? 10)}
+            title={`tithe gold for favor (${rel?.titheRate ?? 10}g per +1)`}
+            onClick={() => app.dispatch({ t: 'TITHE', heroId: hero.id, amount: Math.min(hero.gold, 200) })}
+          >
+            tithe
+          </button>
+        )}
+      </span>
+    </div>
+  );
+}
+
 function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
   const d = derive(hero);
   const [editingTactics, setEditingTactics] = useState(false);
@@ -845,6 +893,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
         {d.moveTicks > 4 ? <span className="muted"> · heavy gear slows movement</span> : null}
       </div>
       <div className="small personality">☘ {personalityLine(hero.traits, hero.raceId)}</div>
+      <FaithRow hero={hero} />
       {hero.perks.length > 0 && (
         <div className="small">
           {hero.perks.map((pid) => {

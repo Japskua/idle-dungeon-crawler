@@ -9,6 +9,7 @@ import { defaultTactics } from '../tactics/defaults';
 import { TRAIT_IDS, emptyStats } from '../hero/create';
 import { RACE_IDS } from '../content/races';
 import { DUNGEON_EVENTS } from '../content/events';
+import { RELIGIONS } from '../content/religions';
 
 function u8ToBase64(u8: Uint8Array): string {
   let bin = '';
@@ -133,6 +134,8 @@ function reconcileContent(state: GameState) {
     }
     if (typeof hero.gold !== 'number') hero.gold = 0;
     if (typeof hero.morale !== 'number') hero.morale = 10;
+    if (hero.faith === undefined) hero.faith = null;
+    if (hero.faith && !RELIGIONS[hero.faith.religionId]) hero.faith = null;
     if (!Array.isArray(hero.satchel)) hero.satchel = [];
     if (hero.stats && typeof hero.stats.runGold !== 'number') hero.stats.runGold = 0;
     hero.satchel = hero.satchel.filter((it: { defId: string }) => {

@@ -3,10 +3,10 @@
  * Computed on demand — never stored in GameState.
  */
 import type { Attributes, Hero, StatMod } from '../types';
-import { CLASSES, INJURIES, PERKS, RACES, STATUSES, itemDef } from '../content';
+import { CLASSES, INJURIES, PERKS, RACES, RELIGIONS, STATUSES, itemDef } from '../content';
 import {
   BOMB_WEIGHT, HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp,
-  moraleBand, moraleCombatMods,
+  moraleBand, moraleCombatMods, favorTier,
 } from '../balance';
 
 export interface DerivedStats {
@@ -67,12 +67,20 @@ export function derive(hero: Hero): DerivedStats {
   const race = RACES[hero.raceId];
   if (race) mods.push(...race.mods);
   if (race?.armorFlat) armor += race.armorFlat;
+  // religion: the god's signature bonus rewards good standing
+  const rel = hero.faith ? RELIGIONS[hero.faith.religionId] : undefined;
+  let wrathMult = 1;
+  if (rel) {
+    const tier = favorTier(hero.faith!.favor);
+    if (tier === 'faithful' || tier === 'exalted') mods.push(...rel.bonus);
+    if (tier === 'forsaken') wrathMult = rel.wrathDmgMult;
+  }
   for (const pid of hero.perks) mods.push(...(PERKS[pid]?.mods ?? []));
   for (const iid of hero.injuries) mods.push(...(INJURIES[iid]?.mods ?? []));
   for (const st of hero.statuses) mods.push(...(STATUSES[st.statusId]?.mods ?? []));
 
   const mm = moraleCombatMods(moraleBand(hero.morale, hero.traits));
-  let dmgMult = mm.dmgMult;
+  let dmgMult = mm.dmgMult * wrathMult;
   let xpMult = 1;
   let goldMult = 1;
   let maxhpMult = 1;

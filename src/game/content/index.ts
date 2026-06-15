@@ -14,13 +14,14 @@ import { PALETTE } from './gen/palette.gen';
 import { CLASSES } from './classes';
 import { RACES } from './races';
 import { DUNGEON_EVENTS } from './events';
+import { RELIGIONS } from './religions';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { INJURIES } from './injuries';
 import { CHORES } from './chores';
 import type { ClassDef, ItemDef, MonsterDef, SkillDef, InjuryDef, PerkDef, ChoreDef, StatusDef, RaceDef } from '../types';
 
-export { MONSTERS, NEUTRALS, ITEMS, PERKS, TILES, NAME_BANKS, PALETTE, CLASSES, SKILLS, STATUSES, INJURIES, CHORES, BANTER, RACES, DUNGEON_EVENTS };
+export { MONSTERS, NEUTRALS, ITEMS, PERKS, TILES, NAME_BANKS, PALETTE, CLASSES, SKILLS, STATUSES, INJURIES, CHORES, BANTER, RACES, DUNGEON_EVENTS, RELIGIONS };
 
 function lookup<T>(table: Record<string, T>, id: string, kind: string): T {
   const def = table[id];
