@@ -118,6 +118,22 @@ export function resurrectP(base: number, favor: number): number {
   return base + (Math.max(61, favor) - 61) / 39 * 0.08;
 }
 
+// ---------- summons (menagerie & necromancer budgets) ----------
+/** Summoner's menagerie cap: max simultaneous conjured minion-cost = 1.5× level */
+export function menagerieCap(level: number): number {
+  return Math.floor(level * 1.5);
+}
+/** Necromancer's undead budget: max simultaneous reanimated undead-levels = 2× level */
+export function undeadBudget(level: number): number {
+  return level * 2;
+}
+/** reanimated units fight at this fraction of the original enemy's stats */
+export const REANIMATE_STAT_FRAC = 0.6;
+/** corpse pool capacity per floor (FIFO; oldest corpse drops off) */
+export const CORPSE_POOL_CAP = 6;
+/** an enemy drops a corpse only if a living necromancer is within this many tiles of the kill */
+export const CORPSE_REACH = 9;
+
 /** per-trait morale tuning: baseline shift, gain/loss mults, band shift (sums) */
 export const MORALE_TRAIT_MODS: Record<string, { baseline?: number; gainMult?: number; lossMult?: number; bandShift?: number }> = {
   cowardly: { lossMult: 1.4, bandShift: -15 }, // first to break

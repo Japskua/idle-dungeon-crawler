@@ -1,0 +1,52 @@
+{
+  "id": "spirit_wolf_minion",
+  "name": "Spirit Wolf",
+  "tier": "minion",
+  "disposition": "neutral",
+  "behavior": "wander",
+  "summonOnly": true,
+  "base": {
+    "hp": 13,
+    "dmg": 6,
+    "armor": 1,
+    "attackTicks": 9,
+    "moveTicks": 3,
+    "range": 1,
+    "aggroRadius": 0
+  },
+  "spawn": [],
+  "level": {
+    "offset": 0,
+    "spread": 0
+  },
+  "xpBase": 1,
+  "gold": [
+    0,
+    0
+  ],
+  "skills": [],
+  "drops": [],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "..........00....",
+        ".0t0.....0tt0...",
+        "0tTt0...0ttTt...",
+        "0tTTt000ttttt...",
+        ".0tWtttttttt0...",
+        "..0ttttttttt0...",
+        "..0ttttttttt0...",
+        "...0ttttttt0....",
+        "...0tt0tt0t0....",
+        "...0t0.0t00.....",
+        "...00...00......",
+        "................",
+        "................",
+        "................",
+        "................"
+      ]
+    ]
+  }
+}

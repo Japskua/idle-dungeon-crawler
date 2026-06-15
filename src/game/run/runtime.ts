@@ -11,6 +11,7 @@ import type {
   GameState,
   Hero,
   Id,
+  MonsterDefId,
   MonsterInstance,
   Vec2,
 } from '../types';
@@ -48,6 +49,10 @@ import {
   moraleCombatMods,
   favorTier,
   resurrectP,
+  undeadBudget,
+  REANIMATE_STAT_FRAC,
+  CORPSE_POOL_CAP,
+  CORPSE_REACH,
 } from '../balance';
 import { CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
@@ -455,9 +460,13 @@ function buildBattleView(
     .filter((did) => !carriedBy.has(did))
     .sort();
   let myMinions = 0;
+  let myMinionCost = 0;
   for (const mid of run.monsterOrder) {
     const m = run.monsters[mid]!;
-    if (m.hp > 0 && m.summonedBy === heroId) myMinions++;
+    if (m.hp > 0 && m.summonedBy === heroId) {
+      myMinions++;
+      myMinionCost += m.summonCost ?? 0;
+    }
   }
   return {
     enemies,
@@ -468,6 +477,8 @@ function buildBattleView(
     carrying: !!run.party.carrying[heroId],
     withdrawing: run.intent === 'withdraw',
     myMinions,
+    myMinionCost,
+    corpseCount: run.corpses?.length ?? 0,
   };
 }
 
@@ -1179,28 +1190,70 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     if (!skill) return;
 
     // summons: conjure friendly minions on free cells around the caster
-    if (skill.kind === 'summon' && skill.summon) {
-      const def = creatureDef(skill.summon.defId);
-      const alive = run.monsterOrder.filter((mid) => {
-        const m = run.monsters[mid]!;
-        return m.hp > 0 && m.summonedBy === hero.id;
-      }).length;
-      const want = Math.max(0, skill.summon.count - alive);
+    if (skill.kind === 'summon') {
+      // build the list of units to raise: reanimation pulls from the corpse pool;
+      // a normal summon tops the conjured count up to the skill's count.
+      const toSpawn: { defId: MonsterDefId; level: number; hp: number; summonCost: number }[] = [];
+      if (skill.reanimate) {
+        const pool = run.corpses ?? [];
+        let used = 0;
+        for (const mid of run.monsterOrder) {
+          const m = run.monsters[mid]!;
+          if (m.hp > 0 && m.summonedBy === hero.id) used += m.summonCost ?? 0;
+        }
+        let budget = undeadBudget(hero.level) - used;
+        // highest-level corpses first, FIFO among ties (pool order is the kill order)
+        const order = pool.map((c, i) => ({ c, i })).sort((a, b) => b.c.level - a.c.level || a.i - b.i);
+        const consumed = new Set<number>();
+        for (const { c, i } of order) {
+          if (c.level > budget) continue;
+          const spawnLevel = Math.max(1, Math.round(c.level * REANIMATE_STAT_FRAC));
+          const def = creatureDef(c.defId);
+          toSpawn.push({
+            defId: c.defId,
+            level: spawnLevel,
+            hp: monsterMaxHp(def.base.hp, spawnLevel, c.elite, false),
+            summonCost: c.level,
+          });
+          budget -= c.level;
+          consumed.add(i);
+        }
+        if (consumed.size > 0) run.corpses = pool.filter((_, i) => !consumed.has(i));
+      } else if (skill.summon) {
+        const def = creatureDef(skill.summon.defId);
+        const alive = run.monsterOrder.filter((mid) => {
+          const m = run.monsters[mid]!;
+          return m.hp > 0 && m.summonedBy === hero.id;
+        }).length;
+        const want = Math.max(0, skill.summon.count - alive);
+        for (let i = 0; i < want; i++) {
+          toSpawn.push({
+            defId: def.id,
+            level: hero.level,
+            hp: monsterMaxHp(def.base.hp, hero.level, false, false),
+            summonCost: skill.summonCost ?? 0,
+          });
+        }
+      }
+      if (toSpawn.length === 0) return;
+
+      const ttl = skill.reanimate ? 400 : skill.summon!.durationTicks;
       let spawned = 0;
       const seen = new Set<string>([`${myPos.x},${myPos.y}`]);
       const queue: Vec2[] = [myPos];
       const heroCells = heroesByPos(state, run);
       const occupied = monsterOccupancy(run);
-      while (queue.length > 0 && spawned < want) {
+      while (queue.length > 0 && spawned < toSpawn.length) {
         const cur = queue.shift()!;
         const key = `${cur.x},${cur.y}`;
         if (cur !== myPos && !heroCells.has(key) && !occupied.has(key)) {
+          const u = toSpawn[spawned]!;
           const minion: MonsterInstance = {
             id: allocId(state, 'mn'),
-            defId: def.id,
-            level: hero.level,
+            defId: u.defId,
+            level: u.level,
             elite: false,
-            hp: monsterMaxHp(def.base.hp, hero.level, false, false),
+            hp: u.hp,
             pos: { ...cur },
             move: null,
             targetId: null,
@@ -1210,7 +1263,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
             statuses: [],
             cooldowns: {},
             summonedBy: hero.id,
-            ttlTicks: skill.summon.durationTicks,
+            ttlTicks: ttl,
+            summonCost: u.summonCost,
           };
           run.monsters[minion.id] = minion;
           run.monsterOrder.push(minion.id);
@@ -1228,13 +1282,20 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
         }
       }
       if (spawned > 0) {
-        events.push({ t: 'summon', heroId: hero.id, defId: def.id, count: spawned });
+        events.push({ t: 'summon', heroId: hero.id, defId: toSpawn[0]!.defId, count: spawned });
       }
       return;
     }
-    const power = skill.physical
+    let power = skill.physical
       ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
+    // Gambler's coin flip: a single seeded draw nudges the swing to boom or bust
+    if (skill.flip) {
+      const heads = chance(state.rng.combat, 0.5);
+      power *= heads ? skill.flip.heads : skill.flip.tails;
+      if (!heads) hero.statuses.push({ statusId: 'fumbled', ticksLeft: 30, sourceId: hero.id });
+      events.push({ t: 'coinFlip', heroId: hero.id, heads });
+    }
     const offensive = skill.kind === 'attack' || skill.kind === 'debuff';
     const fromStealth = offensive && isStealthed(hero);
     if (fromStealth) breakStealth(hero);
@@ -1594,6 +1655,17 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
         const checkpoint = run.depth + 1;
         if (!state.progress.checkpoints.includes(checkpoint)) state.progress.checkpoints.push(checkpoint);
         chronicle(state, nowMs, `${def.name} has been slain at depth ${run.depth}!`, run.depth);
+      }
+      // Necromancer corpse pool: a fresh body for any living necromancer nearby
+      const necroNear = standing.some((hid) => {
+        const h = state.roster[hid];
+        const hp = run.party.pos[hid];
+        return h?.classId === 'necromancer' && hp && manhattan(hp, m.pos) <= CORPSE_REACH;
+      });
+      if (necroNear) {
+        if (!run.corpses) run.corpses = [];
+        run.corpses.push({ defId: m.defId, level: m.level, elite: m.elite });
+        if (run.corpses.length > CORPSE_POOL_CAP) run.corpses.shift();
       }
     }
     const drops = rollDrops(state, def, m.level, m.elite);

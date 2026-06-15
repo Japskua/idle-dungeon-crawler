@@ -98,6 +98,7 @@ export function enterFloor(state: GameState, run: DungeonRun, depth: number, eve
   run.groundLoot = [];
   run.visitedRooms = [0];
   run.ticksOnFloor = 0;
+  run.corpses = []; // corpse pool is floor-scoped: the dead don't follow you down the stairs
 
   // party spawns around the entrance, one hero per tile (BFS for unique cells)
   const spots: { x: number; y: number }[] = [];

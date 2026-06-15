@@ -198,6 +198,8 @@ describe('throwBomb tactic feasibility', () => {
       carrying: false,
       withdrawing: false,
       myMinions: 0,
+      myMinionCost: 0,
+      corpseCount: 0,
       ...partial,
     };
   }

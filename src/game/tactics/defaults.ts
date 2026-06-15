@@ -60,9 +60,42 @@ function mainSet(classId: string): TacticSet {
     case 'necromancer':
       return set('default', 'Gravecaller', [
         rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
-        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'raise_skeleton' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'reanimate_fallen' }),
         rule({ k: 'inMeleeRange' }, { k: 'retreat' }),
         rule({ k: 'always' }, { k: 'castSkill', skillId: 'soul_bolt' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'priest':
+      return set('default', 'Devout', [
+        rule({ k: 'selfHpBelow', pct: 30 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'allyDowned' }, { k: 'castSkill', skillId: 'divine_intervention' }),
+        rule({ k: 'allyHpBelow', pct: 60 }, { k: 'castSkill', skillId: 'sanctify' }),
+        rule({ k: 'enemiesAtLeast', n: 2 }, { k: 'castSkill', skillId: 'blessing_of_faith' }),
+        rule({ k: 'always' }, { k: 'castSkill', skillId: 'searing_judgment' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'grave_robber':
+      return set('default', 'Tomb Raider', [
+        rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'tomb_sense' }),
+        rule({ k: 'skillReady', skillId: 'smash_and_grab' }, { k: 'castSkill', skillId: 'smash_and_grab' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'gambler':
+      return set('default', 'Card Sharp', [
+        rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'loaded_dice' }),
+        rule({ k: 'enemiesAtLeast', n: 2 }, { k: 'castSkill', skillId: 'all_in' }),
+        rule({ k: 'skillReady', skillId: 'double_or_nothing' }, { k: 'castSkill', skillId: 'double_or_nothing' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'summoner':
+      return set('default', 'Menagerist', [
+        rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'spirit_wolves' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'summon_stone_golem' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'conjure_imps' }),
+        rule({ k: 'inMeleeRange' }, { k: 'retreat' }),
         rule({ k: 'always' }, { k: 'attack' }),
       ]);
     case 'barbarian':
@@ -171,8 +204,40 @@ function aggressiveSet(classId: string): TacticSet {
     case 'necromancer':
       return a('Bone Storm', [
         rule({ k: 'selfHpBelow', pct: 25 }, { k: 'usePotion', potion: 'hp' }),
-        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'raise_skeleton' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'reanimate_fallen' }),
         rule({ k: 'always' }, { k: 'castSkill', skillId: 'soul_bolt' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'priest':
+      return a('Holy Wrath', [
+        rule({ k: 'selfHpBelow', pct: 22 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'allyDowned' }, { k: 'castSkill', skillId: 'divine_intervention' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'blessing_of_faith' }),
+        rule({ k: 'always' }, { k: 'castSkill', skillId: 'searing_judgment' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'grave_robber':
+      return a('Smash and Grab', [
+        lastDitch,
+        rule({ k: 'skillReady', skillId: 'smash_and_grab' }, { k: 'castSkill', skillId: 'smash_and_grab' }),
+        rule({ k: 'skillReady', skillId: 'pocket_it' }, { k: 'castSkill', skillId: 'pocket_it' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'gambler':
+      return a('High Roller', [
+        lastDitch,
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'loaded_dice' }),
+        rule({ k: 'skillReady', skillId: 'jackpot' }, { k: 'castSkill', skillId: 'jackpot' }),
+        rule({ k: 'skillReady', skillId: 'all_in' }, { k: 'castSkill', skillId: 'all_in' }),
+        rule({ k: 'always' }, { k: 'castSkill', skillId: 'double_or_nothing' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'summoner':
+      return a('Open Every Cage', [
+        rule({ k: 'selfHpBelow', pct: 25 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'spirit_wolves' }),
+        rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'conjure_imps' }),
+        rule({ k: 'enemiesAtLeast', n: 2 }, { k: 'castSkill', skillId: 'menagerie_unleashed' }),
         rule({ k: 'always' }, { k: 'attack' }),
       ]);
     case 'barbarian':
@@ -269,6 +334,14 @@ function triageSet(classId: string): TacticSet | null {
     case 'chef':
       return t('Soup Kitchen', [
         rule({ k: 'allyHpBelow', pct: 75 }, { k: 'castSkill', skillId: 'soup_toss' }),
+        rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
+        rule({ k: 'always' }, { k: 'attack' }),
+      ]);
+    case 'priest':
+      return t('Shepherd of the Fallen', [
+        rule({ k: 'allyDowned' }, { k: 'castSkill', skillId: 'divine_intervention' }),
+        rule({ k: 'allyHpBelow', pct: 80 }, { k: 'castSkill', skillId: 'sanctify' }),
+        rule({ k: 'selfHpBelow', pct: 60 }, { k: 'castSkill', skillId: 'sanctify' }),
         rule({ k: 'selfHpBelow', pct: 35 }, { k: 'usePotion', potion: 'hp' }),
         rule({ k: 'always' }, { k: 'attack' }),
       ]);

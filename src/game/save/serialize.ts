@@ -4,7 +4,7 @@
  */
 import type { GameState } from '../types';
 import { SAVE_VERSION } from '../newGame';
-import { ITEMS } from '../content';
+import { ITEMS, MONSTERS, NEUTRALS } from '../content';
 import { defaultTactics } from '../tactics/defaults';
 import { TRAIT_IDS, emptyStats } from '../hero/create';
 import { RACE_IDS } from '../content/races';
@@ -161,6 +161,9 @@ function reconcileContent(state: GameState) {
     if (!state.run.behavior) state.run.behavior = 'balanced';
     if (typeof state.run.morale !== 'number') state.run.morale = 50;
     if (typeof state.run.favor !== 'number') state.run.favor = 0;
+    if (!Array.isArray(state.run.corpses)) state.run.corpses = [];
+    // a save from before these minions existed may reference a vanished summon def
+    state.run.corpses = state.run.corpses.filter((c) => MONSTERS[c.defId] || NEUTRALS[c.defId]);
     const pe = state.run.pendingEvent;
     if (pe && !DUNGEON_EVENTS[pe.eventId]) state.run.pendingEvent = undefined;
   }

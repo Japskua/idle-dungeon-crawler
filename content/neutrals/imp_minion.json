@@ -1,0 +1,52 @@
+{
+  "id": "imp_minion",
+  "name": "Conjured Imp",
+  "tier": "minion",
+  "disposition": "neutral",
+  "behavior": "wander",
+  "summonOnly": true,
+  "base": {
+    "hp": 9,
+    "dmg": 4,
+    "armor": 0,
+    "attackTicks": 9,
+    "moveTicks": 3,
+    "range": 1,
+    "aggroRadius": 0
+  },
+  "spawn": [],
+  "level": {
+    "offset": 0,
+    "spread": 0
+  },
+  "xpBase": 1,
+  "gold": [
+    0,
+    0
+  ],
+  "skills": [],
+  "drops": [],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "................",
+        "....0...0.......",
+        "...0r0.0r0......",
+        "...0rr0rr0......",
+        "..0rrrrrrr0.....",
+        "..0ry0r0yr0.....",
+        "..0rrrorrr0.....",
+        "...0rrrrr0......",
+        "...0RrrrR0......",
+        "..0r0rrr0r0.....",
+        "..o0rrrrr0o.....",
+        "...0rr0rr0......",
+        "...0R0.0R0......",
+        "..0o0...0o0.....",
+        "................",
+        "................"
+      ]
+    ]
+  }
+}

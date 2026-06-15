@@ -144,6 +144,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`${heroName(game, e.heroId)} summons ${e.count}x ${mobName(e.defId)}!`, 'level');
     case 'minionDied':
       return entry(`A ${mobName(e.defId).toLowerCase()} crumbles away.`, 'info');
+    case 'coinFlip':
+      return entry(`${heroName(game, e.heroId)} flips a coin… ${e.heads ? 'Heads! 🪙' : 'Tails. 💀'}`, e.heads ? 'level' : 'info');
     case 'neutralSighted':
       return entry(`A wild ${mobName(e.defId)} minds its own business nearby.`, 'info');
     case 'neutralKilled':
