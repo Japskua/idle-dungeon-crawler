@@ -453,6 +453,14 @@ export interface BanterContent {
   families: Record<string, string>;
 }
 
+export type PartyBehavior =
+  | 'balanced'
+  | 'together'
+  | 'aggressive'
+  | 'focus'
+  | 'conserve'
+  | 'wander';
+
 // ---------- dungeon ----------
 export const TILE = {
   WALL: 0,
@@ -520,6 +528,8 @@ export interface DungeonRun {
   depth: number;
   floor: Floor;
   intent: 'explore' | 'withdraw';
+  /** party-wide posture overlaying per-hero tactics (see tactics/behaviors.ts) */
+  behavior: PartyBehavior;
   party: PartyState;
   monsters: Record<Id, MonsterInstance>;
   monsterOrder: Id[];
@@ -582,10 +592,11 @@ export interface GameState {
 
 // ---------- commands (UI -> sim, applied at tick boundaries) ----------
 export type Command =
-  | { t: 'EMBARK'; memberIds: Id[]; startDepth: number }
+  | { t: 'EMBARK'; memberIds: Id[]; startDepth: number; behavior?: PartyBehavior }
   | { t: 'WITHDRAW' }
   | { t: 'ABANDON_HERO'; heroId: Id }
   | { t: 'SWITCH_TACTIC_SET'; heroId: Id; setId: Id }
+  | { t: 'SET_PARTY_BEHAVIOR'; behavior: PartyBehavior }
   | { t: 'SET_TACTICS'; heroId: Id; sets: TacticSet[]; activeSetId: Id }
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
   | { t: 'BUY_POTION'; potion: PotionKind; qty: number }

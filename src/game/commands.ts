@@ -19,7 +19,11 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
     case 'EMBARK': {
       if (state.mode !== 'village') return;
       const depth = state.progress.checkpoints.includes(cmd.startDepth) || cmd.startDepth === 1 ? cmd.startDepth : 1;
-      startRun(state, cmd.memberIds, depth, nowMs, events);
+      startRun(state, cmd.memberIds, depth, nowMs, events, cmd.behavior ?? 'balanced');
+      return;
+    }
+    case 'SET_PARTY_BEHAVIOR': {
+      if (state.run) state.run.behavior = cmd.behavior;
       return;
     }
     case 'WITHDRAW': {
