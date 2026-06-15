@@ -109,6 +109,13 @@ function reconcileContent(state: GameState) {
     // heroes saved before the tactics system (or with all sets deleted) get class defaults
     if (!hero.tactics || hero.tactics.sets.length === 0 || hero.tactics.sets.every((s) => s.rules.length === 0)) {
       hero.tactics = { sets: defaultTactics(hero.classId), activeSetId: 'default' };
+    } else {
+      // give existing heroes any newly-added default sets they're missing (by id),
+      // without clobbering ones they may have edited
+      const have = new Set(hero.tactics.sets.map((s) => s.id));
+      for (const ds of defaultTactics(hero.classId)) {
+        if (!have.has(ds.id)) hero.tactics.sets.push(ds);
+      }
     }
     // heroes saved before lifetime statistics get a blank story arc
     if (!hero.stats) hero.stats = emptyStats();
