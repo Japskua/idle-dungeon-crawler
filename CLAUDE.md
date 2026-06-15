@@ -21,7 +21,11 @@ player manages roster/economy in the village and programs per-hero **tactics**
   (`combat`, `loot`, `village`); floor generation uses an ephemeral rng from
   `hash2(runSeed, depth)` so floors are pure functions of the seed.
 - Wall-clock time enters only as the `nowMs` parameter (village chores/recovery);
-  the dungeon sim runs on integer ticks (10/s, `TICK_MS`).
+  the dungeon sim runs on integer ticks (10/s, `TICK_MS`). **No offline progress:**
+  time advances only while the tab is foreground — the app loop re-anchors
+  `village.lastChoreAccrualMs` on boot and on any big inter-frame wall-clock gap,
+  so closed/backgrounded time never accrues. `villageUpkeep` itself is a pure,
+  uncapped accrual of whatever delta it's handed.
 - UI mutates state ONLY by dispatching `Command`s (applied at tick boundaries).
 
 Layers: `src/game` (sim) ← `src/render` (canvas, read-only) ← `src/app` (loop,

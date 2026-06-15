@@ -268,57 +268,6 @@ function SaveMenu() {
   );
 }
 
-function fmtDuration(ms: number): string {
-  const mins = Math.floor(ms / 60_000);
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
-
-function OfflineModal() {
-  const report = useUi((s) => s.offlineReport);
-  if (!report) return null;
-  return (
-    <div className="modal-overlay">
-      <div className="modal panel">
-        <div className="panel-title">⛺ Welcome back!</div>
-        <p>
-          You were away for <b>{fmtDuration(report.awayMs)}</b>
-          {report.capped && <span className="muted"> (village work counts up to 12h)</span>}.
-        </p>
-        {report.goldEarned > 0 && (
-          <p>
-            The chores brought in <b className="gold">{report.goldEarned}g</b>.
-          </p>
-        )}
-        {report.goldEarned < 0 && (
-          <p>
-            The training yard charged <b className="gold">{-report.goldEarned}g</b> for its services.
-          </p>
-        )}
-        {report.heroes.map((h) => (
-          <div key={h.name} className="small">
-            • {h.name}
-            {h.xpGained > 0 && <> earned {h.xpGained} xp</>}
-            {h.levelsGained > 0 && (
-              <b className="gold"> (+{h.levelsGained} level{h.levelsGained > 1 ? 's' : ''}!)</b>
-            )}
-            {h.recovered && <span className="muted"> — fully recovered</span>}
-          </div>
-        ))}
-        {report.goldEarned === 0 && report.heroes.length === 0 && (
-          <p className="muted">Nothing much happened. The village enjoyed the quiet.</p>
-        )}
-        <div className="row modal-footer">
-          <button className="btn btn-primary" onClick={() => useUi.setState({ offlineReport: null })}>
-            Continue
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function App() {
   useUi((s) => s.rev);
   const game = useUi((s) => s.game);
@@ -350,7 +299,6 @@ export function App() {
         <SaveMenu />
       </header>
       {inDungeon ? <DungeonScreen /> : <VillageScreen />}
-      <OfflineModal />
       <DebriefModal />
       <WelcomeModal />
       <TelemetryNotice />

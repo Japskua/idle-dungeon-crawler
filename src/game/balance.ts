@@ -185,8 +185,6 @@ export function instantHealCost(missingHp: number): number {
   return Math.max(1, Math.round(missingHp * 0.3));
 }
 
-// ---------- offline ----------
-export const OFFLINE_CAP_MS = 12 * 60 * 60 * 1000;
 
 // ---------- rarity ----------
 export function rarityWeights(depth: number): { common: number; magic: number; rare: number; epic: number } {

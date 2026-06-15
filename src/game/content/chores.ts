@@ -1,6 +1,6 @@
 import type { ChoreDef, ChoreId } from '../types';
 
-/** Village chores: benched heroes earn slow gold/xp on wall-clock time (works offline). */
+/** Village chores: benched heroes earn slow gold/xp on wall-clock time (only while the tab is open). */
 export const CHORES: Record<ChoreId, ChoreDef> = {
   farmhand: {
     id: 'farmhand',
