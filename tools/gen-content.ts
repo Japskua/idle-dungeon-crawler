@@ -229,6 +229,7 @@ if (banks.firstSyllables.length === 0 || banks.lastSyllables.length === 0) {
 const CLASS_IDS = [
   'knight', 'cleric', 'ranger', 'mage', 'necromancer', 'barbarian', 'monk',
   'paladin', 'druid', 'bard', 'chef', 'beekeeper', 'thief', 'mime',
+  'priest', 'grave_robber', 'gambler', 'summoner',
 ];
 const ROLE_IDS = ['tank', 'healer', 'ranged_dps', 'caster', 'melee_dps', 'support'];
 const FAMILY_IDS = ['beast', 'slime', 'goblinoid', 'undead', 'cultist', 'fungus', 'landlord', 'generic'];

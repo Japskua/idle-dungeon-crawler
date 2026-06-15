@@ -874,6 +874,266 @@
     "No comment. Officially. Unofficially: heh.",
     "Lovely thought. Everyone check your pockets, unrelated."
    ]
+  },
+  {
+   "id": "priest",
+   "taunts": {
+    "beast": [
+     "The Light made beasts to roam the fields, not to bare fangs at the faithful. Repent!",
+     "Even you, poor creature, may be redeemed. After. After is fine.",
+     "My god loves all things. My god also signs off on this. Funny how that works."
+    ],
+    "slime": [
+     "Behold, the formless! A sermon on humility, given shape, given a swift end.",
+     "I shall cleanse thee, ooze, as scripture demands. Verse forthcoming.",
+     "You are an omen, slime. The omen is: today you splatter."
+    ],
+    "goblinoid": [
+     "The pious do not flee the wicked. They schedule their reckoning. Yours is now.",
+     "Greenskin, your god is small and frightened. Mine is vast and right here.",
+     "Nine of you! A holy number, were any of you holy. Alas. Strike."
+    ],
+    "undead": [
+     "Abomination! The grave is sacred and you have skipped your appointment with it!",
+     "To walk after death is blasphemy made bone. My deity is most offended.",
+     "Smiting the unclean dead is not violence. It is, technically, a chore for god."
+    ],
+    "cultist": [
+     "Your dark lord is a rumor in a hood. MY god answers the mail!",
+     "Heretic! I have prayed three times the prayers you have, and louder.",
+     "Drop the robes and the chanting. There is room in the choir, if you survive."
+    ],
+    "fungus": [
+     "Spore-thing, you are mildew that learned to dream. The dream ends in light.",
+     "Unclean! Unclean and also slightly damp! Both offend the Radiance!",
+     "Cleansing the creeping rot is holy work. I do hum a hymn while I do it."
+    ],
+    "landlord": [
+     "Greed in a crown is still greed, and my god itemizes every coin you've squeezed.",
+     "You charge rent on a tomb? Even the dark gods find that a bit much.",
+     "Render unto the Light, landlord. Starting with this dungeon. And your deed."
+    ],
+    "generic": [
+     "Stand aside, or be a parable in tonight's sermon. The cautionary kind.",
+     "An omen sent you to me. Sadly for you, I read omens correctly.",
+     "I bless this corridor and curse your timing in equal, radiant measure."
+    ]
+   },
+   "kill": [
+    "And the faithful prevailed, and it was written down, by me, just now.",
+    "Praise be! {enemy} has been returned to the Light, gift-wrapped.",
+    "Another verse for the scripture. The smiting chapter is getting long.",
+    "Thank you, my god, for the strength, the aim, and the smiting privileges.",
+    "Rest now, {enemy}. The Light forgives you. I'm still working on it."
+   ],
+   "idle": [
+    "A quiet hall. Surely an omen. Everything is an omen if you believe hard enough.",
+    "Depth {depth}, and still my faith does not flicker. Mostly. The torches do, though.",
+    "I shall narrate our deeds into scripture later. The chapter title is 'Onward.'",
+    "Thank you, my god, for this dust, this echo, and this faintly suspicious smell.",
+    "Silence is the Light listening. Or it's just a corridor. I choose to be moved."
+   ],
+   "react": [
+    "A sign! The Light agrees with you, and so, gladly, do I.",
+    "Bless you, {ally}, that was almost scripture.",
+    "Mm! I shall pray upon that. Briefly. We are mid-corridor.",
+    "The faithful say 'amen.' I say it twice, for emphasis."
+   ]
+  },
+  {
+   "id": "grave_robber",
+   "taunts": {
+    "beast": [
+     "Hold still, I just need your pelt, claws, and that suspiciously shiny eye.",
+     "Do you have any idea what taxidermy fetches these days? You're an investment.",
+     "Nothing personal, you're just walking inventory with a pulse."
+    ],
+    "slime": [
+     "Can't pickpocket a puddle, so I'll just bottle you and sell you as 'rare gel'.",
+     "Hold still, viscous one, I'm appraising whether you count as one item or fluid ounces.",
+     "Every collector wants an ooze in a jar. You're going to make me rich, slowly."
+    ],
+    "goblinoid": [
+     "You hoard shinies, I steal shinies. One of us is about to be unemployed.",
+     "Drop the loot pouch and nobody appraises your teeth for the relic market.",
+     "A goblin with a coin purse? That's just a treasure chest that runs away."
+    ],
+    "undead": [
+     "You've been buried with the GOOD stuff and you're just LYING on it. Rude.",
+     "Move along, bones, you're standing between me and a perfectly good sarcophagus.",
+     "No grave goods for the dead. House rule. My house, my rule, your grave."
+    ],
+    "cultist": [
+     "Robes that nice? There's GOT to be a gold-thread resale market. Hold still.",
+     "Summon whatever you like, I'm here for the ritual silverware.",
+     "Dark lord, schmark lord, does he pay finder's fees? No? Then out of my way."
+    ],
+    "fungus": [
+     "Alchemists pay top coin for spores. You're basically a walking spice rack.",
+     "I'd say no hard feelings, but you're a mushroom, so there's no feelings at all.",
+     "Sorry, friend, my potion supplier has a STANDING order for your kind."
+    ],
+    "landlord": [
+     "A 'dungeon access surcharge'? On a TOMB? I'm robbing you on PRINCIPLE now.",
+     "You charge rent on a crypt and call ME the unscrupulous one. Pot, kettle, {gold}.",
+     "Eviction notice? Cute. I'm repossessing your entire vault, landlord."
+    ],
+    "generic": [
+     "If it's not nailed down it's mine. If it IS nailed down, I brought a crowbar.",
+     "Stand aside or be appraised. Either way I'm leaving with your valuables.",
+     "I'd love to chat but you're standing on something shiny."
+    ]
+   },
+   "kill": [
+    "And THAT goes in the bag. Bag's getting heavy. Good problem to have.",
+    "Sorry, were you using those teeth? Collectors aren't picky.",
+    "Loot drop confirmed. {ally}, that one's mine, don't even look at it.",
+    "Dead men file no insurance claims. Pockets, please.",
+    "Down you go. Now, what were you guarding so jealously?"
+   ],
+   "idle": [
+    "Floor {depth} and not a single sarcophagus pried open. Disgraceful.",
+    "Is that a false wall, or am I just hopeful? It's always a false wall. Or hope.",
+    "I appraise every torch sconce I pass. Habit. Most are bolted. Most.",
+    "{gold} gold and counting. The dead don't need a pension, do they.",
+    "Somewhere down here is a vault, and somewhere in that vault is my retirement."
+   ],
+   "react": [
+    "Yeah yeah, very inspiring. Does it pay?",
+    "Hold that thought, I'm pocketing this.",
+    "Agreed, but I'm taking the loot split.",
+    "Less talking, more looting, {ally}."
+   ]
+  },
+  {
+   "id": "gambler",
+   "taunts": {
+    "beast": [
+     "The over-under on your survival just hit zero. Place your bets.",
+     "Wild card on the table. House always tames the wild.",
+     "Animal instincts versus my pot odds? Easy money."
+    ],
+    "slime": [
+     "Ever bet on a coin flip that's all heads? That's you, friend. Splat.",
+     "I'll wager you can't dodge. Spoiler: that's a sucker's bet.",
+     "Low risk, low reward, all ooze. I'm doubling down anyway."
+    ],
+    "goblinoid": [
+     "You and your little green chips. I'm raising you a fatality.",
+     "Goblins fold first. It's basically a house rule.",
+     "All in on greed, are we? I invented that game, {enemy}."
+    ],
+    "undead": [
+     "Already dead and STILL a bad beat. Painful.",
+     "The house always collects, even from the grave.",
+     "You can't bluff with no face, bonehead. Tell of the century."
+    ],
+    "cultist": [
+     "Your dark lord doesn't cover the spread. Trust me, I checked.",
+     "Praying for variance? Cute. I AM the variance.",
+     "Robes hide a lot, but not how broke your odds are."
+    ],
+    "fungus": [
+     "Spores on red, swing on black. Sorry, {enemy}, house edge.",
+     "I'd say the odds are 50/50, but you're a mushroom. Make it 90/10.",
+     "You spread, I split. Guess who comes out ahead."
+    ],
+    "landlord": [
+     "Oh, the LANDLORD. Double or nothing on my overdue rent, pal.",
+     "You take a cut of everything down here? Let me take a cut of YOU.",
+     "I never paid the deposit and I'm sure not paying the toll. All in."
+    ],
+    "generic": [
+     "The odds favor me. They always do, eventually.",
+     "Place your bets, {enemy}. Oh wait, you already lost.",
+     "Feeling lucky? I'm feeling certain."
+    ]
+   },
+   "kill": [
+    "And THAT, my friends, is how you cash out.",
+    "Snake eyes for you. Jackpot for me.",
+    "Told you the house always wins.",
+    "Bad beat, {enemy}. Should've folded.",
+    "Lucky? No. Skilled? Also no. Rigged? Absolutely."
+   ],
+   "idle": [
+    "Down to my last lucky coin. Don't tell {ally}.",
+    "We're {depth} floors deep and I haven't lost a hand. Statistically terrifying.",
+    "I'd kill for a card table and a stiff drink right now.",
+    "Hot streaks never last. I'd know. Enjoy it while it spins.",
+    "{gold} gold riding on us getting out alive. Bold bet."
+   ],
+   "react": [
+    "I'd put money on that.",
+    "Now THOSE are favorable odds.",
+    "Bad beat, friend. Bad beat.",
+    "Double or nothing says you're wrong."
+   ]
+  },
+  {
+   "id": "summoner",
+   "taunts": {
+    "beast": [
+     "Oh, a wild thing! Children, gather round — it wants to play with our teeth.",
+     "No no, don't touch it directly, friends. We don't know where it's been.",
+     "Imps, dear, fetch. The beast is the fetching, not the ball."
+    ],
+    "slime": [
+     "Ew. Spirit-wolves, you handle this one. I do not do wet.",
+     "Golem, sweetie, just step on it. Mind the splash, the splash is acid.",
+     "I am NOT reaching into that. My friends will reach into that."
+    ],
+    "goblinoid": [
+     "Outnumbered? Darlings, I brought enough friends for everyone.",
+     "Imps, there's exactly one each. Share nicely, no biting the same goblin twice.",
+     "You greenskins versus my menagerie. I do hope you said your goodbyes."
+    ],
+    "undead": [
+     "Already dead? How convenient. Children, no cleanup required.",
+     "Spirit-wolves, fetch the rattly one. Yes, the one that won't stop walking.",
+     "Eugh, the smell. Golem, dear, please be a love and end it quickly."
+    ],
+    "cultist": [
+     "You summon ONE little horror and feel powerful? I have a whole daycare.",
+     "Robes off the rack, summons off a scroll — amateurs. Children, show them craft.",
+     "My menagerie has notes on your form. Mostly that there isn't any."
+    ],
+    "fungus": [
+     "No no no, do NOT inhale near it, friends. Hold your little breaths.",
+     "Spores? On my robes? Golem, sweetheart, flatten it from upwind.",
+     "Imps, torches up. We are NOT bringing mushrooms home this time."
+    ],
+    "landlord": [
+     "A lease? On MY children's hunting grounds? Menagerie, escort the gentleman out.",
+     "You charge rent and I pay in imps. Many, many imps.",
+     "Eviction works both ways, sir. Spirit-wolves — show him the door."
+    ],
+    "generic": [
+     "Children, assemble. Mummy would rather not get her robes dirty today.",
+     "Don't fret, my friends are very excited to meet you. ALL of them.",
+     "I delegate. Allow me to delegate violence in your direction now."
+    ]
+   },
+   "kill": [
+    "Good imp! WhoSE a good little horror? You are. Yes you are.",
+    "{enemy} handled. I didn't lift a finger, and my robes are spotless.",
+    "See, children? That is how we share the {enemy}. Beautifully done.",
+    "Golem, sweetie, you can put it down now. It's quite finished.",
+    "Another one for the menagerie's scrapbook. Mummy's so proud."
+   ],
+   "idle": [
+    "Headcount, my loves. One golem, three imps, two wolves — wonderful, all present.",
+    "Nobody to summon AT. The children get bored, you know. They start chewing.",
+    "I really must stop naming them. The last batch popped and I cried for a week.",
+    "An empty hall is just a nursery waiting to happen. Spread out, darlings.",
+    "Mummy is fine. Mummy did not get any blood on her hem. Mummy is FINE."
+   ],
+   "react": [
+    "The children agree with you, and the children are rarely wrong.",
+    "Ooh, say that again, the imps adore a good speech.",
+    "Mm, I'd help, but you know me — I have people for that. Tiny screaming people.",
+    "Noted, dear. I'll have a minion act on it immediately."
+   ]
   }
  ]
 }

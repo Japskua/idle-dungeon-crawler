@@ -198,6 +198,15 @@ export interface MonsterInstance {
   summonedBy?: Id;
   /** minions crumble when this reaches zero */
   ttlTicks?: number;
+  /** menagerie-cost this minion counts against its summoner's cap (summoner & necro budgets) */
+  summonCost?: number;
+}
+
+/** a fallen enemy the Necromancer can reanimate — floor-local, FIFO, cleared on descend */
+export interface Corpse {
+  defId: MonsterDefId;
+  level: number;
+  elite: boolean;
 }
 
 // ---------- content: skills & statuses ----------
@@ -220,6 +229,12 @@ export interface SkillDef {
   guild?: { cost: number; minLevel: number; minInt: number };
   /** summon skills conjure friendly minions that fight alongside the party */
   summon?: { defId: MonsterDefId; count: number; durationTicks: number };
+  /** menagerie-cost per summoned minion; presence enables the Summoner's cap (1.5× level) */
+  summonCost?: number;
+  /** Necromancer reanimation: consume floor corpses up to a 2× level undead-budget instead of a fixed summon */
+  reanimate?: boolean;
+  /** Gambler coin-flip: roll rng.combat vs 50% — Heads multiplies power by .heads, Tails by .tails */
+  flip?: { heads: number; tails: number };
 }
 
 export interface StatusDef {
@@ -624,6 +639,8 @@ export interface DungeonRun {
   groundLoot: GroundLoot[];
   visitedRooms: number[];
   ticksOnFloor: number;
+  /** Necromancer corpse pool: enemies killed near a necromancer this floor (FIFO, cap 6) */
+  corpses?: Corpse[];
 }
 
 // ---------- village ----------
@@ -742,6 +759,7 @@ export type GameEvent =
   | { t: 'wipe'; depth: number; goldLost: number }
   | { t: 'summon'; heroId: Id; defId: MonsterDefId; count: number }
   | { t: 'minionDied'; defId: MonsterDefId; pos: Vec2 }
+  | { t: 'coinFlip'; heroId: Id; heads: boolean }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }

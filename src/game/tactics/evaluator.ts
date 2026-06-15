@@ -16,6 +16,7 @@
  */
 import type { Hero, Id, PotionKind, SkillId, TacticSet, Trigger } from '../types';
 import { SKILLS } from '../content';
+import { menagerieCap, undeadBudget } from '../balance';
 import type { DerivedStats } from '../hero/derive';
 
 export interface EnemyView {
@@ -46,6 +47,10 @@ export interface BattleView {
   withdrawing: boolean;
   /** living minions this hero has already summoned */
   myMinions: number;
+  /** summed summon-cost of this hero's living minions (menagerie / undead budget) */
+  myMinionCost: number;
+  /** reanimatable corpses currently in the floor pool (Necromancer) */
+  corpseCount: number;
 }
 
 export type ResolvedAction =
@@ -149,6 +154,18 @@ function feasible(
         // worth conjuring only with a fight on and room in the entourage
         if (view.withdrawing) return null;
         if (view.enemies.length === 0) return null;
+        if (skill.reanimate) {
+          // Necromancer: needs corpses in the pool and undead-budget headroom (2× level)
+          if (view.corpseCount === 0) return null;
+          if (view.myMinionCost >= undeadBudget(hero.level)) return null;
+          return { kind: 'cast', skillId, targetId: null };
+        }
+        if (skill.summonCost) {
+          // Summoner: respect the menagerie cap (1.5× level in minion-cost)
+          if (view.myMinionCost + skill.summonCost > menagerieCap(hero.level)) return null;
+          return { kind: 'cast', skillId, targetId: null };
+        }
+        // legacy fixed-count summons (beekeeper bees, etc.): top up to the count
         if (view.myMinions >= (skill.summon?.count ?? 1)) return null;
         return { kind: 'cast', skillId, targetId: null };
       }

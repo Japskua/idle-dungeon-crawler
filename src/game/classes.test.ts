@@ -43,9 +43,9 @@ function injectHostile(state: ReturnType<typeof newGame>, defId: string, pos: { 
   return m;
 }
 
-describe('the fourteen classes', () => {
+describe('the eighteen classes', () => {
   test('all class skill unlocks, starting items, and gear rules are coherent', () => {
-    expect(Object.keys(CLASSES).length).toBe(14);
+    expect(Object.keys(CLASSES).length).toBe(18);
     for (const cls of Object.values(CLASSES)) {
       for (const item of cls.startingItems) {
         const def = ITEMS[item]!;
@@ -83,13 +83,37 @@ describe('the fourteen classes', () => {
 });
 
 describe('necromancy (and beekeeping)', () => {
-  test('the necromancer raises skeletons that fight, then crumble', () => {
-    const { state, hero } = soloRun(72, 'necromancer', 3);
+  test('killing an enemy near the necromancer drops a corpse into the pool', () => {
+    const { state, hero } = soloRun(73, 'necromancer', 3);
+    const run = state.run!;
+    run.monsters = {};
+    run.monsterOrder = [];
+    run.corpses = [];
+    const heroPos = run.party.pos[hero.id]!;
+    const foe = injectHostile(state, 'zombie', { x: heroPos.x + 2, y: heroPos.y });
+    foe.hp = 1; // one poke and it's a corpse
+
+    for (let i = 0; i < 200; i++) {
+      advanceTick(state, [], NOW, []);
+      if ((run.corpses?.length ?? 0) > 0) break;
+    }
+    expect((run.corpses?.length ?? 0)).toBeGreaterThan(0);
+    expect(run.corpses![0]!.defId).toBe('zombie');
+  });
+
+  test('reanimate raises the fallen (strongest first, within budget), who fight then crumble', () => {
+    const { state, hero } = soloRun(72, 'necromancer', 3); // budget = 6 undead-levels
     const run = state.run!;
     run.monsters = {};
     run.monsterOrder = [];
     const heroPos = run.party.pos[hero.id]!;
     const foe = injectHostile(state, 'zombie', { x: heroPos.x + 3, y: heroPos.y });
+    // a pool with more corpse-levels than the budget can hold (6): highest fit first
+    run.corpses = [
+      { defId: 'rat', level: 1, elite: false },
+      { defId: 'zombie', level: 5, elite: false },
+      { defId: 'skeleton', level: 4, elite: false },
+    ];
 
     const events: GameEvent[] = [];
     let summoned = 0;
@@ -101,12 +125,14 @@ describe('necromancy (and beekeeping)', () => {
       if (s && s.t === 'summon') summoned = s.count;
       if (summoned > 0) break;
     }
-    expect(summoned).toBe(2);
+    expect(summoned).toBeGreaterThan(0);
     const minions = run.monsterOrder.filter((id) => run.monsters[id]!.summonedBy === hero.id);
-    expect(minions.length).toBe(2);
-    expect(run.monsters[minions[0]!]!.level).toBe(hero.level); // scale with the caster
+    // budget 6: takes the L5 corpse (cost 5), the L4 won't fit (5+4>6), L1 fits (5+1=6)
+    const cost = minions.reduce((s, id) => s + (run.monsters[id]!.summonCost ?? 0), 0);
+    expect(cost).toBeLessThanOrEqual(6);
+    expect(run.monsters[minions[0]!]!.summonCost).toBe(5); // strongest corpse raised first
 
-    // they fight: a minion lands a hit on the zombie
+    // they fight: a minion lands a hit on the zombie (or finishes it)
     let minionHit = false;
     for (let i = 0; i < 600 && !minionHit; i++) {
       const ev: GameEvent[] = [];
@@ -146,27 +172,33 @@ describe('necromancy (and beekeeping)', () => {
     expect(beeTargeted).toBe(true);
   });
 
-  test('no re-summoning while the entourage is full (evaluator cap)', () => {
-    const { state, hero } = soloRun(74, 'necromancer', 3);
+  test('the undead budget holds: raised levels never exceed 2× the necromancer level', () => {
+    const { state, hero } = soloRun(74, 'necromancer', 3); // budget = 6
     const run = state.run!;
     run.monsters = {};
     run.monsterOrder = [];
     const heroPos = run.party.pos[hero.id]!;
-    injectHostile(state, 'zombie', { x: heroPos.x + 4, y: heroPos.y });
-    hero.cooldowns = {}; // ensure ready
+    const foe = injectHostile(state, 'zombie', { x: heroPos.x + 4, y: heroPos.y });
+    foe.hp = 9999; // never dies — keep the fight on so reanimate stays feasible
 
-    const events: GameEvent[] = [];
+    let maxCost = 0;
     for (let i = 0; i < 600; i++) {
-      const ev: GameEvent[] = [];
-      advanceTick(state, [], NOW, ev);
-      events.push(...ev);
-      const m = run.monsters['foe1'];
-      if (!m || m.hp <= 0) break;
-      hero.cooldowns['raise_skeleton'] = 0; // even with no cooldown...
+      advanceTick(state, [], NOW, []);
+      // keep an overflowing corpse pool and the skill always ready
+      run.corpses = [
+        { defId: 'rat', level: 1, elite: false },
+        { defId: 'rat', level: 1, elite: false },
+        { defId: 'zombie', level: 3, elite: false },
+        { defId: 'skeleton', level: 2, elite: false },
+      ];
+      hero.cooldowns['reanimate_fallen'] = 0;
       hero.mp = 50;
+      const cost = run.monsterOrder
+        .filter((id) => run.monsters[id]!.summonedBy === hero.id)
+        .reduce((s, id) => s + (run.monsters[id]!.summonCost ?? 0), 0);
+      maxCost = Math.max(maxCost, cost);
     }
-    const summons = events.filter((e) => e.t === 'summon');
-    // ...the cap holds: one summon while both skeletons live
-    expect(summons.length).toBeLessThanOrEqual(2);
+    expect(maxCost).toBeGreaterThan(0); // it did raise an army
+    expect(maxCost).toBeLessThanOrEqual(6); // ...but never past the budget
   });
 });
