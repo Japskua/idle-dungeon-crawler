@@ -318,6 +318,8 @@ export interface HeroStats {
   dmgDealt: number;
   /** damage dealt in the current crawl (reset at embark) */
   runDmg: number;
+  /** gold found in the current crawl (reset at embark; this-run gold is lost on a wipe) */
+  runGold: number;
   bestRunDmg: number;
   biggestHitTaken: number;
   biggestHitFrom?: string;
@@ -342,6 +344,15 @@ export interface EntityAction {
   total: number;
 }
 
+export interface OwnershipTraits {
+  /** won't let their personal gold buy gear for ANOTHER hero */
+  greedy?: boolean;
+  /** resists giving up earned items — unequip/transfer can fail on a roll */
+  loneWolf?: boolean;
+  /** auto-gambles their own gold while the player idles in the village */
+  gamblingAddiction?: boolean;
+}
+
 export interface Hero {
   id: Id;
   name: string;
@@ -355,6 +366,12 @@ export interface Hero {
   potions: Record<PotionKind, number>;
   /** bombs in the pack — thrown via tactics, explosions spare no one */
   bombs: number;
+  /** gold this hero personally owns — earned in the dungeon, never auto-shared */
+  gold: number;
+  /** unequipped items this hero personally carries (their pack) */
+  satchel: ItemInstance[];
+  /** typed economy/ownership flags (greedy / lone-wolf / gambling-addiction) */
+  ownership?: OwnershipTraits;
   skills: SkillId[];
   perks: PerkId[];
   /** 2-3 personality trait ids — they shape what this hero says */
@@ -488,8 +505,6 @@ export interface PartyState {
   downed: Record<Id, { pos: Vec2 }>;
   /** carrierId -> downed heroId being carried. */
   carrying: Record<Id, Id>;
-  goldCarried: number;
-  lootBag: ItemInstance[];
 }
 
 export interface GroundLoot {
@@ -581,6 +596,12 @@ export type Command =
   | { t: 'UNEQUIP'; heroId: Id; slot: EquipSlot }
   | { t: 'SET_HERO_POTIONS'; heroId: Id; potions: Record<PotionKind, number> }
   | { t: 'SET_HERO_BOMBS'; heroId: Id; bombs: number }
+  | { t: 'DEPOSIT_GOLD'; heroId: Id; amount: number }
+  | { t: 'WITHDRAW_GOLD'; heroId: Id; amount: number }
+  | { t: 'TRANSFER_GOLD'; fromHeroId: Id; toHeroId: Id; amount: number }
+  | { t: 'DEPOSIT_ITEM'; heroId: Id; itemId: Id }
+  | { t: 'TRANSFER_ITEM'; fromHeroId: Id; toHeroId: Id; itemId: Id }
+  | { t: 'SELL_SATCHEL_ITEM'; heroId: Id; itemId: Id }
   | { t: 'HIRE'; recruitKey: string }
   | { t: 'DISMISS'; heroId: Id }
   | { t: 'ASSIGN_CHORE'; heroId: Id; choreId: ChoreId | null }
@@ -595,6 +616,7 @@ export type GameEvent =
   | { t: 'skillCast'; src: Id; skillId: SkillId }
   | { t: 'potionUsed'; heroId: Id; potion: PotionKind; amount: number; pos: Vec2 }
   | { t: 'bombThrown'; heroId: Id; pos: Vec2 }
+  | { t: 'transferRefused'; heroId: Id; itemId: Id }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }

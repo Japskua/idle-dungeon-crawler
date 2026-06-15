@@ -338,6 +338,10 @@ export function App() {
       <header className="topbar">
         <span className="title">IDLE DUNGEON CRAWLER</span>
         <span className="gold">⛀ {game.village.gold}g</span>
+        {(() => {
+          const purse = game.rosterOrder.reduce((sum, id) => sum + (game.roster[id]?.gold ?? 0), 0);
+          return purse > 0 ? <span className="muted small">+ {purse}g in purses</span> : null;
+        })()}
         <span className="muted">
           depth best: {game.progress.maxDepthReached} · heroes: {game.rosterOrder.length}
         </span>

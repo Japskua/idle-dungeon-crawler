@@ -845,3 +845,16 @@ input[type='number'] {
     flex-wrap: wrap;
   }
 }
+
+/* ---------- per-hero satchel (Guild Hall) ---------- */
+.satchel-head {
+  border-top: 1px dotted var(--border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.satchel {
+  padding-left: 6px;
+  border-left: 2px solid var(--border);
+  margin: 2px 0 4px;
+}

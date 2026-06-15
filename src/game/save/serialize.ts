@@ -42,7 +42,39 @@ export function deserialize(text: string): GameState {
 }
 
 /** ordered migrations; index i migrates v=i+1 -> v=i+2 */
-const MIGRATIONS: ((state: any) => any)[] = [];
+const MIGRATIONS: ((state: any) => any)[] = [
+  // v1 -> v2: party-shared loot/gold became per-hero (gold + satchel).
+  (s: any) => {
+    for (const id of s.rosterOrder ?? []) {
+      const h = s.roster?.[id];
+      if (!h) continue;
+      if (typeof h.gold !== 'number') h.gold = 0;
+      if (!Array.isArray(h.satchel)) h.satchel = [];
+      if (h.stats && typeof h.stats.runGold !== 'number') h.stats.runGold = 0;
+    }
+    // an in-progress v1 run still has party.goldCarried + party.lootBag; disperse
+    // them to the standing members deterministically so no haul is lost.
+    if (s.run?.party) {
+      const p = s.run.party;
+      const standing = (p.memberIds ?? []).filter((m: string) => !(p.downed && m in p.downed));
+      const recipients = standing.length ? standing : (p.memberIds ?? []);
+      const g = p.goldCarried ?? 0;
+      const per = recipients.length ? Math.floor(g / recipients.length) : 0;
+      recipients.forEach((m: string, i: number) => {
+        const h = s.roster?.[m];
+        if (!h) return;
+        const add = per + (i === 0 ? g - per * recipients.length : 0);
+        h.gold = (h.gold ?? 0) + add;
+        if (h.stats) h.stats.runGold = (h.stats.runGold ?? 0) + add;
+      });
+      const first = recipients[0] && s.roster?.[recipients[0]];
+      for (const it of p.lootBag ?? []) if (first) first.satchel.push(it);
+      delete p.goldCarried;
+      delete p.lootBag;
+    }
+    return s;
+  },
+];
 
 export function migrate(state: GameState): GameState {
   let s: any = state;
@@ -81,6 +113,14 @@ function reconcileContent(state: GameState) {
     // heroes saved before lifetime statistics get a blank story arc
     if (!hero.stats) hero.stats = emptyStats();
     if (typeof hero.bombs !== 'number') hero.bombs = 0;
+    if (typeof hero.gold !== 'number') hero.gold = 0;
+    if (!Array.isArray(hero.satchel)) hero.satchel = [];
+    if (hero.stats && typeof hero.stats.runGold !== 'number') hero.stats.runGold = 0;
+    hero.satchel = hero.satchel.filter((it: { defId: string }) => {
+      if (ITEMS[it.defId]) return true;
+      hero.gold += Math.round((ITEMS[it.defId]?.value ?? 0) * 0.4);
+      return false;
+    });
     if (!Array.isArray(hero.traits) || hero.traits.length === 0) {
       // pre-banter heroes get a stable personality from their id, no rng burned
       let h = 0x811c9dc5;
@@ -95,7 +135,6 @@ function reconcileContent(state: GameState) {
     }
   }
   if (state.run) {
-    state.run.party.lootBag = state.run.party.lootBag.filter((i) => ITEMS[i.defId]);
     state.run.groundLoot = state.run.groundLoot.filter((g) => ITEMS[g.item.defId]);
   }
 }

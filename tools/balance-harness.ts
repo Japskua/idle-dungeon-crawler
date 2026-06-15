@@ -47,7 +47,9 @@ function simulate(seed: number): RunStats {
     maxDepth: state.progress.maxDepthReached,
     ticks,
     goldLost,
-    lootKept: state.village.inventory.length,
+    lootKept:
+      state.village.inventory.length +
+      state.rosterOrder.reduce((n, id) => n + (state.roster[id]?.satchel.length ?? 0), 0),
     permadeaths: state.progress.totalPermadeaths,
     heroLevels: state.rosterOrder.map((id) => state.roster[id]!.level).join('/'),
   };
