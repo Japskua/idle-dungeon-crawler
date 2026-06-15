@@ -3,6 +3,7 @@ import { useUi } from './store';
 import { VillageScene } from './village/VillageScene';
 import {
   ArmorerView,
+  CoveView,
   GateView,
   GraveyardView,
   GuildView,
@@ -26,6 +27,8 @@ export function VillageScreen() {
       return <StoreView game={game} />;
     case 'guild':
       return <GuildView game={game} />;
+    case 'cove':
+      return <CoveView game={game} />;
     case 'hall':
       return <HallView game={game} />;
     case 'hospital':

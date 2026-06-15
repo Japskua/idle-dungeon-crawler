@@ -17,7 +17,7 @@ import {
   learnSkillCost,
   spellAmount,
 } from '../../game/balance';
-import { BANTER, CHORES, CLASSES, INJURIES, ITEMS, PERKS, RACES, RELIGIONS, SKILLS } from '../../game/content';
+import { BANTER, CHORES, CLASSES, COVE_GAMES, INJURIES, ITEMS, PERKS, RACES, RELIGIONS, SKILLS } from '../../game/content';
 import { favorTier } from '../../game/balance';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
@@ -27,7 +27,7 @@ import { ClassSprite, HeroVitals, ItemName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
 import { PARTY_BEHAVIORS } from '../../game/tactics/behaviors';
 import type { PartyBehavior } from '../../game/types';
-import { setVillageView } from '../store';
+import { setVillageView, useUi } from '../store';
 
 // ---------------------------------------------------------------- item browsing
 type SortKey = 'new' | 'name' | 'value' | 'weight' | 'power';
@@ -1297,6 +1297,111 @@ export function GateView({ game }: { game: GameState }) {
             onToggle={() => toggle(h.id)}
           />
         ))}
+      </div>
+    </BuildingShell>
+  );
+}
+
+// ---------------------------------------------------------------- gambler's cove
+export function CoveView({ game }: { game: GameState }) {
+  const [stake, setStake] = useState(25);
+  const log = useUi((s) => s.log);
+  const gold = game.village.gold;
+  const recent = log.filter((l) => l.text.startsWith('🎲')).slice(0, 7);
+
+  const clampStake = (g: (typeof COVE_GAMES)[string]) =>
+    Math.min(Math.max(g.minStake, Math.floor(stake)), g.maxStake, gold);
+
+  return (
+    <BuildingShell
+      icon="🎲"
+      title="Gambler's Cove"
+      blurb="A seaside den where the village coffers come to feel alive. The house always keeps a sliver — but the longshots pay like the tide."
+    >
+      <div className="cove">
+        <div className="cove-bank">
+          <span>
+            Village bank: <b className="gold">{gold}g</b>
+          </span>
+          <label className="cove-stake">
+            stake
+            <input
+              type="range"
+              min={5}
+              max={250}
+              step={5}
+              value={stake}
+              onChange={(e) => setStake(Number(e.target.value))}
+            />
+            <input
+              type="number"
+              min={5}
+              value={stake}
+              onChange={(e) => setStake(Math.max(5, Number(e.target.value) || 5))}
+            />
+            <span className="muted">g</span>
+          </label>
+          <span className="row-buttons">
+            {[25, 50, 100].map((v) => (
+              <button key={v} className="btn btn-tiny" onClick={() => setStake(v)}>
+                {v}
+              </button>
+            ))}
+            <button className="btn btn-tiny" onClick={() => setStake(Math.max(5, Math.min(250, gold)))}>
+              max
+            </button>
+          </span>
+        </div>
+
+        <div className="cove-games">
+          {Object.values(COVE_GAMES).map((g) => {
+            const bet = clampStake(g);
+            const profit = Math.round(bet * (g.payoutMult - 1));
+            const canBet = gold >= g.minStake;
+            return (
+              <div key={g.id} className="cove-game">
+                <div className="cove-game-head">
+                  <b>{g.name}</b>
+                  <span className="cove-mult">{g.payoutMult}×</span>
+                </div>
+                <div className="small muted cove-blurb">{g.blurb}</div>
+                <div className="cove-odds small">
+                  <span>win {Math.round(g.winChance * 100)}%</span>
+                  <span>·</span>
+                  <span>min {g.minStake}</span>
+                  <span>·</span>
+                  <span>max {g.maxStake}g</span>
+                </div>
+                <button
+                  className="btn cove-bet"
+                  disabled={!canBet}
+                  onClick={() => app.dispatch({ t: 'GAMBLE', gameId: g.id, stake: bet })}
+                >
+                  {canBet ? (
+                    <>
+                      Bet {bet}g → win <b className="gold">+{profit}g</b>
+                    </>
+                  ) : (
+                    'bank too low'
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="cove-results">
+          <div className="muted small">At the table…</div>
+          {recent.length === 0 ? (
+            <div className="small muted">No bets placed yet. The barkeep cracks his knuckles.</div>
+          ) : (
+            recent.map((l, i) => (
+              <div key={i} className={`small log-${l.cls}`}>
+                {l.text}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </BuildingShell>
   );

@@ -66,6 +66,22 @@ export interface ReligionDef {
   blessing: string;
 }
 
+/** a game of chance at the Gambler's Cove — one wager, one rng.village draw */
+export interface CoveGame {
+  id: string;
+  name: string;
+  blurb: string;
+  /** probability of winning (winChance × payoutMult is < 1: the house edge) */
+  winChance: number;
+  /** a win pays stake × payoutMult (net gain (payoutMult−1) × stake) */
+  payoutMult: number;
+  minStake: number;
+  maxStake: number;
+  /** flavor lines; {gold} is replaced with the net winnings on a win */
+  win: string;
+  lose: string;
+}
+
 export interface RaceDef {
   id: string;
   name: string;
@@ -704,6 +720,7 @@ export type Command =
   | { t: 'SET_PARTY_BEHAVIOR'; behavior: PartyBehavior }
   | { t: 'SET_HERO_FAITH'; heroId: Id; religionId: string | null }
   | { t: 'TITHE'; heroId: Id; amount: number }
+  | { t: 'GAMBLE'; gameId: string; stake: number }
   | { t: 'EVENT_CHOICE'; eventId: string; choiceKey: string }
   | { t: 'SET_TACTICS'; heroId: Id; sets: TacticSet[]; activeSetId: Id }
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
@@ -760,6 +777,7 @@ export type GameEvent =
   | { t: 'summon'; heroId: Id; defId: MonsterDefId; count: number }
   | { t: 'minionDied'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'coinFlip'; heroId: Id; heads: boolean }
+  | { t: 'gamble'; gameId: string; stake: number; won: boolean; delta: number }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }
