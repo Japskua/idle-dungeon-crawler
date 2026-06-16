@@ -5,7 +5,7 @@ import { CLASSES } from '../game/content';
 import { partySpareCapacity } from '../game/run/runtime';
 import { PARTY_BEHAVIORS } from '../game/tactics/behaviors';
 import { moraleBand } from '../game/balance';
-import type { Hero, PartyBehavior } from '../game/types';
+import type { GameState, Hero, PartyBehavior } from '../game/types';
 import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
 import { HeroVitals } from './components';
@@ -19,6 +19,18 @@ const MORALE_LABEL: Record<string, string> = {
   confident: 'confident',
   inspired: '★ inspired',
 };
+
+/** living minions currently conjured by a given summoner */
+function minionCount(game: GameState, heroId: string): number {
+  const run = game.run;
+  if (!run) return 0;
+  let n = 0;
+  for (const id of run.monsterOrder) {
+    const m = run.monsters[id];
+    if (m && m.hp > 0 && m.summonedBy === heroId) n++;
+  }
+  return n;
+}
 
 function TacticSwitch({ hero }: { hero: Hero }) {
   const [editing, setEditing] = useState(false);
@@ -147,6 +159,12 @@ export function DungeonScreen() {
                         <span className="greed" title={`greed: ${hero.greed} (party gold-find +${hero.greed * 3}%)`}>
                           {' · '}
                           💰 {hero.greed}
+                        </span>
+                      )}
+                      {hero.classId === 'summoner' && (
+                        <span className={`menagerie${hero.frenzyTicks > 0 ? ' frenzy' : ''}`} title={hero.frenzyTicks > 0 ? 'Menagerie Unleashed!' : 'conjured minions'}>
+                          {' · '}
+                          {hero.frenzyTicks > 0 ? '🔥' : '🐾'} {minionCount(game, id)}
                         </span>
                       )}
                     </span>

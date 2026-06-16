@@ -68,6 +68,9 @@ import {
   GREED_GOLD_PER,
   GREED_SMASH_DMG_PER,
   GREED_POCKET_GOLD,
+  menagerieCap,
+  MENAGERIE_FRENZY_TICKS,
+  MENAGERIE_FRENZY_DMG,
 } from '../balance';
 import { BANTER, CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
@@ -246,6 +249,7 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   if (state.run && run.pendingEvent) tickPendingEvent(state, run, events);
   if (state.run) moraleStep(state, run, events);
   if (state.run) devotionStep(state, run);
+  if (state.run) frenzyStep(state, run, events);
   if (state.run && standingIds(run).length === 0) {
     endRunWiped(state, nowMs, events);
   }
@@ -1462,6 +1466,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
         hero.hp = Math.min(d.maxHp, hero.hp + amount);
         events.push({ t: 'heal', src: hero.id, dst: hero.id, amount, pos: { ...myPos } });
       }
+      // Menagerie Unleashed: open every cage — the cap soars and the minions go feral
+      if (skill.id === 'menagerie_unleashed') hero.frenzyTicks = MENAGERIE_FRENZY_TICKS;
       // Pocket It: cash in every Greed stack straight into the robber's own purse
       if (skill.id === 'pocket_it' && hero.greed > 0) {
         const stacks = hero.greed;
@@ -1637,7 +1643,12 @@ function resolveMonsterAttack(state: GameState, run: DungeonRun, m: MonsterInsta
     if (manhattan(m.pos, creatureTarget.pos) > def.base.range) return;
     const targetDef = creatureDef(creatureTarget.defId);
     const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
-    const raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
+    let raw = monsterDmg(def.base.dmg, m.level, m.elite, def.tier === 'boss') * variance;
+    // a frenzied summoner's pack hits harder
+    if (m.summonedBy) {
+      const owner = state.roster[m.summonedBy];
+      if (owner?.classId === 'summoner' && owner.frenzyTicks > 0) raw *= MENAGERIE_FRENZY_DMG;
+    }
     const dmg = Math.max(1, Math.round(mitigate(raw, targetDef.base.armor)));
     creatureTarget.hp -= dmg;
     creatureTarget.lastHitBy = m.id;
@@ -1876,6 +1887,32 @@ function moraleStep(state: GameState, run: DungeonRun, events: GameEvent[]) {
       if (h?.faith && h.faith.favor !== 0) h.faith.favor -= Math.sign(h.faith.favor);
     }
   }
+}
+
+/**
+ * Summoner Menagerie Unleashed: count down the frenzy window; when it closes,
+ * any minions conjured over the NORMAL cap expire (highest-cost first, then
+ * latest-summoned), so the over-summon was a fleeting war-band, not a free cap.
+ */
+function frenzyStep(state: GameState, run: DungeonRun, events: GameEvent[]) {
+  for (const hid of run.party.memberIds) {
+    const h = state.roster[hid];
+    if (!h || h.classId !== 'summoner' || h.frenzyTicks <= 0) continue;
+    h.frenzyTicks--;
+    if (h.frenzyTicks > 0) continue;
+    const cap = menagerieCap(h.level);
+    const mine = run.monsterOrder
+      .map((id) => run.monsters[id]!)
+      .filter((m) => m.hp > 0 && m.summonedBy === h.id)
+      .sort((a, b) => (b.summonCost ?? 0) - (a.summonCost ?? 0) || (a.id < b.id ? 1 : -1));
+    let total = mine.reduce((s, m) => s + (m.summonCost ?? 0), 0);
+    for (const m of mine) {
+      if (total <= cap) break;
+      m.hp = 0; // the cage closes — over-cap conjurations wink out (processDeaths cleans up)
+      total -= m.summonCost ?? 0;
+    }
+  }
+  void events;
 }
 
 /** Priest Devotion drifts each tick: +1 in combat (piety under fire), −1 out of it. */

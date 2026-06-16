@@ -158,6 +158,14 @@ export const LUCK_COINS_MAX = 3;
 /** Jackpot Heads chance = base + this per coin spent (3 coins -> guaranteed) */
 export const LUCK_COIN_HEADS_PER = 0.25;
 
+// ---------- summoner (menagerie unleashed / frenzy) ----------
+/** Menagerie Unleashed window length, in ticks */
+export const MENAGERIE_FRENZY_TICKS = 120;
+/** during frenzy the cap rises to this multiple of level (over-summon a war-band) */
+export const MENAGERIE_FRENZY_MULT = 2.5;
+/** during frenzy, a summoner's minions deal this multiple damage */
+export const MENAGERIE_FRENZY_DMG = 1.35;
+
 // ---------- summons (menagerie & necromancer budgets) ----------
 /** Summoner's menagerie cap: max simultaneous conjured minion-cost = 1.5× level */
 export function menagerieCap(level: number): number {

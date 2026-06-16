@@ -933,3 +933,7 @@ input[type='number'] {
 
 /* grave robber greed stacks */
 .greed { color: var(--gold, #f2c94c); }
+
+/* summoner menagerie / frenzy */
+.menagerie { color: var(--muted, #8a87a8); }
+.menagerie.frenzy { color: var(--red, #d13b3b); font-weight: bold; }
