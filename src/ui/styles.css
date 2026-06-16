@@ -923,3 +923,6 @@ input[type='number'] {
   border-top: 1px dotted var(--border, #2b213a); padding-top: 8px;
   display: flex; flex-direction: column; gap: 2px; min-height: 60px;
 }
+
+/* gambler luck coins on the dungeon hero card */
+.luck-coins { letter-spacing: -1px; }

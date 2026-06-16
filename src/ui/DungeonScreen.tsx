@@ -128,6 +128,12 @@ export function DungeonScreen() {
                       <span className={`morale morale-${moraleBand(hero.morale, hero.traits)}`}>
                         {MORALE_LABEL[moraleBand(hero.morale, hero.traits)]}
                       </span>
+                      {hero.classId === 'gambler' && (
+                        <span className="luck-coins" title={`luck coins: ${hero.luckCoins}/3`}>
+                          {' · '}
+                          {'🪙'.repeat(hero.luckCoins) || '◌'}
+                        </span>
+                      )}
                     </span>
                     <TacticSwitch hero={hero} />
                   </div>

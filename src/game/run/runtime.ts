@@ -53,6 +53,8 @@ import {
   REANIMATE_STAT_FRAC,
   CORPSE_POOL_CAP,
   CORPSE_REACH,
+  LUCK_COINS_MAX,
+  LUCK_COIN_HEADS_PER,
 } from '../balance';
 import { CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
@@ -1289,12 +1291,33 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     let power = skill.physical
       ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
-    // Gambler's coin flip: a single seeded draw nudges the swing to boom or bust
+    // Gambler's coin flip: a seeded draw nudges the swing to boom or bust, and
+    // LUCK COINS let a hot streak snowball, buy back a bad beat, or force a win.
     if (skill.flip) {
-      const heads = chance(state.rng.combat, 0.5);
+      const jackpot = skill.id === 'jackpot';
+      let headsChance = 0.5;
+      let spentAll = false;
+      if (jackpot && hero.luckCoins > 0) {
+        // bet it all: 50% + 25%/coin (three coins → guaranteed Heads)
+        headsChance = Math.min(1, 0.5 + LUCK_COIN_HEADS_PER * hero.luckCoins);
+        hero.luckCoins = 0;
+        spentAll = true;
+      }
+      let heads = chance(state.rng.combat, headsChance);
+      let rerolled = false;
+      if (!heads && !spentAll && hero.luckCoins > 0) {
+        // spend a coin to buy back the bad beat — one re-roll
+        hero.luckCoins -= 1;
+        rerolled = true;
+        heads = chance(state.rng.combat, headsChance);
+      }
       power *= heads ? skill.flip.heads : skill.flip.tails;
+      if (heads && !rerolled) {
+        // a natural (or jackpot) Heads pays a coin back — the streak builds
+        hero.luckCoins = Math.min(LUCK_COINS_MAX, hero.luckCoins + 1);
+      }
       if (!heads) hero.statuses.push({ statusId: 'fumbled', ticksLeft: 30, sourceId: hero.id });
-      events.push({ t: 'coinFlip', heroId: hero.id, heads });
+      events.push({ t: 'coinFlip', heroId: hero.id, heads, coins: hero.luckCoins, skillId: skill.id });
     }
     const offensive = skill.kind === 'attack' || skill.kind === 'debuff';
     const fromStealth = offensive && isStealthed(hero);

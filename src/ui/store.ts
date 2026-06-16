@@ -149,8 +149,13 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`${heroName(game, e.heroId)} summons ${e.count}x ${mobName(e.defId)}!`, 'level');
     case 'minionDied':
       return entry(`A ${mobName(e.defId).toLowerCase()} crumbles away.`, 'info');
-    case 'coinFlip':
-      return entry(`${heroName(game, e.heroId)} flips a coin… ${e.heads ? 'Heads! 🪙' : 'Tails. 💀'}`, e.heads ? 'level' : 'info');
+    case 'coinFlip': {
+      const label = e.skillId === 'jackpot' ? 'JACKPOT' : 'flips a coin…';
+      return entry(
+        `${heroName(game, e.heroId)} ${label} ${e.heads ? 'Heads!' : 'Tails.'} ${'🪙'.repeat(e.coins) || '—'}`,
+        e.heads ? 'level' : 'info',
+      );
+    }
     case 'gamble':
       return e.won
         ? entry(`🎲 ${coveName(e.gameId)}: won ${e.delta}g!`, 'gold')
