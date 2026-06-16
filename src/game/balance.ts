@@ -140,6 +140,10 @@ export const SMITE_UNCLEAN_MULT = 1.6;
 /** Divine Intervention cannot fire below — and consumes — this much devotion */
 export const DIVINE_INTERVENTION_COST = 70;
 
+// ---------- ownership traits (greedy) ----------
+/** a greedy hero has a hustler'''s nose for coin: gold-find bonus */
+export const GREEDY_GOLD_MULT = 1.15;
+
 // ---------- grave robber (greed stacks) ----------
 /** most Greed stacks a grave robber can hoard in one run */
 export const GREED_MAX = 10;

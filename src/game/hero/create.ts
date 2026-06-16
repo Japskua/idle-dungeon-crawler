@@ -43,6 +43,11 @@ export const TRAIT_IDS = [
   'scholarly',
 ] as const;
 
+/** typed economy flags derived from personality traits (greedy hoards their gold) */
+export function ownershipFromTraits(traits: string[]): import('../types').OwnershipTraits {
+  return { greedy: traits.includes('greedy') };
+}
+
 /** 2-3 distinct personality traits; loud ones are rarer by weight elsewhere */
 export function rollTraits(rng: Rng): string[] {
   const pool = [...TRAIT_IDS];
@@ -79,6 +84,7 @@ export function makeHero(
     int: cls.base.int + cls.growth.int * (level - 1),
     vit: cls.base.vit + cls.growth.vit * (level - 1),
   };
+  const heroTraits = traits ?? rollTraits(state.rng.village);
   const hero: Hero = {
     id: allocId(state, 'h'),
     name,
@@ -100,7 +106,8 @@ export function makeHero(
     devotion: DEVOTION_START,
     greed: 0,
     frenzyTicks: 0,
-    traits: traits ?? rollTraits(state.rng.village),
+    traits: heroTraits,
+    ownership: ownershipFromTraits(heroTraits),
     skills: unlockedSkills(classId, level),
     perks,
     injuries: [],
