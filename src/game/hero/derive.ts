@@ -6,7 +6,7 @@ import type { Attributes, Hero, StatMod } from '../types';
 import { CLASSES, INJURIES, PERKS, RACES, RELIGIONS, STATUSES, itemDef } from '../content';
 import {
   BOMB_WEIGHT, HERO_MOVE_TICKS, POTION_WEIGHT, UNARMED, carryCapacity, critChance, heroMaxHp, heroMaxMp,
-  moraleBand, moraleCombatMods, favorTier,
+  moraleBand, moraleCombatMods, favorTier, GREEDY_GOLD_MULT,
 } from '../balance';
 
 export interface DerivedStats {
@@ -98,6 +98,10 @@ export function derive(hero: Hero): DerivedStats {
       }
     }
   }
+  // a greedy hero hustles harder for coin (the other half of the trait — the
+  // hoarding — is enforced where gold would leave their purse)
+  if (hero.ownership?.greedy) goldMult *= GREEDY_GOLD_MULT;
+
   for (const k of ATTR_KEYS) attrs[k] = Math.max(0, attrs[k]);
 
   return {

@@ -227,6 +227,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.mode !== 'village') return;
       const hero = state.roster[cmd.heroId];
       if (!hero) return;
+      if (hero.ownership?.greedy) return; // a greedy hero hoards — won't surrender gold to the communal treasury
       const amt = Math.min(Math.max(0, Math.floor(cmd.amount)), hero.gold);
       hero.gold -= amt;
       state.village.gold += amt;

@@ -6,7 +6,7 @@ import type { GameState } from '../types';
 import { SAVE_VERSION } from '../newGame';
 import { ITEMS, MONSTERS, NEUTRALS } from '../content';
 import { defaultTactics } from '../tactics/defaults';
-import { TRAIT_IDS, emptyStats } from '../hero/create';
+import { TRAIT_IDS, emptyStats, ownershipFromTraits } from '../hero/create';
 import { RACE_IDS } from '../content/races';
 import { DUNGEON_EVENTS } from '../content/events';
 import { RELIGIONS } from '../content/religions';
@@ -138,6 +138,8 @@ function reconcileContent(state: GameState) {
     if (typeof hero.devotion !== 'number') hero.devotion = 20;
     if (typeof hero.greed !== 'number') hero.greed = 0;
     if (typeof hero.frenzyTicks !== 'number') hero.frenzyTicks = 0;
+    // derive ownership flags from traits (greedy hoards); backfill old saves
+    if (!hero.ownership) hero.ownership = ownershipFromTraits(hero.traits ?? []);
     if (hero.faith === undefined) hero.faith = null;
     if (hero.faith && !RELIGIONS[hero.faith.religionId]) hero.faith = null;
     if (!Array.isArray(hero.satchel)) hero.satchel = [];

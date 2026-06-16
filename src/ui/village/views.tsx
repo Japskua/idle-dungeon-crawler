@@ -951,15 +951,20 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
           <span className="gold">{hero.gold}g</span>
           {hero.satchel.length > 0 ? <span className="muted"> · 🎒 {hero.satchel.length} in pack</span> : null}
         </span>
-        {hero.gold > 0 && (
-          <button
-            className="btn btn-tiny"
-            title="move this hero's gold into the village treasury"
-            onClick={() => app.dispatch({ t: 'DEPOSIT_GOLD', heroId: hero.id, amount: hero.gold })}
-          >
-            bank {hero.gold}g
-          </button>
-        )}
+        {hero.gold > 0 &&
+          (hero.ownership?.greedy ? (
+            <span className="muted small" title="Greedy — hoards their gold and won't bank or share it (but finds more of it)">
+              🪙 hoarding
+            </span>
+          ) : (
+            <button
+              className="btn btn-tiny"
+              title="move this hero's gold into the village treasury"
+              onClick={() => app.dispatch({ t: 'DEPOSIT_GOLD', heroId: hero.id, amount: hero.gold })}
+            >
+              bank {hero.gold}g
+            </button>
+          ))}
       </div>
       {hero.satchel.length > 0 && (
         <div className="small satchel">
