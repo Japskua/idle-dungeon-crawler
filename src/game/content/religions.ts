@@ -25,6 +25,10 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [dmg(10)], favorRules: { killMelee: 2, killBoss: 5, killElite: 2, withdrawNear: -5 },
     resurrectChance: 0.07, wrathDmgMult: 0.88, titheRate: 10,
     blessing: 'Last Stand — Vohrmund hauls the faithful back to their feet, blade still swinging.',
+    manifestation: { boon: 'smite', wrath: 'avatar',
+      creature: 'skeleton',
+      boonText: "Vohrmund roars His approval — a blade of pure war-light scythes through the foe!",
+      wrathText: "Vohrmund spits on the deserter — a revenant claws up from the dead to drag them to the front." },
   },
   trickster_god: {
     id: 'trickster_god', name: 'The Sleight', deity: 'Cull, Who Counts Your Coins While Shaking Your Hand', domain: 'luck, theft, mischief, locked things',
@@ -32,6 +36,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [gold(15), { kind: 'mult', what: 'xp', mul: 1 }], favorRules: { chest: 2, killElite: 2 },
     resurrectChance: 0.06, wrathDmgMult: 0.92, titheRate: 20,
     blessing: 'Second Shadow — the faithful blink away into the dark and reappear mid-strike.',
+    manifestation: { boon: 'bounty', wrath: 'curse',
+      boonText: "Cull slips a stolen gift from fate straight into your hand. Don't ask whose it was.",
+      wrathText: "Cull's grin turns cruel — a jinx settles over you like a marked card." },
   },
   poultry_god: {
     id: 'poultry_god', name: 'The Roost Eternal', deity: 'Cluxabeth, the Thousand-Feathered Hen', domain: 'poultry, eggs, dawn, suspicious calm',
@@ -39,6 +46,10 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [maxhp(10)], favorRules: { kill: 1, chickenKilled: -15 },
     resurrectChance: 0.05, wrathDmgMult: 0.92, titheRate: 10,
     blessing: 'Rise, My Chick — the faithful is reborn from a giant egg in a flurry of feathers.',
+    manifestation: { boon: 'host', wrath: 'curse',
+      creature: 'chicken',
+      boonText: "Cluxabeth sends the Sacred Flock — a clatter of righteous, furious hens at your side!",
+      wrathText: "Cluxabeth clucks her judgement — a feathered hex weighs you down." },
   },
   debt_god: {
     id: 'debt_god', name: 'The Ledger', deity: 'Marrow-Audit, Collector of All Owed', domain: 'debt, contracts, interest, inevitability',
@@ -46,6 +57,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [dmg(8), gold(8)], favorRules: { chest: 1, killBoss: 3 },
     resurrectChance: 0.06, wrathDmgMult: 0.9, titheRate: 8,
     blessing: 'Debt Deferred — death is merely postponed; the bill comes due later.',
+    manifestation: { boon: 'bounty', wrath: 'scourge',
+      boonText: "Marrow-Audit advances you a windfall. (Interest accrues. It always accrues.)",
+      wrathText: "The bill comes due — Marrow-Audit collects, in blood, with a cold smile." },
   },
   mushroom_god: {
     id: 'mushroom_god', name: 'The Mycelium Below', deity: 'Spü, the Spreading Quiet', domain: 'fungus, decay, patient growth',
@@ -53,6 +67,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [maxhp(12)], favorRules: { kill: 1, chest: 1 },
     resurrectChance: 0.06, wrathDmgMult: 0.92, titheRate: 10,
     blessing: 'Regrowth — the faithful knits back together from a single surviving spore.',
+    manifestation: { boon: 'bless', wrath: 'curse',
+      boonText: "Spü blooms quietly through the whole party — a total, patient renewal.",
+      wrathText: "Spü withdraws the spores — a creeping rot saps the apostate." },
   },
   money_god: {
     id: 'money_god', name: 'The Gilded Smile', deity: 'Aurum Magnifico, His Excellency the Coin', domain: 'wealth, greed, commerce',
@@ -60,6 +77,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [gold(25)], favorRules: { chest: 3, kill: 1 },
     resurrectChance: 0.06, wrathDmgMult: 0.92, titheRate: 6,
     blessing: 'Golden Parachute — wealth buys the faithful one more breath.',
+    manifestation: { boon: 'bounty', wrath: 'curse',
+      boonText: "Aurum Magnifico showers His favour down in coin and gleaming treasure!",
+      wrathText: "His Excellency revokes His favour — a pauper's hex clings to the bankrupt soul." },
   },
   death_god: {
     id: 'death_god', name: 'The Last Door', deity: 'Mortishka, the Patient Hostess', domain: 'death, endings, the quiet rest',
@@ -67,6 +87,10 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [dmg(6)], favorRules: { kill: 2, killBoss: 4 },
     resurrectChance: 0.12, wrathDmgMult: 0.9, titheRate: 10,
     blessing: 'Not Yet — Mortishka turns the faithful gently back from her door. (death-touched builds excel here.)',
+    manifestation: { boon: 'revive', wrath: 'avatar',
+      creature: 'skeleton',
+      boonText: "Mortishka, unhurried, turns one fallen soul gently back from her door.",
+      wrathText: "Mortishka sends a reaper to settle the overdue account in person." },
   },
   sun_god: {
     id: 'sun_god', name: 'The Noon Eternal', deity: 'Solivar, Whose Eye Never Blinks', domain: 'light, judgment, relentless dawn',
@@ -74,6 +98,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [xp(10), { kind: 'attr', attr: 'dex', add: 1 }], favorRules: { kill: 1, killElite: 2 },
     resurrectChance: 0.06, wrathDmgMult: 0.9, titheRate: 10,
     blessing: 'Dawnbreak — a pillar of light raises the faithful and scours the dark.',
+    manifestation: { boon: 'smite', wrath: 'scourge',
+      boonText: "Solivar's noon-pillar crashes down and scours the dark from the room!",
+      wrathText: "Solivar's eye blazes — the blasphemer is seared where they stand." },
   },
   storm_god: {
     id: 'storm_god', name: 'The Riotous Sky', deity: 'Krakaboom, the Applauding Thunder', domain: 'storms, chaos, sudden violence',
@@ -81,6 +108,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [dmg(12)], favorRules: { killElite: 3, killBoss: 4 },
     resurrectChance: 0.06, wrathDmgMult: 0.85, titheRate: 10,
     blessing: 'Thunderclap — a bolt from nowhere jolts the faithful back upright.',
+    manifestation: { boon: 'smite', wrath: 'scourge',
+      boonText: "Krakaboom applauds with a sky-splitting bolt that forks across the enemy!",
+      wrathText: "Krakaboom hurls a bolt at the faithless — applause for a terrible act." },
   },
   moon_god: {
     id: 'moon_god', name: 'The Pale Witness', deity: 'Lunalla, the Half-Closed Eye', domain: 'night, secrets, second chances',
@@ -88,6 +118,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [{ kind: 'attr', attr: 'int', add: 1 }, xp(6)], favorRules: { kill: 1, chest: 1 },
     resurrectChance: 0.08, wrathDmgMult: 0.92, titheRate: 10,
     blessing: 'Moonlit Return — the faithful slips back from the dark between heartbeats.',
+    manifestation: { boon: 'bless', wrath: 'curse',
+      boonText: "Lunalla's pale light spills over the party and knits every wound shut.",
+      wrathText: "Lunalla looks away — a moonless hex leaves you cold and slow." },
   },
   glutton_god: {
     id: 'glutton_god', name: 'The Endless Table', deity: 'Borbo, the Bottomless Gullet', domain: 'feasting, plenty, excess',
@@ -95,6 +128,9 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [maxhp(15), dmg(4)], favorRules: { kill: 1, chest: 2 },
     resurrectChance: 0.05, wrathDmgMult: 0.92, titheRate: 10,
     blessing: 'One More Course — Borbo decides the faithful’s feast isn’t finished yet.',
+    manifestation: { boon: 'bless', wrath: 'curse',
+      boonText: "Borbo lays a sudden feast mid-battle — the party is restored and emboldened!",
+      wrathText: "Borbo denies the table — a cursed, gnawing hunger hollows the unfaithful." },
   },
   bee_god: {
     id: 'bee_god', name: 'The Humming Comb', deity: 'Queen Apiastra, Whose Word Is Buzz', domain: 'bees, order, tireless industry',
@@ -102,6 +138,10 @@ export const RELIGIONS: Record<string, ReligionDef> = {
     bonus: [dmg(8), { kind: 'attr', attr: 'vit', add: 1 }], favorRules: { kill: 1, killElite: 2 },
     resurrectChance: 0.05, wrathDmgMult: 0.92, titheRate: 10,
     blessing: 'Swarm Tithe — the hive lifts the faithful on a thousand wings.',
+    manifestation: { boon: 'host', wrath: 'scourge',
+      creature: 'bee',
+      boonText: "Queen Apiastra dispatches the Tithe-Swarm to fight loyally at your side!",
+      wrathText: "The hive turns as one — Apiastra's sting is divine, and it is severe." },
   },
 };
 

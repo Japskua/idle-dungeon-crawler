@@ -168,6 +168,7 @@ function reconcileContent(state: GameState) {
     if (typeof state.run.morale !== 'number') state.run.morale = 50;
     if (typeof state.run.favor !== 'number') state.run.favor = 0;
     if (!Array.isArray(state.run.corpses)) state.run.corpses = [];
+    if (!Array.isArray(state.run.manifested)) state.run.manifested = [];
     // a save from before these minions existed may reference a vanished summon def
     state.run.corpses = state.run.corpses.filter((c) => MONSTERS[c.defId] || NEUTRALS[c.defId]);
     const pe = state.run.pendingEvent;

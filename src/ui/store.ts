@@ -107,6 +107,8 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`✦ ${e.resultText}`, 'info');
     case 'divineIntervention':
       return entry(`🛐 A god hauls ${heroName(game, e.heroId)} back from the brink of death!`, 'level');
+    case 'divineManifestation':
+      return entry(`${e.boon ? '✨' : '⚡'} ${e.text}`, e.boon ? 'level' : 'bad');
     case 'moraleBeat':
       return e.valence === 'cheer'
         ? entry(`${heroName(game, e.from)} rallies ${heroName(game, e.to)} — spirits lift.`, 'heal')

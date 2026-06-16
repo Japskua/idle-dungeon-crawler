@@ -60,6 +60,7 @@ export function startRun(
     groundLoot: [],
     visitedRooms: [],
     ticksOnFloor: 0,
+    manifested: [], // a fresh run: every believer's one divine moment is available again
   };
   state.run = run;
   state.mode = 'dungeon';
