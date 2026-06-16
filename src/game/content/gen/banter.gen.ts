@@ -3471,6 +3471,9 @@ export const BANTER: BanterContent = {
   "bone_colossus": "undead",
   "cultist": "cultist",
   "fungal_tyrant": "fungus",
-  "the_landlord": "landlord"
+  "the_landlord": "landlord",
+  "war_avatar": "undead",
+  "death_avatar": "undead",
+  "wrath_hen": "beast"
  }
 };

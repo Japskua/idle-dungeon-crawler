@@ -18,4 +18,6 @@ export const STATUSES: Record<StatusId, StatusDef> = {
   greedy_focus: { id: 'greedy_focus', name: 'Greedy Focus', mods: [{ kind: 'mult', what: 'gold', mul: 1.2 }] },
   lucky_dig: { id: 'lucky_dig', name: 'Lucky Dig', mods: [{ kind: 'mult', what: 'gold', mul: 1.3 }] },
   evasive: { id: 'evasive', name: 'Evasive', mods: [{ kind: 'mult', what: 'speed', mul: 1.3 }] },
+  // a forsaken god's hex: weak and sluggish until it lifts
+  cursed: { id: 'cursed', name: 'Cursed', mods: [{ kind: 'mult', what: 'dmg', mul: 0.6 }, { kind: 'mult', what: 'speed', mul: 0.8 }] },
 };

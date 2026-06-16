@@ -49,6 +49,12 @@ import {
   moraleCombatMods,
   favorTier,
   resurrectP,
+  MANIFEST_CHECK_TICKS,
+  MANIFEST_BOON_CHANCE,
+  MANIFEST_WRATH_CHANCE,
+  MANIFEST_HOST_COUNT,
+  MANIFEST_AVATAR_COUNT,
+  MANIFEST_AVATAR_LEVEL_BONUS,
   undeadBudget,
   REANIMATE_STAT_FRAC,
   CORPSE_EXPLOSION_FRAC,
@@ -258,6 +264,7 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   if (state.run) moraleStep(state, run, events);
   if (state.run) devotionStep(state, run);
   if (state.run) frenzyStep(state, run, events);
+  if (state.run) manifestationStep(state, run, nowMs, events);
   if (state.run && standingIds(run).length === 0) {
     endRunWiped(state, nowMs, events);
   }
@@ -1923,6 +1930,139 @@ function tryMoraleDodge(state: GameState, run: DungeonRun, hero: Hero, m: Monste
   if (dodge <= 0 || !chance(state.rng.combat, dodge)) return false;
   events.push({ t: 'damage', src: m.id, dst: hero.id, amount: 0, crit: false, pos: { ...run.party.pos[hero.id]! } });
   return true;
+}
+
+/**
+ * Rare DIVINE MANIFESTATIONS — the angry-god / blessing moments. A believer who
+ * has pushed their favor to an extreme (Exalted or Forsaken — already uncommon)
+ * has a tiny per-check chance of a single, unforgettable visitation per run: a
+ * boon if beloved, a wrath if forsaken. Deterministic (seeded rng.combat), gated,
+ * and capped to once per believer per run so it never becomes routine.
+ */
+function manifestationStep(state: GameState, run: DungeonRun, nowMs: number, events: GameEvent[]) {
+  if (state.tick % MANIFEST_CHECK_TICKS !== 0) return;
+  const manifested = run.manifested ?? (run.manifested = []);
+  for (const hid of standingIds(run)) {
+    const hero = state.roster[hid];
+    if (!hero?.faith || manifested.includes(hid)) continue;
+    const rel = RELIGIONS[hero.faith.religionId];
+    if (!rel) continue;
+    const tier = favorTier(hero.faith.favor);
+    let boon: boolean;
+    let kind: import('../types').ManifestKind;
+    if (tier === 'exalted' && chance(state.rng.combat, MANIFEST_BOON_CHANCE)) {
+      boon = true;
+      kind = rel.manifestation.boon;
+    } else if (tier === 'forsaken' && chance(state.rng.combat, MANIFEST_WRATH_CHANCE)) {
+      boon = false;
+      kind = rel.manifestation.wrath;
+    } else {
+      continue;
+    }
+    manifested.push(hid);
+    const text = boon ? rel.manifestation.boonText : rel.manifestation.wrathText;
+    applyManifestation(state, run, hero, rel, kind, events);
+    events.push({ t: 'divineManifestation', heroId: hid, religionId: rel.id, kind, boon, text });
+    chronicle(state, nowMs, text, run.depth);
+  }
+}
+
+export function applyManifestation(
+  state: GameState,
+  run: DungeonRun,
+  hero: Hero,
+  rel: import('../types').ReligionDef,
+  kind: import('../types').ManifestKind,
+  events: GameEvent[],
+): void {
+  const standing = standingIds(run);
+  const heroPos = run.party.pos[hero.id] ?? run.floor.entrance;
+  const blessAll = (ticks: number) => {
+    for (const hid of standing) state.roster[hid]?.statuses.push({ statusId: 'blessed', ticksLeft: ticks, sourceId: hero.id });
+  };
+  const healAll = (frac: number) => {
+    for (const hid of standing) {
+      const h = state.roster[hid];
+      if (h) h.hp = Math.min(derive(h).maxHp, h.hp + derive(h).maxHp * frac);
+    }
+  };
+  const blast = 20 + run.depth * 12; // a god-tier hit: one-shots normals, dents the big
+
+  switch (kind) {
+    case 'smite': {
+      // a pillar/bolt scours every hostile in the room; an empty room → a blessing instead
+      let struck = false;
+      for (const mid of [...run.monsterOrder]) {
+        const m = run.monsters[mid]!;
+        if (m.hp <= 0 || m.summonedBy || creatureDef(m.defId).disposition !== 'hostile') continue;
+        const dmg = Math.max(1, Math.round(mitigate(blast, creatureDef(m.defId).base.armor)));
+        m.hp -= dmg;
+        m.lastHitBy = hero.id;
+        events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit: true, pos: { ...m.pos }, srcPos: { ...heroPos } });
+        struck = true;
+      }
+      if (!struck) {
+        healAll(0.5);
+        blessAll(300);
+      }
+      break;
+    }
+    case 'bless':
+      healAll(1);
+      blessAll(400);
+      break;
+    case 'bounty': {
+      const loot = rollChestLoot(state, run.depth + 3); // a blessed (deeper-rolled) windfall
+      const gold = loot.gold + 50;
+      hero.gold += gold;
+      hero.stats.runGold += gold;
+      for (const item of loot.items) {
+        if (heroSpareCapacity(hero) >= (ITEMS[item.defId]?.weight ?? 0)) hero.satchel.push(item);
+        else run.groundLoot.push({ id: allocId(state, 'g'), pos: { ...heroPos }, item, heavy: true });
+      }
+      break;
+    }
+    case 'revive': {
+      const downedId = Object.keys(run.party.downed)[0];
+      if (downedId) {
+        const d = state.roster[downedId];
+        if (d) {
+          delete run.party.downed[downedId];
+          d.hp = Math.max(1, Math.round(derive(d).maxHp * 0.5));
+          applyMorale(d, 20, 'divine_intervention', events);
+          events.push({ t: 'divineIntervention', heroId: downedId, religionId: rel.id });
+        }
+      } else {
+        healAll(1);
+        blessAll(300);
+      }
+      break;
+    }
+    case 'host': {
+      const cr = rel.manifestation.hostDef ?? 'chicken';
+      for (let i = 0; i < MANIFEST_HOST_COUNT; i++) placeMonsterNear(state, run, heroPos, cr, hero.level, false, false, hero.id, 400);
+      events.push({ t: 'summon', heroId: hero.id, defId: cr, count: MANIFEST_HOST_COUNT });
+      break;
+    }
+    case 'scourge': {
+      // the god's bolt savages the apostate — brutal, but never an outright kill
+      hero.hp = Math.max(1, hero.hp - blast);
+      recordHitTaken(hero, blast, `the wrath of ${rel.deity}`);
+      events.push({ t: 'damage', src: hero.id, dst: hero.id, amount: blast, crit: true, pos: { ...heroPos } });
+      applyMorale(hero, -12, 'careless', events);
+      break;
+    }
+    case 'curse':
+      hero.statuses.push({ statusId: 'cursed', ticksLeft: 400, sourceId: hero.id });
+      applyMorale(hero, -8, 'careless', events);
+      break;
+    case 'avatar': {
+      const cr = rel.manifestation.avatarDef ?? 'skeleton';
+      for (let i = 0; i < MANIFEST_AVATAR_COUNT; i++)
+        placeMonsterNear(state, run, heroPos, cr, hero.level + MANIFEST_AVATAR_LEVEL_BONUS, true, true);
+      break;
+    }
+  }
 }
 
 /** periodic social cheer/jeer (banter voices it app-side) + the party-morale readout */

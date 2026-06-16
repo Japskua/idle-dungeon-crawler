@@ -64,6 +64,24 @@ export interface ReligionDef {
   /** gold per +1 favor when tithing */
   titheRate: number;
   blessing: string;
+  /** rare divine manifestation: a boon while Exalted, a wrath while Forsaken */
+  manifestation: Manifestation;
+}
+
+/** the kinds of rare divine event a god can visit on a believer at favor's extremes */
+export type ManifestKind = 'smite' | 'bless' | 'bounty' | 'revive' | 'host' | 'scourge' | 'curse' | 'avatar';
+export interface Manifestation {
+  /** fires (rarely) while the believer is Exalted */
+  boon: ManifestKind;
+  /** fires (rarely) while the believer is Forsaken */
+  wrath: ManifestKind;
+  /** dramatic chronicle/log lines */
+  boonText: string;
+  wrathText: string;
+  /** allied creature defId for a 'host' boon */
+  hostDef?: string;
+  /** hostile avatar defId for an 'avatar' wrath */
+  avatarDef?: string;
 }
 
 /** a game of chance at the Gambler's Cove — one wager, one rng.village draw */
@@ -667,6 +685,8 @@ export interface DungeonRun {
   ticksOnFloor: number;
   /** Necromancer corpse pool: enemies killed near a necromancer this floor (FIFO, cap 6) */
   corpses?: Corpse[];
+  /** heroes who've already had their one rare divine manifestation this run */
+  manifested?: Id[];
 }
 
 // ---------- village ----------
@@ -769,6 +789,7 @@ export type GameEvent =
   | { t: 'moraleBeat'; from: Id; to: Id; valence: 'cheer' | 'jeer' }
   | { t: 'favor'; heroId: Id; delta: number; religionId: string }
   | { t: 'divineIntervention'; heroId: Id; religionId: string }
+  | { t: 'divineManifestation'; heroId: Id; religionId: string; kind: ManifestKind; boon: boolean; text: string }
   | { t: 'monsterDied'; id: Id; defId: MonsterDefId; level: number; xp: number; gold: number; pos: Vec2 }
   | { t: 'lootDropped'; defId: ItemDefId; pos: Vec2 }
   | { t: 'lootPicked'; defId: ItemDefId; by: Id }
