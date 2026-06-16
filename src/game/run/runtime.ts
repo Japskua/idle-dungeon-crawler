@@ -55,8 +55,17 @@ import {
   CORPSE_REACH,
   LUCK_COINS_MAX,
   LUCK_COIN_HEADS_PER,
+  DEVOTION_MAX,
+  DEVOTION_GRACE,
+  DEVOTION_HEAL_GAIN,
+  DEVOTION_SMITE_GAIN,
+  DEVOTION_PIETY_TICKS,
+  DEVOTION_DECAY_TICKS,
+  GRACE_POWER_MULT,
+  SMITE_UNCLEAN_MULT,
+  DIVINE_INTERVENTION_COST,
 } from '../balance';
-import { CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
+import { BANTER, CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
 import { dayIndexFor } from '../village/shop';
 import { behaviorKnobs } from '../tactics/behaviors';
@@ -83,6 +92,22 @@ import { explorationOrder, insideAnyRoom, revealAround } from '../dungeon/genera
 import { endRunWiped, endRunWithdrawn, enterFloor, chronicle } from './lifecycle';
 import { applyCommand } from '../commands';
 import { RECOVERY_HP_FRACTION_PER_SEC } from '../balance';
+
+// ---------- priest: devotion (state of grace) ----------
+/** undead and cultist (demon-adjacent) foes the holy hate */
+function isUnclean(defId: string): boolean {
+  const fam = BANTER.families[defId];
+  return fam === 'undead' || fam === 'cultist';
+}
+/** the single funnel for priest Devotion changes — clamps 0..100 */
+function gainDevotion(hero: Hero, amount: number): void {
+  if (hero.classId !== 'priest') return;
+  hero.devotion = Math.max(0, Math.min(DEVOTION_MAX, hero.devotion + amount));
+}
+/** at or above the threshold a priest's heals/buffs are stronger and free */
+function inStateOfGrace(hero: Hero): boolean {
+  return hero.classId === 'priest' && hero.devotion >= DEVOTION_GRACE;
+}
 
 // ---------- derived caches (recomputed, never saved — keyed by object identity) ----------
 const flowFieldCache = new WeakMap<object, { doorsKey: number; field: Int32Array }>();
@@ -200,6 +225,7 @@ export function advanceTick(state: GameState, commands: Command[], nowMs: number
   if (state.run) partyLogic(state, run, nowMs, events);
   if (state.run && run.pendingEvent) tickPendingEvent(state, run, events);
   if (state.run) moraleStep(state, run, events);
+  if (state.run) devotionStep(state, run);
   if (state.run && standingIds(run).length === 0) {
     endRunWiped(state, nowMs, events);
   }
@@ -670,7 +696,9 @@ function performResolved(
         }
       }
       if (inRange) {
-        hero.mp -= skill.mpCost;
+        // State of Grace: a devout priest channels heals & buffs for free
+        const graceFree = inStateOfGrace(hero) && (skill.kind === 'heal' || skill.kind === 'buff');
+        hero.mp -= graceFree ? 0 : skill.mpCost;
         hero.cooldowns[skill.id] = skill.cooldown + skill.castTicks;
         run.party.action[heroId] = {
           kind: 'cast',
@@ -1291,6 +1319,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
     let power = skill.physical
       ? physDamage(d.weaponDmg, d.attrs.str) * skill.power * d.dmgMult
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
+    // State of Grace: a devout priest's heals (and buffs) hit 25% harder
+    if (inStateOfGrace(hero) && (skill.kind === 'heal' || skill.kind === 'buff')) power *= GRACE_POWER_MULT;
     // Gambler's coin flip: a seeded draw nudges the swing to boom or bust, and
     // LUCK COINS let a hot streak snowball, buy back a bad beat, or force a win.
     if (skill.flip) {
@@ -1333,14 +1363,19 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
 
     const hitMonster = (m: import('../types').MonsterInstance) => {
       const def = creatureDef(m.defId);
-      if (power > 0) {
+      // Searing Judgment scourges the unclean dead especially hard
+      const unclean = skill.id === 'searing_judgment' && isUnclean(m.defId);
+      const effPower = unclean ? power * SMITE_UNCLEAN_MULT : power;
+      if (effPower > 0) {
         const variance = randRange(state.rng.combat, DMG_VARIANCE[0], DMG_VARIANCE[1]);
         const crit = skill.physical ? fromStealth || chance(state.rng.combat, d.critChance) : false;
-        const dmg = Math.max(1, Math.round(mitigate(power * variance * (crit ? CRIT_MULT : 1), def.base.armor)));
+        const dmg = Math.max(1, Math.round(mitigate(effPower * variance * (crit ? CRIT_MULT : 1), def.base.armor)));
         m.hp -= dmg;
         m.lastHitBy = hero.id;
         hero.stats.dmgDealt += dmg;
         hero.stats.runDmg += dmg;
+        // holy damage that fells an unclean foe feeds the priest's faith
+        if (m.hp <= 0 && unclean) gainDevotion(hero, DEVOTION_SMITE_GAIN);
         events.push({ t: 'damage', src: hero.id, dst: m.id, amount: dmg, crit, pos: { ...m.pos }, srcPos: { ...myPos } });
       }
       applyStatuses(m.statuses);
@@ -1389,11 +1424,14 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       const ally = state.roster[action.targetId];
       if (!ally || action.targetId in run.party.downed || !run.party.memberIds.includes(action.targetId)) return;
       const ad = derive(ally);
+      const wasWounded = ally.hp < ad.maxHp * 0.5;
       const amount = Math.max(1, Math.round(power));
       ally.hp = Math.min(ad.maxHp, ally.hp + amount);
       const pos = run.party.pos[action.targetId]!;
       events.push({ t: 'heal', src: hero.id, dst: ally.id, amount, pos: { ...pos } });
       applyStatuses(ally.statuses);
+      // a heal that catches an ally below half feeds the priest's faith
+      if (wasWounded) gainDevotion(hero, DEVOTION_HEAL_GAIN);
       return;
     }
     if (skill.target === 'self') {
@@ -1406,6 +1444,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       return;
     }
     if (skill.target === 'alliesInRadius') {
+      // Divine Intervention: the miracle is paid for in faith, spent on cast
+      if (skill.id === 'divine_intervention') gainDevotion(hero, -DIVINE_INTERVENTION_COST);
       const r2 = (skill.radius ?? 1) * (skill.radius ?? 1);
       for (const hid of standingIds(run)) {
         const ally = state.roster[hid];
@@ -1799,6 +1839,21 @@ function moraleStep(state: GameState, run: DungeonRun, events: GameEvent[]) {
       const h = state.roster[id];
       if (h?.faith && h.faith.favor !== 0) h.faith.favor -= Math.sign(h.faith.favor);
     }
+  }
+}
+
+/** Priest Devotion drifts each tick: +1 in combat (piety under fire), −1 out of it. */
+function devotionStep(state: GameState, run: DungeonRun) {
+  const inCombat = run.monsterOrder.some((id) => {
+    const m = run.monsters[id]!;
+    return m.hp > 0 && !m.summonedBy && m.aggro && creatureDef(m.defId).disposition === 'hostile';
+  });
+  const piety = inCombat && state.tick % DEVOTION_PIETY_TICKS === 0;
+  const decay = !inCombat && state.tick % DEVOTION_DECAY_TICKS === 0;
+  if (!piety && !decay) return;
+  for (const id of standingIds(run)) {
+    const h = state.roster[id];
+    if (h?.classId === 'priest') gainDevotion(h, piety ? 1 : -1);
   }
 }
 

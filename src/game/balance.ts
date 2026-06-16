@@ -118,8 +118,28 @@ export function resurrectP(base: number, favor: number): number {
   return base + (Math.max(61, favor) - 61) / 39 * 0.08;
 }
 
-// ---------- summons (menagerie & necromancer budgets) ----------
-/** Summoner's menagerie cap: max simultaneous conjured minion-cost = 1.5× level */
+// ---------- priest (devotion / state of grace) ----------
+/** a priest's Devotion meter sits 0..100, separate from MP */
+export const DEVOTION_MAX = 100;
+/** devotion a priest carries into each floor */
+export const DEVOTION_START = 20;
+/** at or above this, the priest enters STATE OF GRACE (heals/buffs +25%, free) */
+export const DEVOTION_GRACE = 70;
+/** devotion gained when a heal lands on an ally below half health */
+export const DEVOTION_HEAL_GAIN = 6;
+/** devotion gained when holy damage slays an unclean (undead/cultist) foe */
+export const DEVOTION_SMITE_GAIN = 4;
+/** in combat, +1 devotion every this many ticks (pious under fire) */
+export const DEVOTION_PIETY_TICKS = 20;
+/** out of combat, -1 devotion every this many ticks (faith bleeds, but a committed priest still banks toward Grace) */
+export const DEVOTION_DECAY_TICKS = 45;
+/** State of Grace power bonus on heals and buffs */
+export const GRACE_POWER_MULT = 1.25;
+/** Searing Judgment deals this multiple against the unclean */
+export const SMITE_UNCLEAN_MULT = 1.6;
+/** Divine Intervention cannot fire below — and consumes — this much devotion */
+export const DIVINE_INTERVENTION_COST = 70;
+
 // ---------- gambler (luck coins) ----------
 /** luck coins a Gambler starts each floor with */
 export const LUCK_COINS_START = 1;
@@ -128,6 +148,8 @@ export const LUCK_COINS_MAX = 3;
 /** Jackpot Heads chance = base + this per coin spent (3 coins -> guaranteed) */
 export const LUCK_COIN_HEADS_PER = 0.25;
 
+// ---------- summons (menagerie & necromancer budgets) ----------
+/** Summoner's menagerie cap: max simultaneous conjured minion-cost = 1.5× level */
 export function menagerieCap(level: number): number {
   return Math.floor(level * 1.5);
 }

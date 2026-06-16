@@ -16,7 +16,7 @@
  */
 import type { Hero, Id, PotionKind, SkillId, TacticSet, Trigger } from '../types';
 import { SKILLS } from '../content';
-import { menagerieCap, undeadBudget } from '../balance';
+import { menagerieCap, undeadBudget, DEVOTION_GRACE, DIVINE_INTERVENTION_COST } from '../balance';
 import type { DerivedStats } from '../hero/derive';
 
 export interface EnemyView {
@@ -133,7 +133,12 @@ function feasible(
       if (!skill) return null;
       if (!hero.skills.includes(skillId)) return null;
       if ((hero.cooldowns[skillId] ?? 0) > 0) return null;
-      if (hero.mp < skill.mpCost) return null;
+      // a priest in State of Grace channels heals & buffs for free
+      const graceFree =
+        hero.classId === 'priest' && hero.devotion >= DEVOTION_GRACE && (skill.kind === 'heal' || skill.kind === 'buff');
+      if (!graceFree && hero.mp < skill.mpCost) return null;
+      // Divine Intervention is gated behind a full reservoir of faith
+      if (skill.id === 'divine_intervention' && hero.devotion < DIVINE_INTERVENTION_COST) return null;
       const offensive = skill.target === 'enemy' || skill.target === 'enemiesInRadius';
       if (offensive) {
         if (view.withdrawing) return null;

@@ -926,3 +926,7 @@ input[type='number'] {
 
 /* gambler luck coins on the dungeon hero card */
 .luck-coins { letter-spacing: -1px; }
+
+/* priest devotion / state of grace */
+.devotion { color: var(--muted, #8a87a8); }
+.devotion.grace { color: var(--gold, #f2c94c); font-weight: bold; }

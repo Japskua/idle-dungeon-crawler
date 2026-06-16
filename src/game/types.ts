@@ -454,6 +454,8 @@ export interface Hero {
   faith: { religionId: string; favor: number } | null;
   /** Gambler signature: luck coins in hand (0-3), a re-roll/force-Heads currency; reset to 1 each floor */
   luckCoins: number;
+  /** Priest signature: Devotion meter (0-100), reset to 20 each floor; ≥70 = State of Grace */
+  devotion: number;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];

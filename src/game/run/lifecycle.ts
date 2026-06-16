@@ -17,7 +17,7 @@ import {
 import { INJURIES, classDef } from '../content';
 import { derive } from '../hero/derive';
 import { applyMorale } from '../hero/morale';
-import { MORALE_RECOVERING_FLOOR, LUCK_COINS_START } from '../balance';
+import { MORALE_RECOVERING_FLOOR, LUCK_COINS_START, DEVOTION_START } from '../balance';
 
 export function chronicle(state: GameState, nowMs: number, text: string, depth?: number) {
   state.chronicle.push({ atMs: nowMs, depth, text });
@@ -99,10 +99,13 @@ export function enterFloor(state: GameState, run: DungeonRun, depth: number, eve
   run.visitedRooms = [0];
   run.ticksOnFloor = 0;
   run.corpses = []; // corpse pool is floor-scoped: the dead don't follow you down the stairs
-  // luck coins reset each floor — a Gambler's hot streak doesn't survive the stairs
+  // luck coins & devotion reset each floor — a Gambler's streak and a Priest's
+  // accumulated faith don't survive the descent
   for (const hid of run.party.memberIds) {
     const h = state.roster[hid];
-    if (h) h.luckCoins = LUCK_COINS_START;
+    if (!h) continue;
+    h.luckCoins = LUCK_COINS_START;
+    if (h.classId === 'priest') h.devotion = DEVOTION_START;
   }
 
   // party spawns around the entrance, one hero per tile (BFS for unique cells)
