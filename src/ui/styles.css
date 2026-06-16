@@ -930,3 +930,6 @@ input[type='number'] {
 /* priest devotion / state of grace */
 .devotion { color: var(--muted, #8a87a8); }
 .devotion.grace { color: var(--gold, #f2c94c); font-weight: bold; }
+
+/* grave robber greed stacks */
+.greed { color: var(--gold, #f2c94c); }

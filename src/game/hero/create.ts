@@ -98,6 +98,7 @@ export function makeHero(
     faith: null,
     luckCoins: LUCK_COINS_START,
     devotion: DEVOTION_START,
+    greed: 0,
     traits: traits ?? rollTraits(state.rng.village),
     skills: unlockedSkills(classId, level),
     perks,

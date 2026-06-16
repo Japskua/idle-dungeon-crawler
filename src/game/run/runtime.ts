@@ -64,6 +64,10 @@ import {
   GRACE_POWER_MULT,
   SMITE_UNCLEAN_MULT,
   DIVINE_INTERVENTION_COST,
+  GREED_MAX,
+  GREED_GOLD_PER,
+  GREED_SMASH_DMG_PER,
+  GREED_POCKET_GOLD,
 } from '../balance';
 import { BANTER, CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
@@ -107,6 +111,22 @@ function gainDevotion(hero: Hero, amount: number): void {
 /** at or above the threshold a priest's heals/buffs are stronger and free */
 function inStateOfGrace(hero: Hero): boolean {
   return hero.classId === 'priest' && hero.devotion >= DEVOTION_GRACE;
+}
+
+// ---------- grave robber: greed stacks ----------
+/** the single funnel for Greed changes — clamps 0..GREED_MAX, grave robbers only */
+function gainGreed(hero: Hero, amount = 1): void {
+  if (hero.classId !== 'grave_robber') return;
+  hero.greed = Math.max(0, Math.min(GREED_MAX, hero.greed + amount));
+}
+/** the richest greed among the party's living grave robbers (drives party gold-find) */
+function partyGreed(state: GameState, standing: Id[]): number {
+  let g = 0;
+  for (const id of standing) {
+    const h = state.roster[id];
+    if (h?.classId === 'grave_robber') g = Math.max(g, h.greed);
+  }
+  return g;
 }
 
 // ---------- derived caches (recomputed, never saved — keyed by object identity) ----------
@@ -1321,6 +1341,8 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       : spellAmount(skill.power, d.attrs.int) * (skill.kind === 'heal' ? 1 : d.dmgMult);
     // State of Grace: a devout priest's heals (and buffs) hit 25% harder
     if (inStateOfGrace(hero) && (skill.kind === 'heal' || skill.kind === 'buff')) power *= GRACE_POWER_MULT;
+    // Smash and Grab: the richer the grave robber feels, the harder they swing
+    if (skill.id === 'smash_and_grab') power *= 1 + GREED_SMASH_DMG_PER * hero.greed;
     // Gambler's coin flip: a seeded draw nudges the swing to boom or bust, and
     // LUCK COINS let a hot streak snowball, buy back a bad beat, or force a win.
     if (skill.flip) {
@@ -1439,6 +1461,16 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
         const amount = Math.max(1, Math.round(power));
         hero.hp = Math.min(d.maxHp, hero.hp + amount);
         events.push({ t: 'heal', src: hero.id, dst: hero.id, amount, pos: { ...myPos } });
+      }
+      // Pocket It: cash in every Greed stack straight into the robber's own purse
+      if (skill.id === 'pocket_it' && hero.greed > 0) {
+        const stacks = hero.greed;
+        let siphon = 0;
+        for (let i = 0; i < stacks; i++) siphon += randInt(state.rng.loot, GREED_POCKET_GOLD[0], GREED_POCKET_GOLD[1]);
+        hero.gold += siphon;
+        hero.stats.runGold += siphon;
+        hero.greed = 0;
+        events.push({ t: 'pocketIt', heroId: hero.id, stacks, gold: siphon });
       }
       applyStatuses(hero.statuses);
       return;
@@ -1682,7 +1714,9 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
       const goldRoll = randInt(state.rng.loot, def.gold[0], def.gold[1]);
       const killer = m.lastHitBy ? state.roster[m.lastHitBy] : undefined;
       const goldMult = killer ? derive(killer).goldMult : 1;
-      const gold = Math.round(goldRoll * monsterGoldMult(m.level, def.tier === 'boss') * goldMult);
+      // a grave robber's hoarded Greed lifts the WHOLE party's take
+      const greedMult = 1 + GREED_GOLD_PER * partyGreed(state, standing);
+      const gold = Math.round(goldRoll * monsterGoldMult(m.level, def.tier === 'boss') * goldMult * greedMult);
       // gold goes to the killer's own purse; a minion/absent killer falls back
       // to the first standing hero (deterministic by rosterOrder, weightless gold)
       const goldTaker = killer ?? (standing[0] ? state.roster[standing[0]] : undefined);
@@ -1691,6 +1725,8 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
         goldTaker.stats.runGold += gold;
       }
       if (killer) killer.stats.kills++;
+      // a grave robber pries something valuable off every fresh corpse
+      if (killer) gainGreed(killer);
       // morale: the slayer is heartened (more for elites/bosses), the party cheered
       const killMorale = def.tier === 'boss' ? 12 : m.elite ? 6 : 3;
       if (killer) applyMorale(killer, killMorale, 'kill', events);
@@ -2109,6 +2145,7 @@ function partyLogic(state: GameState, run: DungeonRun, nowMs: number, events: Ga
       }
     }
     if (opener) applyFavor(opener, 'chest', events);
+    if (opener) gainGreed(opener); // cracking a chest is a grave robber's bread and butter
     events.push({ t: 'chestOpened', gold: loot.gold, items: loot.items.map((i) => i.defId), pos: { ...chest.pos } });
   }
 
