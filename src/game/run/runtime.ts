@@ -72,6 +72,13 @@ import {
   menagerieCap,
   MENAGERIE_FRENZY_TICKS,
   MENAGERIE_FRENZY_DMG,
+  ADDICT_GAMBLE_INTERVAL_MS,
+  ADDICT_GAMBLE_STAKE_FRAC,
+  ADDICT_GAMBLE_MIN_STAKE,
+  ADDICT_GAMBLE_FLOOR,
+  ADDICT_GAMBLE_WIN_CHANCE,
+  ADDICT_GAMBLE_PAYOUT,
+  ADDICT_GAMBLE_MAX_PER_UPKEEP,
 } from '../balance';
 import { BANTER, CHORES, DUNGEON_EVENTS, ITEMS, RELIGIONS, SKILLS, STATUSES, creatureDef } from '../content';
 import type { EventEffect } from '../types';
@@ -319,6 +326,33 @@ export function villageUpkeep(state: GameState, nowMs: number, events: GameEvent
         hero.choreXpCarry = carry - whole;
         if (whole > 0) addXp(state, hero, whole, events);
       }
+    }
+
+    // gambling addiction: an idle addict can't help themselves, betting their OWN
+    // purse one fixed interval at a time. Deterministic (seeded rng.village, time
+    // carried in a fractional ms meter just like chore XP) and bounded — the app
+    // loop re-anchors the clock on boot/gaps, so closed/backgrounded time never
+    // accrues and an addict can only gamble while the tab is live and foreground.
+    if (hero.ownership?.gamblingAddiction && hero.activity === 'idle') {
+      let carry = (hero.gambleCarryMs ?? 0) + dtMs;
+      let bets = 0;
+      while (
+        carry >= ADDICT_GAMBLE_INTERVAL_MS &&
+        bets < ADDICT_GAMBLE_MAX_PER_UPKEEP &&
+        hero.gold >= ADDICT_GAMBLE_FLOOR
+      ) {
+        carry -= ADDICT_GAMBLE_INTERVAL_MS;
+        bets++;
+        const stake = Math.min(hero.gold, Math.max(ADDICT_GAMBLE_MIN_STAKE, Math.round(hero.gold * ADDICT_GAMBLE_STAKE_FRAC)));
+        const won = chance(state.rng.village, ADDICT_GAMBLE_WIN_CHANCE);
+        const delta = won ? Math.round(stake * (ADDICT_GAMBLE_PAYOUT - 1)) : -stake;
+        hero.gold = Math.max(0, hero.gold + delta);
+        events.push({ t: 'addictGamble', heroId: hero.id, won, delta });
+      }
+      // never bank more than one interval of pent-up time (no burst-ruin on resume)
+      hero.gambleCarryMs = Math.min(carry, ADDICT_GAMBLE_INTERVAL_MS);
+    } else if (hero.gambleCarryMs) {
+      hero.gambleCarryMs = 0; // busy or cured: the itch resets
     }
   }
   const wholeGold = Math.trunc(goldDelta);

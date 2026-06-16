@@ -41,11 +41,17 @@ export const TRAIT_IDS = [
   'hungry',
   'motherly',
   'scholarly',
+  'lone_wolf',
+  'gambling_addict',
 ] as const;
 
-/** typed economy flags derived from personality traits (greedy hoards their gold) */
+/** typed economy flags derived from personality traits */
 export function ownershipFromTraits(traits: string[]): import('../types').OwnershipTraits {
-  return { greedy: traits.includes('greedy') };
+  return {
+    greedy: traits.includes('greedy'), // hoards their gold
+    loneWolf: traits.includes('lone_wolf'), // resists handing over earned items
+    gamblingAddiction: traits.includes('gambling_addict'), // auto-gambles their own purse while idle
+  };
 }
 
 /** 2-3 distinct personality traits; loud ones are rarer by weight elsewhere */
@@ -106,6 +112,7 @@ export function makeHero(
     devotion: DEVOTION_START,
     greed: 0,
     frenzyTicks: 0,
+    gambleCarryMs: 0,
     traits: heroTraits,
     ownership: ownershipFromTraits(heroTraits),
     skills: unlockedSkills(classId, level),

@@ -164,6 +164,12 @@ function formatEvent(game: GameState, e: GameEvent): LogEntry | null {
       return entry(`💰 ${heroName(game, e.heroId)} pockets ${e.stacks} stack${e.stacks === 1 ? '' : 's'} of greed — ${e.gold}g into their own cut.`, 'gold');
     case 'corpseExplosion':
       return entry(`💥 ${heroName(game, e.heroId)} detonates a risen corpse!`, 'level');
+    case 'addictGamble':
+      return e.won
+        ? entry(`🎰 ${heroName(game, e.heroId)} can't stop — and wins ${e.delta}g this time.`, 'gold')
+        : entry(`🎰 ${heroName(game, e.heroId)} can't stop gambling — down ${-e.delta}g.`, 'bad');
+    case 'transferRefused':
+      return entry(`🐺 ${heroName(game, e.heroId)} won't give up their gear — lone wolf.`, 'info');
     case 'neutralSighted':
       return entry(`A wild ${mobName(e.defId)} minds its own business nearby.`, 'info');
     case 'neutralKilled':

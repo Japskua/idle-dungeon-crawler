@@ -460,6 +460,8 @@ export interface Hero {
   greed: number;
   /** Summoner signature: Menagerie Unleashed frenzy window countdown (ticks); >0 raises the cap and buffs minions */
   frenzyTicks: number;
+  /** gambling-addiction accrual: ms of idle village time banked toward the next compulsive bet */
+  gambleCarryMs?: number;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];
@@ -788,6 +790,7 @@ export type GameEvent =
   | { t: 'gamble'; gameId: string; stake: number; won: boolean; delta: number }
   | { t: 'pocketIt'; heroId: Id; stacks: number; gold: number }
   | { t: 'corpseExplosion'; heroId: Id; pos: Vec2 }
+  | { t: 'addictGamble'; heroId: Id; won: boolean; delta: number }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }

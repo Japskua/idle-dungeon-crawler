@@ -1072,6 +1072,182 @@ export const BANTER: BanterContent = {
      "I've read three treatises on that exact subject. They all disagree, so you may well be right."
     ]
    }
+  },
+  {
+   "id": "lone_wolf",
+   "name": "Lone Wolf",
+   "blurb": "Works better alone, and never stops saying so to the four people helping.",
+   "weight": 10,
+   "interjections": [
+    "Solo.",
+    "Mine.",
+    "Back off.",
+    "Handled.",
+    "Alone."
+   ],
+   "tags": [
+    "...by myself, thanks.",
+    "...I had it.",
+    "...don't touch my stuff.",
+    "...didn't need the help.",
+    "...wolves hunt alone."
+   ],
+   "lines": {
+    "kill": [
+     "The {enemy} is mine. The kill is mine. The credit is, obviously, mine.",
+     "Got the {enemy}. Alone. As I prefer everything.",
+     "I had that {enemy} handled before any of you arrived. Don't argue.",
+     "One {enemy}, one of me. That's the correct ratio."
+    ],
+    "hurt": [
+     "I let that hit land. To keep things interesting. For me.",
+     "Don't reach for me. It's a flesh wound and it's private.",
+     "That hurt, but my problems are my own. Eyes forward.",
+     "I've bled in worse company. Which is to say, none."
+    ],
+    "lowHp": [
+     "I'm fine. I'm always fine. Stop hovering, all of you.",
+     "If I drop, leave me. That's an order from me, to me.",
+     "Nearly done. Don't you dare try to carry me.",
+     "Low, sure. Still wouldn't trade you for a tourniquet."
+    ],
+    "allyDown": [
+     "{ally} fell. See, this is what teamwork gets you.",
+     "Get up, {ally}. I am NOT carrying you, on principle.",
+     "{ally} is down. I'll avenge them. Alone. Naturally.",
+     "Should've spread out, {ally}. Crowds are how you get hit."
+    ],
+    "rescue": [
+     "Fine. I'll carry you, {ally}. Tell no one. Especially me.",
+     "Don't read into this, {ally}. The wolf carries wounded once.",
+     "Up you come, {ally}. This is a loan, not affection.",
+     "Hold still, {ally}. And we never speak of this rescue again."
+    ],
+    "loot": [
+     "{gold} gold. MY {gold} gold. I see five hands and I will count them later.",
+     "A chest. I found it, I open it, I keep it. House rule. My house.",
+     "Mine. The treasure is mine. The 'we' you're imagining isn't real.",
+     "Don't divide it. I already divided it: one pile, mine."
+    ],
+    "boss": [
+     "A boss. Finally, something that won't try to share my loot.",
+     "Big one. Stay back — I mean it, I work better with room.",
+     "I'll take the boss. The rest of you take notes. From a distance.",
+     "Just me and the monster. The way every fight should be."
+    ],
+    "descend": [
+     "Floor {depth}. Deeper, darker, blessedly fewer opinions.",
+     "Down to {depth}. I'd go faster, but you keep following.",
+     "Stairs. I take them alone. You can take them alone too, separately.",
+     "Floor {depth}. One day this dungeon and I will be properly alone."
+    ],
+    "idle": [
+     "Empty hall. Finally. Just me, the silence, and my refusal to enjoy company.",
+     "Quiet. Good. Quiet doesn't borrow your gear.",
+     "No monsters. No chatter. This is the dungeon at its best.",
+     "I could do this whole floor solo. I'm only walking with you to be polite. I'm not even polite."
+    ],
+    "friendlyFire": [
+     "{ally}, THIS is why I keep my distance. Vindicated and on fire.",
+     "Hit me again, {ally}, and the pack gets one member smaller.",
+     "See? Allies. A liability with a smile. Watch your aim.",
+     "I'd have dodged that solo, {ally}. Crowds slow the reflexes."
+    ],
+    "react": [
+     "Mm. I'd have phrased it shorter, and to no one.",
+     "Sure. I work better without the commentary, but sure.",
+     "Save your breath, {ally}. The dungeon doesn't take suggestions, and neither do I.",
+     "Noted. Doesn't change my plan, which is mine, which I keep to myself."
+    ]
+   }
+  },
+  {
+   "id": "gambling_addict",
+   "name": "Gambling Addict",
+   "blurb": "Sees odds in everything and has never once walked away ahead.",
+   "weight": 10,
+   "interjections": [
+    "Double or nothing!",
+    "Place your bets!",
+    "I'm due!",
+    "All in!",
+    "Lucky dice!"
+   ],
+   "tags": [
+    "...the odds were great.",
+    "...just variance.",
+    "...one more bet.",
+    "...the dice were due.",
+    "...I had a system."
+   ],
+   "lines": {
+    "kill": [
+     "Called it! Had the {enemy} at three-to-one and I cleaned up.",
+     "Ha! Pay out, dungeon — I bet on me and I never lose. Often.",
+     "That {enemy} folded. Should've bluffed harder.",
+     "Told you it was a sure thing. Now double-or-nothing on the next one."
+    ],
+    "hurt": [
+     "Ow! Fine, fine, the house wins a hand. I'm still up overall.",
+     "That hit? Bad beat. Pure bad beat. My read was correct.",
+     "Took one on the chin. The odds said I wouldn't. The odds owe me money.",
+     "Argh! I had eighty percent on that dodge. EIGHTY."
+    ],
+    "lowHp": [
+     "One health left? That's not low, that's a comeback waiting to happen.",
+     "I've survived worse spreads than this. Probably. Let's find out!",
+     "Death's got me at long odds. I love being the underdog. I think.",
+     "If I cash out now I lose everything. So we ride. WE RIDE."
+    ],
+    "allyDown": [
+     "{ally}'s down?! I had money on them lasting two more rooms!",
+     "No no no, {ally}, get up — I staked my whole cut on you!",
+     "{ally} folded! That's the third payout I've blown today.",
+     "Hang on, {ally}! The comeback's the best part of the story AND the bet!"
+    ],
+    "rescue": [
+     "Got you, {ally}. I always back the long shot. You're the long shot.",
+     "Easy, {ally} — carrying you's a gamble, but I like the odds.",
+     "Up you come, {ally}. Don't die owing me, that's just rude.",
+     "Hold on, {ally}! Saving you doubles my luck, everyone knows that."
+    ],
+    "loot": [
+     "{gold} gold! See? See?! The system WORKS. Tell no one the losses.",
+     "A chest! Could be empty, could be a jackpot. I'll take that action.",
+     "Winnings! Now I just need a table to lose it all back at.",
+     "{gold} gold — pocket change. One good streak and I'm a king."
+    ],
+    "boss": [
+     "A boss?! The house finally raised the stakes. I'm IN.",
+     "Long odds on the big one. Long odds mean a BIG payout, friends.",
+     "Nobody bets on us against that. That's exactly why I am.",
+     "High roller's table at last. Watch me push every chip I've got."
+    ],
+    "descend": [
+     "Floor {depth}! Deeper means richer pots. The dungeon's just a casino with stairs.",
+     "Down to {depth}. I feel a streak coming. I always feel a streak coming.",
+     "More floor, more wagers. Floor {depth}, deal me in.",
+     "Stairs down! Each one's a fresh table. Fresh table, fresh luck."
+    ],
+    "idle": [
+     "Quiet hall. I'll bet you my share that torch burns out before the next one. Anyone?",
+     "Nothing to fight. Want to flip for who scouts ahead? Best of three?",
+     "I'm counting my losses. Just kidding. I never count those.",
+     "Empty corridor. Tragic. No table, no dice, no action down here."
+    ],
+    "friendlyFire": [
+     "{ally}! What were the odds you'd hit ME?! Apparently great!",
+     "Blown up by my own side. I did NOT have that on my card, {ally}.",
+     "{ally}, I'd have bet anything against that. Good thing I didn't. ...I did.",
+     "Friendly fire?! That's the worst payout I've seen all dungeon, {ally}."
+    ],
+    "react": [
+     "Bold claim. I'll give it even money.",
+     "Mm, I'd take that bet. I'd take almost any bet, honestly.",
+     "You feeling lucky, {ally}? Because I'm ALWAYS feeling lucky.",
+     "Sure, sure — but what's the wager? Talk's free, and I hate free."
+    ]
+   }
   }
  ],
  "voices": {

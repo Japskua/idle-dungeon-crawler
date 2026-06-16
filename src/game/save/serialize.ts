@@ -138,8 +138,10 @@ function reconcileContent(state: GameState) {
     if (typeof hero.devotion !== 'number') hero.devotion = 20;
     if (typeof hero.greed !== 'number') hero.greed = 0;
     if (typeof hero.frenzyTicks !== 'number') hero.frenzyTicks = 0;
-    // derive ownership flags from traits (greedy hoards); backfill old saves
-    if (!hero.ownership) hero.ownership = ownershipFromTraits(hero.traits ?? []);
+    // derive ownership flags from traits (greedy/lone-wolf/addict); recompute so
+    // saves from before these traits existed pick up the new flags
+    hero.ownership = ownershipFromTraits(hero.traits ?? []);
+    if (typeof hero.gambleCarryMs !== 'number') hero.gambleCarryMs = 0;
     if (hero.faith === undefined) hero.faith = null;
     if (hero.faith && !RELIGIONS[hero.faith.religionId]) hero.faith = null;
     if (!Array.isArray(hero.satchel)) hero.satchel = [];

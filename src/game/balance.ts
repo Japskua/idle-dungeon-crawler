@@ -140,8 +140,28 @@ export const SMITE_UNCLEAN_MULT = 1.6;
 /** Divine Intervention cannot fire below — and consumes — this much devotion */
 export const DIVINE_INTERVENTION_COST = 70;
 
+// ---------- gambling addiction (idle auto-gamble) ----------
+// An addicted hero auto-gambles their OWN gold while idle in the village. To stay
+// deterministic and obey the no-offline rule, this accrues exactly like chores:
+// a per-hero ms carry crosses a fixed interval to resolve one seeded bet at a time
+// (rng.village). The app loop re-anchors lastChoreAccrualMs on boot/gaps, so closed
+// or backgrounded time never accrues — addicts only gamble while the tab is live.
+/** an idle addict places one bet per this many ms of foreground village time */
+export const ADDICT_GAMBLE_INTERVAL_MS = 18_000;
+/** each bet stakes this fraction of the addict'''s current gold... */
+export const ADDICT_GAMBLE_STAKE_FRAC = 0.2;
+/** ...clamped to at least this many gold (so tiny purses still bet something) */
+export const ADDICT_GAMBLE_MIN_STAKE = 5;
+/** an addict stops betting once their purse drops below this (never goes broke-negative) */
+export const ADDICT_GAMBLE_FLOOR = 5;
+/** the addict'''s private game: win chance and payout (a slight house edge, like the Cove) */
+export const ADDICT_GAMBLE_WIN_CHANCE = 0.47;
+export const ADDICT_GAMBLE_PAYOUT = 2;
+/** hard cap on bets resolved in a single upkeep, so a large delta can't burst-ruin them */
+export const ADDICT_GAMBLE_MAX_PER_UPKEEP = 40;
+
 // ---------- ownership traits (greedy) ----------
-/** a greedy hero has a hustler'''s nose for coin: gold-find bonus */
+/** a greedy hero has a hustler's nose for coin: gold-find bonus */
 export const GREEDY_GOLD_MULT = 1.15;
 
 // ---------- grave robber (greed stacks) ----------
@@ -198,6 +218,8 @@ export const MORALE_TRAIT_MODS: Record<string, { baseline?: number; gainMult?: n
   deadpan: { gainMult: 0.6, lossMult: 0.6 }, // a stable anchor
   superstitious: { lossMult: 1.2 }, // rattled by omens
   motherly: { gainMult: 1.1 },
+  lone_wolf: { gainMult: 0.8, lossMult: 0.9 }, // unmoved by the party mood, for better and worse
+  gambling_addict: { gainMult: 1.3, lossMult: 1.3 }, // rides every high and low
 };
 
 function moraleTraitSum(traits: string[], key: 'baseline' | 'bandShift'): number {
