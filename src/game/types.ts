@@ -452,6 +452,8 @@ export interface Hero {
   morale: number;
   /** chosen god + per-hero favor (-100..+100); null = non-believer */
   faith: { religionId: string; favor: number } | null;
+  /** Gambler signature: luck coins in hand (0-3), a re-roll/force-Heads currency; reset to 1 each floor */
+  luckCoins: number;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];
@@ -776,7 +778,7 @@ export type GameEvent =
   | { t: 'wipe'; depth: number; goldLost: number }
   | { t: 'summon'; heroId: Id; defId: MonsterDefId; count: number }
   | { t: 'minionDied'; defId: MonsterDefId; pos: Vec2 }
-  | { t: 'coinFlip'; heroId: Id; heads: boolean }
+  | { t: 'coinFlip'; heroId: Id; heads: boolean; coins: number; skillId: SkillId }
   | { t: 'gamble'; gameId: string; stake: number; won: boolean; delta: number }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }

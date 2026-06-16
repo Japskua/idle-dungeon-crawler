@@ -134,6 +134,7 @@ function reconcileContent(state: GameState) {
     }
     if (typeof hero.gold !== 'number') hero.gold = 0;
     if (typeof hero.morale !== 'number') hero.morale = 10;
+    if (typeof hero.luckCoins !== 'number') hero.luckCoins = 1;
     if (hero.faith === undefined) hero.faith = null;
     if (hero.faith && !RELIGIONS[hero.faith.religionId]) hero.faith = null;
     if (!Array.isArray(hero.satchel)) hero.satchel = [];

@@ -120,6 +120,14 @@ export function resurrectP(base: number, favor: number): number {
 
 // ---------- summons (menagerie & necromancer budgets) ----------
 /** Summoner's menagerie cap: max simultaneous conjured minion-cost = 1.5× level */
+// ---------- gambler (luck coins) ----------
+/** luck coins a Gambler starts each floor with */
+export const LUCK_COINS_START = 1;
+/** most luck coins a Gambler can hold */
+export const LUCK_COINS_MAX = 3;
+/** Jackpot Heads chance = base + this per coin spent (3 coins -> guaranteed) */
+export const LUCK_COIN_HEADS_PER = 0.25;
+
 export function menagerieCap(level: number): number {
   return Math.floor(level * 1.5);
 }
