@@ -134,6 +134,15 @@ export function DungeonScreen() {
                           {'🪙'.repeat(hero.luckCoins) || '◌'}
                         </span>
                       )}
+                      {hero.classId === 'priest' && (
+                        <span
+                          className={`devotion${hero.devotion >= 70 ? ' grace' : ''}`}
+                          title={hero.devotion >= 70 ? 'State of Grace — heals are stronger and free' : `devotion ${hero.devotion}/100`}
+                        >
+                          {' · '}
+                          {hero.devotion >= 70 ? '✨' : '🙏'} {hero.devotion}
+                        </span>
+                      )}
                     </span>
                     <TacticSwitch hero={hero} />
                   </div>
