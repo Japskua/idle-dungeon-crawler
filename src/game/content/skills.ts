@@ -691,4 +691,17 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     reanimate: true,
     description: 'Raise the enemies you just killed — the strongest corpses that fit your undead budget (2× level).',
   },
+  corpse_explosion: {
+    id: 'corpse_explosion',
+    name: 'Corpse Explosion',
+    kind: 'attack',
+    target: 'enemiesInRadius',
+    range: 6,
+    radius: 2,
+    mpCost: 18,
+    cooldown: 130,
+    castTicks: 10,
+    power: 0,
+    description: 'Detonate one of your risen dead in a burst of magical rot — AoE damage worth 40% of its own health. The horde is ammunition.',
+  },
 };

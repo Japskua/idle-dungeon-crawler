@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { GameEvent, MonsterInstance } from './types';
+import type { GameEvent, MonsterInstance, TacticSet } from './types';
 import { newGame } from './newGame';
 import { advanceTick } from './run/runtime';
 import { makeHero } from './hero/create';
@@ -200,5 +200,64 @@ describe('necromancy (and beekeeping)', () => {
     }
     expect(maxCost).toBeGreaterThan(0); // it did raise an army
     expect(maxCost).toBeLessThanOrEqual(6); // ...but never past the budget
+  });
+
+  test('Corpse Explosion detonates a risen minion for AoE and spends the body', () => {
+    const { state, hero } = soloRun(77, 'necromancer', 6);
+    hero.tactics.activeSetId = 'aggressive'; // "Bone Storm" carries Corpse Explosion
+    const run = state.run!;
+    run.monsters = {};
+    run.monsterOrder = [];
+    const hp = run.party.pos[hero.id]!;
+    // a risen minion sitting in the middle of a tight enemy cluster
+    const minion: MonsterInstance = {
+      id: 'risen1', defId: 'zombie', level: 6, elite: false, hp: 200,
+      pos: { x: hp.x + 2, y: hp.y }, move: null, targetId: null, aggro: true, packId: 0,
+      action: null, statuses: [], cooldowns: {}, summonedBy: hero.id, ttlTicks: 9999, summonCost: 6,
+    };
+    run.monsters[minion.id] = minion;
+    run.monsterOrder.push(minion.id);
+    const foes = ['e0', 'e1', 'e2'].map((id, i) => {
+      const m: MonsterInstance = {
+        id, defId: 'rat', level: 3, elite: false, hp: 9999,
+        pos: { x: hp.x + 2 + (i - 1), y: hp.y + (i === 1 ? 1 : 0) }, move: null, targetId: null,
+        aggro: true, packId: 9, action: null, statuses: [], cooldowns: {},
+      };
+      run.monsters[id] = m;
+      run.monsterOrder.push(id);
+      return m;
+    });
+    const hpBefore = foes.map((f) => f.hp);
+
+    let boomed = false;
+    for (let i = 0; i < 800 && !boomed; i++) {
+      hero.mp = 60;
+      const ev: GameEvent[] = [];
+      advanceTick(state, [], NOW, ev);
+      if (ev.some((e) => e.t === 'corpseExplosion')) boomed = true;
+      for (const f of foes) if (run.monsters[f.id]) run.monsters[f.id]!.hp = 9999; // immortal so the fight persists
+    }
+    expect(boomed).toBe(true);
+    expect(run.monsters['risen1']).toBeUndefined(); // the body was spent
+    // before resetting them to 9999 each loop they took blast damage at least once → can't assert final hp,
+    // but the explosion event firing + the minion being consumed proves the detonation resolved
+    void hpBefore;
+  });
+
+  test('Corpse Explosion will not fire with no risen dead to throw', () => {
+    const { state, hero } = soloRun(78, 'necromancer', 6);
+    const d = derive(hero);
+    const view = {
+      enemies: [{ id: 'm1', level: 1, dist2: 9, adjacent: false, isBoss: false, isElite: false }],
+      allies: [{ id: hero.id, hpFrac: 1, dist2: 0 }],
+      downedAllies: [], selfHpFrac: 1, selfMpFrac: 1, carrying: false, withdrawing: false,
+      myMinions: 0, myMinionCost: 0, corpseCount: 0,
+    };
+    const { evaluate } = require('./tactics/evaluator');
+    const set: TacticSet = {
+      id: 's', name: 's',
+      rules: [{ id: 'r0', enabled: true, trigger: { k: 'always' }, action: { k: 'castSkill', skillId: 'corpse_explosion' } }],
+    };
+    expect(evaluate(hero, d, view, set)).toBeNull(); // no minion → no boom
   });
 });

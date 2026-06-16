@@ -51,6 +51,7 @@ import {
   resurrectP,
   undeadBudget,
   REANIMATE_STAT_FRAC,
+  CORPSE_EXPLOSION_FRAC,
   CORPSE_POOL_CAP,
   CORPSE_REACH,
   LUCK_COINS_MAX,
@@ -1338,6 +1339,39 @@ function resolveHeroAction(state: GameState, run: DungeonRun, hero: Hero, action
       if (spawned > 0) {
         events.push({ t: 'summon', heroId: hero.id, defId: toSpawn[0]!.defId, count: spawned });
       }
+      return;
+    }
+    // Corpse Explosion: detonate one risen minion for AoE worth 40% of its own HP
+    if (skill.id === 'corpse_explosion') {
+      const mine = run.monsterOrder
+        .map((id) => run.monsters[id]!)
+        .filter((mm) => mm.hp > 0 && mm.summonedBy === hero.id);
+      if (mine.length === 0) return; // nothing to throw (the evaluator should have gated this)
+      const aim = action.targetId && run.monsters[action.targetId] ? run.monsters[action.targetId]!.pos : myPos;
+      // pick the risen unit nearest the target enemy (ties → lowest id) — it's likely in the thick of it
+      let bomb = mine[0]!;
+      for (const mm of mine) {
+        const dn = euclid2(mm.pos, aim);
+        const db = euclid2(bomb.pos, aim);
+        if (dn < db || (dn === db && mm.id < bomb.id)) bomb = mm;
+      }
+      const blast = Math.round(monsterMaxHp(creatureDef(bomb.defId).base.hp, bomb.level, bomb.elite, false) * CORPSE_EXPLOSION_FRAC);
+      const r2 = (skill.radius ?? 2) * (skill.radius ?? 2);
+      for (const mid of [...run.monsterOrder]) {
+        const mm = run.monsters[mid]!;
+        if (mm.hp <= 0 || mm.summonedBy) continue; // spare friendly minions
+        if (creatureDef(mm.defId).disposition !== 'hostile') continue; // a targeted necrotic burst, not a clumsy bomb
+        if (euclid2(bomb.pos, mm.pos) > r2) continue;
+        const dmg = Math.max(1, Math.round(mitigate(blast, creatureDef(mm.defId).base.armor)));
+        mm.hp -= dmg;
+        mm.lastHitBy = hero.id;
+        hero.stats.dmgDealt += dmg;
+        hero.stats.runDmg += dmg;
+        aggroPack(run, mm.packId);
+        events.push({ t: 'damage', src: hero.id, dst: mm.id, amount: dmg, crit: false, pos: { ...mm.pos }, srcPos: { ...bomb.pos } });
+      }
+      bomb.hp = 0; // the corpse is spent — its undead-level returns to the budget when processDeaths reaps it
+      events.push({ t: 'corpseExplosion', heroId: hero.id, pos: { ...bomb.pos } });
       return;
     }
     let power = skill.physical

@@ -205,6 +205,7 @@ function aggressiveSet(classId: string): TacticSet {
       return a('Bone Storm', [
         rule({ k: 'selfHpBelow', pct: 25 }, { k: 'usePotion', potion: 'hp' }),
         rule({ k: 'enemiesAtLeast', n: 1 }, { k: 'castSkill', skillId: 'reanimate_fallen' }),
+        rule({ k: 'enemiesAtLeast', n: 3 }, { k: 'castSkill', skillId: 'corpse_explosion' }),
         rule({ k: 'always' }, { k: 'castSkill', skillId: 'soul_bolt' }),
         rule({ k: 'always' }, { k: 'attack' }),
       ]);

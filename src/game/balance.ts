@@ -177,6 +177,8 @@ export function undeadBudget(level: number): number {
 }
 /** reanimated units fight at this fraction of the original enemy's stats */
 export const REANIMATE_STAT_FRAC = 0.6;
+/** Corpse Explosion deals AoE worth this fraction of the detonated minion's max HP */
+export const CORPSE_EXPLOSION_FRAC = 0.4;
 /** corpse pool capacity per floor (FIFO; oldest corpse drops off) */
 export const CORPSE_POOL_CAP = 6;
 /** an enemy drops a corpse only if a living necromancer is within this many tiles of the kill */

@@ -787,6 +787,7 @@ export type GameEvent =
   | { t: 'coinFlip'; heroId: Id; heads: boolean; coins: number; skillId: SkillId }
   | { t: 'gamble'; gameId: string; stake: number; won: boolean; delta: number }
   | { t: 'pocketIt'; heroId: Id; stacks: number; gold: number }
+  | { t: 'corpseExplosion'; heroId: Id; pos: Vec2 }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }
