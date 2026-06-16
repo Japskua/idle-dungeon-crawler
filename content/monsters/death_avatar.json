@@ -1,0 +1,51 @@
+{
+  "id": "death_avatar",
+  "name": "Mortishka's Reaper",
+  "tier": "elite",
+  "disposition": "hostile",
+  "summonOnly": true,
+  "base": {
+    "hp": 20,
+    "dmg": 8,
+    "armor": 3,
+    "attackTicks": 13,
+    "moveTicks": 4,
+    "range": 1,
+    "aggroRadius": 8
+  },
+  "spawn": [],
+  "level": {
+    "offset": 0,
+    "spread": 0
+  },
+  "xpBase": 32,
+  "gold": [
+    12,
+    36
+  ],
+  "skills": [],
+  "drops": [],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        ".........0000...",
+        "...00000.0tt0...",
+        "..0KKKKK0tt0....",
+        ".0KKkkkKKt0.....",
+        ".0Kk7k7kK0......",
+        ".0Kkk0kkK0......",
+        ".0KKkkkKK0......",
+        "..0KkkkkK0......",
+        "..0KKKKKK0......",
+        "..0KkkkkK0......",
+        "..0KKkkKK0......",
+        "...0KkkK0.......",
+        "...0KKKK0.......",
+        "...0Kk0K0.......",
+        "..0KK0.KK0......",
+        "..000..000......"
+      ]
+    ]
+  }
+}

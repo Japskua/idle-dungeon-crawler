@@ -78,8 +78,10 @@ export interface Manifestation {
   /** dramatic chronicle/log lines */
   boonText: string;
   wrathText: string;
-  /** creature defId for 'host' (allied) and 'avatar' (hostile) manifestations */
-  creature?: string;
+  /** allied creature defId for a 'host' boon */
+  hostDef?: string;
+  /** hostile avatar defId for an 'avatar' wrath */
+  avatarDef?: string;
 }
 
 /** a game of chance at the Gambler's Cove — one wager, one rng.village draw */

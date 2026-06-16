@@ -1,0 +1,51 @@
+{
+  "id": "wrath_hen",
+  "name": "The Wrathful Hen",
+  "tier": "elite",
+  "disposition": "hostile",
+  "summonOnly": true,
+  "base": {
+    "hp": 24,
+    "dmg": 6,
+    "armor": 4,
+    "attackTicks": 11,
+    "moveTicks": 4,
+    "range": 1,
+    "aggroRadius": 8
+  },
+  "spawn": [],
+  "level": {
+    "offset": 0,
+    "spread": 0
+  },
+  "xpBase": 30,
+  "gold": [
+    12,
+    36
+  ],
+  "skills": [],
+  "drops": [],
+  "sprite": {
+    "size": 16,
+    "frames": [
+      [
+        "....rrr.........",
+        "...0rrr0........",
+        "...0rRr0........",
+        "..0wwwww0.......",
+        "..0w0r0w0.......",
+        ".0wwwwwww0oo0...",
+        "0wwwwwwwww0o0...",
+        "0wwwwwwwwww0....",
+        "0wwwwwwwwww0....",
+        "0wwwwwwwwww0....",
+        "0wwwwwwwwww0....",
+        ".0wwwwwwww0.....",
+        "..0wwwwww0......",
+        "...0o00o0.......",
+        "...0o00o0.......",
+        "..0o0..0o0......"
+      ]
+    ]
+  }
+}

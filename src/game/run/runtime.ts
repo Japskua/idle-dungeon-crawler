@@ -2005,7 +2005,7 @@ export function applyManifestation(
       break;
     }
     case 'host': {
-      const cr = rel.manifestation.creature ?? 'chicken';
+      const cr = rel.manifestation.hostDef ?? 'chicken';
       for (let i = 0; i < MANIFEST_HOST_COUNT; i++) placeMonsterNear(state, run, heroPos, cr, hero.level, false, false, hero.id, 400);
       events.push({ t: 'summon', heroId: hero.id, defId: cr, count: MANIFEST_HOST_COUNT });
       break;
@@ -2023,7 +2023,7 @@ export function applyManifestation(
       applyMorale(hero, -8, 'careless', events);
       break;
     case 'avatar': {
-      const cr = rel.manifestation.creature ?? 'skeleton';
+      const cr = rel.manifestation.avatarDef ?? 'skeleton';
       for (let i = 0; i < MANIFEST_AVATAR_COUNT; i++)
         placeMonsterNear(state, run, heroPos, cr, hero.level + MANIFEST_AVATAR_LEVEL_BONUS, true, true);
       break;
