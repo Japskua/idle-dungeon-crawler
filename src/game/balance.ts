@@ -118,6 +118,27 @@ export function resurrectP(base: number, favor: number): number {
   return base + (Math.max(61, favor) - 61) / 39 * 0.08;
 }
 
+// ---------- rare divine manifestations (the angry-god / blessing moments) ----------
+// These are meant to be RARE and memorable. They only roll for a believer who has
+// pushed favor to an EXTREME tier (Exalted / Forsaken — already uncommon), once per
+// run at most, and only on these check ticks. A typical run sees none; a devoted (or
+// blasphemous) one occasionally gets a single unforgettable visitation.
+/** roll for a manifestation only every this many ticks, per believer */
+export const MANIFEST_CHECK_TICKS = 120;
+/** per-check chance an Exalted believer is granted a boon — kept low on purpose: even a
+ *  believer pinned at max favor for a whole run sees one only every several runs */
+export const MANIFEST_BOON_CHANCE = 0.003;
+/** per-check chance a Forsaken believer suffers wrath */
+export const MANIFEST_WRATH_CHANCE = 0.003;
+/** a boon-smite / wrath-scourge deals this multiple of a depth-scaled hit (it's a GOD) */
+export const MANIFEST_SMITE_MULT = 6;
+/** how many allied servants a 'host' boon conjures */
+export const MANIFEST_HOST_COUNT = 3;
+/** how many elite enforcers an 'avatar' wrath manifests */
+export const MANIFEST_AVATAR_COUNT = 1;
+/** an avatar enforcer spawns this many levels above the believer */
+export const MANIFEST_AVATAR_LEVEL_BONUS = 3;
+
 // ---------- priest (devotion / state of grace) ----------
 /** a priest's Devotion meter sits 0..100, separate from MP */
 export const DEVOTION_MAX = 100;
