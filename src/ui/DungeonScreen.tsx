@@ -143,6 +143,12 @@ export function DungeonScreen() {
                           {hero.devotion >= 70 ? '✨' : '🙏'} {hero.devotion}
                         </span>
                       )}
+                      {hero.classId === 'grave_robber' && hero.greed > 0 && (
+                        <span className="greed" title={`greed: ${hero.greed} (party gold-find +${hero.greed * 3}%)`}>
+                          {' · '}
+                          💰 {hero.greed}
+                        </span>
+                      )}
                     </span>
                     <TacticSwitch hero={hero} />
                   </div>

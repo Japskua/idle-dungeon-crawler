@@ -72,6 +72,7 @@ export function startRun(
     hero.stats.runs++;
     hero.stats.runDmg = 0;
     hero.stats.runGold = 0;
+    hero.greed = 0; // a grave robber's greed is spent back in the village — fresh each run
     // top up to 3 hp / 2 mp from the village pool; bigger gate loadouts are kept
     const takeHp = Math.min(Math.max(0, 3 - hero.potions.hp), state.village.potions.hp);
     const takeMp = Math.min(Math.max(0, 2 - hero.potions.mp), state.village.potions.mp);

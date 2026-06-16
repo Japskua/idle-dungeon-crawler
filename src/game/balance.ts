@@ -140,6 +140,16 @@ export const SMITE_UNCLEAN_MULT = 1.6;
 /** Divine Intervention cannot fire below — and consumes — this much devotion */
 export const DIVINE_INTERVENTION_COST = 70;
 
+// ---------- grave robber (greed stacks) ----------
+/** most Greed stacks a grave robber can hoard in one run */
+export const GREED_MAX = 10;
+/** each Greed stack lifts the whole party's gold-find by this fraction */
+export const GREED_GOLD_PER = 0.03;
+/** Smash and Grab gains this much damage per Greed stack */
+export const GREED_SMASH_DMG_PER = 0.08;
+/** Pocket It siphons this gold range PER stack straight into the robber'''s purse */
+export const GREED_POCKET_GOLD: [number, number] = [8, 15];
+
 // ---------- gambler (luck coins) ----------
 /** luck coins a Gambler starts each floor with */
 export const LUCK_COINS_START = 1;

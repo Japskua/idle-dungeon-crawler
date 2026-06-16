@@ -456,6 +456,8 @@ export interface Hero {
   luckCoins: number;
   /** Priest signature: Devotion meter (0-100), reset to 20 each floor; ≥70 = State of Grace */
   devotion: number;
+  /** Grave Robber signature: Greed stacks (0-10), built on loot/kills this run; spent by Pocket It, reset in the village */
+  greed: number;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];
@@ -782,6 +784,7 @@ export type GameEvent =
   | { t: 'minionDied'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'coinFlip'; heroId: Id; heads: boolean; coins: number; skillId: SkillId }
   | { t: 'gamble'; gameId: string; stake: number; won: boolean; delta: number }
+  | { t: 'pocketIt'; heroId: Id; stacks: number; gold: number }
   | { t: 'neutralSighted'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'neutralKilled'; defId: MonsterDefId; pos: Vec2 }
   | { t: 'bossSlain'; defId: MonsterDefId; depth: number }
