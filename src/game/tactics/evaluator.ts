@@ -139,6 +139,8 @@ function feasible(
       if (!graceFree && hero.mp < skill.mpCost) return null;
       // Divine Intervention is gated behind a full reservoir of faith
       if (skill.id === 'divine_intervention' && hero.devotion < DIVINE_INTERVENTION_COST) return null;
+      // Corpse Explosion needs a risen minion to detonate
+      if (skill.id === 'corpse_explosion' && view.myMinions === 0) return null;
       const offensive = skill.target === 'enemy' || skill.target === 'enemiesInRadius';
       if (offensive) {
         if (view.withdrawing) return null;

@@ -182,6 +182,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     skillUnlocks: [
       { level: 1, skillId: 'soul_bolt' },
       { level: 2, skillId: 'reanimate_fallen' },
+      { level: 5, skillId: 'corpse_explosion' },
     ],
     hireCostBase: 70,
     description: 'Reanimates the very enemies it kills. The corpses are temporary. The horde is not.',
