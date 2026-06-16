@@ -458,6 +458,8 @@ export interface Hero {
   devotion: number;
   /** Grave Robber signature: Greed stacks (0-10), built on loot/kills this run; spent by Pocket It, reset in the village */
   greed: number;
+  /** Summoner signature: Menagerie Unleashed frenzy window countdown (ticks); >0 raises the cap and buffs minions */
+  frenzyTicks: number;
   /** 2-3 personality trait ids — they shape what this hero says */
   traits: string[];
   injuries: InjuryId[];

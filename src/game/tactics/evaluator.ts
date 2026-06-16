@@ -16,7 +16,7 @@
  */
 import type { Hero, Id, PotionKind, SkillId, TacticSet, Trigger } from '../types';
 import { SKILLS } from '../content';
-import { menagerieCap, undeadBudget, DEVOTION_GRACE, DIVINE_INTERVENTION_COST } from '../balance';
+import { menagerieCap, undeadBudget, DEVOTION_GRACE, DIVINE_INTERVENTION_COST, MENAGERIE_FRENZY_MULT } from '../balance';
 import type { DerivedStats } from '../hero/derive';
 
 export interface EnemyView {
@@ -166,8 +166,9 @@ function feasible(
           return { kind: 'cast', skillId, targetId: null };
         }
         if (skill.summonCost) {
-          // Summoner: respect the menagerie cap (1.5× level in minion-cost)
-          if (view.myMinionCost + skill.summonCost > menagerieCap(hero.level)) return null;
+          // Summoner: respect the menagerie cap — Menagerie Unleashed raises it to 2.5× for the window
+          const cap = hero.frenzyTicks > 0 ? Math.floor(hero.level * MENAGERIE_FRENZY_MULT) : menagerieCap(hero.level);
+          if (view.myMinionCost + skill.summonCost > cap) return null;
           return { kind: 'cast', skillId, targetId: null };
         }
         // legacy fixed-count summons (beekeeper bees, etc.): top up to the count
