@@ -5,7 +5,7 @@ four into an endless procedurally generated dungeon, and manage everything from 
 village above — gear, potions, injuries, chores, and the **tactics** that program how
 your heroes fight while you watch (or don't).
 
-![stack](https://img.shields.io/badge/bun-react%2019-blueviolet) ![tests](https://img.shields.io/badge/tests-49%20passing-brightgreen)
+![stack](https://img.shields.io/badge/bun-react%2019-blueviolet) ![tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
 
 ## Running it
 
@@ -35,14 +35,27 @@ bun run balance    # headless balance harness (CSV of simulated runs)
    carried in the run; XP, items and equipment are never lost.
 5. **Village**: buy gear (stock rotates daily), hire recruits with generated names and
    random perks ("Grimbeard Souphands — Owns a Frying Pan"), treat injuries at the
-   temple, and put benched heroes on **chores** — they keep earning gold and XP even
-   while the tab is closed (up to 12 h).
-6. **Personalities**: every hero rolls 2-3 personality traits (Boastful, Gloomy,
-   Hungry…) that shape what they say. Heroes banter in the dungeon — taunting
-   enemies by class, chatting with each other, blurting quirk-driven nonsense, and
-   occasionally reflecting on their own story ("Down {downs} times now. The floor
-   and I have an understanding."). The mime never speaks. All dialogue lives in
-   `content/banter/*.json` — add lines by editing JSON.
+   temple, and put benched heroes on **chores** — they earn gold and XP while the tab
+   is open. There is **no offline progress**: time only passes while you're watching.
+6. **Faith & gods**: convert any hero to one of **12 gods** at the Guild Hall and tithe
+   for favor. Devotion grants a passive bonus; pushing favor to the extremes can
+   trigger a rare **divine manifestation** mid-run — a blessing, a sudden resurrection,
+   a shower of gold… or, if you've forsaken your god, its wrath: a curse, a smiting,
+   even a summoned **avatar** (the war-god's revenant, death's reaper, or a giant
+   vengeful hen). These are deliberately uncommon — a moment you'll remember.
+7. **18 classes**, four with a signature gimmick: the Priest builds **Devotion** toward
+   a free-casting State of Grace, the Gambler banks **Luck Coins** to rig coin-flip
+   attacks, the Grave Robber stacks **Greed** for party-wide gold-find, the Summoner
+   fields a menagerie, and the Necromancer **reanimates the very enemies it kills**.
+   The seaside **Gambler's Cove** lets you wager the village purse on games of chance.
+8. **Personalities & morale**: every hero rolls 2-3 traits (Boastful, Gloomy, Hungry…)
+   that shape what they say *and* sometimes how they act — a Greedy hero hoards their
+   gold, a Lone Wolf won't share gear, a Gambling Addict bleeds coin at the Cove while
+   idle. Morale swings with the fight: panic and flee when it craters, crit and dodge
+   when it soars. Heroes banter in the dungeon — taunting enemies by class, chatting
+   with each other, blurting quirk-driven nonsense, and reflecting on their own story
+   ("Down {downs} times now. The floor and I have an understanding."). The mime never
+   speaks. All dialogue lives in `content/banter/*.json` — add lines by editing JSON.
 
 ## Adding content (no code required)
 

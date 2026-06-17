@@ -7,7 +7,7 @@ player manages roster/economy in the village and programs per-hero **tactics**
 ## Commands
 
 - `bun run dev` — gen content + dev server (HMR) on :3000
-- `bun run test` — gen + full suite (49 tests). ALWAYS run via `bun run test`, not bare
+- `bun run test` — gen + full suite (153 tests). ALWAYS run via `bun run test`, not bare
   `bun test` (the gen step keeps `src/game/content/gen/` in sync with `content/`).
 - `bun run typecheck` · `bun run build` · `bun run balance` (headless run simulator)
 
@@ -46,9 +46,35 @@ names, tiles, village scenery, banter dialogue) — one file per thing, includin
 as palette-char rows (`content/palette.json` holds the only palette). `tools/gen-content.ts`
 validates (grid sizes, palette chars, drop/item refs, spawn coverage) and emits
 committed typed modules into `src/game/content/gen/`. Classes/races/religions/skills/statuses/
-injuries/chores stay as TS data in `src/game/content/`. Sprite conventions: 16×16,
+injuries/chores/coveGames stay as TS data in `src/game/content/`. Sprite conventions: 16×16,
 1px `0` outline, single frame (a bob frame is auto-generated), face RIGHT (renderer
 flips), bosses are 16×16 drawn at 2×.
+
+## Game systems (where the depth lives)
+
+Beyond the core crawl, most gameplay depth sits in a few systems — all pure sim,
+all driven off seeded rng + per-hero state, surfaced in the combat log / chronicle:
+
+- **18 classes** (`content/classes.ts`); four have a signature resource meter on
+  `Hero`: priest `devotion` (State of Grace), gambler `luckCoins`, grave-robber
+  `greed`, summoner `frenzyTicks`. Necromancer reanimates a floor-local corpse
+  pool (`run.corpses`) and detonates the risen (Corpse Explosion).
+- **Religion** (`content/religions.ts`): 12 gods, per-hero `faith {religionId, favor}`,
+  five favor tiers, signature passives at Faithful+, a favor-scaled resurrection at
+  Exalted, Forsaken wrath. **Divine manifestations** — rare per-god boons/wraths
+  (incl. summoned avatars: `war_avatar`/`death_avatar`/`wrath_hen`) gated to
+  ≤1 per believer per run via `run.manifested`.
+- **Morale** (`hero/morale.ts`, balance bands): panic/inspire bands, social
+  cheer/jeer, trait modifiers.
+- **Personality traits** (`content/banter/traits.json`, 14): banter + some now
+  mechanical — `ownershipFromTraits` maps greedy/lone_wolf/gambling_addict to
+  `hero.ownership` (hoarding, item-refusal, idle auto-gamble).
+- **Gambler's Cove** (`content/coveGames.ts`): a village building of deterministic
+  `rng.village` wagers; the `GAMBLE` command.
+- **16 races** (`content/races.ts`) — stat mods + racial traits (some combat procs
+  still data-only, hooks pending).
+
+No offline progress, ever — see the architecture rule above.
 
 ## Tuning
 
