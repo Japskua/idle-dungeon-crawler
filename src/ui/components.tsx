@@ -41,6 +41,29 @@ export function GodPortrait({ religionId, scale = 3, label }: { religionId: stri
   );
 }
 
+/** A label that reveals a styled pixel-box explanation on hover/focus — used for
+ *  traits, perks and other quirks so the player learns what e.g. "Lone Wolf" means.
+ *  On reveal it nudges itself left so a right-edge chip's popup stays on-screen. */
+export function Hint({ label, text, className }: { label: string; text?: string; className?: string }) {
+  const popRef = useRef<HTMLSpanElement>(null);
+  if (!text) return <span className={className}>{label}</span>;
+  const clamp = () => {
+    const pop = popRef.current;
+    if (!pop) return;
+    pop.style.left = '0px';
+    const overflow = pop.getBoundingClientRect().right - (window.innerWidth - 8);
+    if (overflow > 0) pop.style.left = `${-overflow}px`;
+  };
+  return (
+    <span className={`hint${className ? ' ' + className : ''}`} tabIndex={0} onMouseEnter={clamp} onFocus={clamp}>
+      {label}
+      <span ref={popRef} className="hint-pop" role="tooltip">
+        {text}
+      </span>
+    </span>
+  );
+}
+
 /** An animated pixel portrait of a class (idle bob, faces right). */
 export function ClassSprite({ classId, scale = 4 }: { classId: string; scale?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);

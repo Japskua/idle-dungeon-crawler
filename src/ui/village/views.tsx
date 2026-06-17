@@ -23,7 +23,7 @@ import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
 import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef, StatMod } from '../../game/types';
-import { ClassSprite, GodPortrait, HeroVitals, ItemName, describeItem } from '../components';
+import { ClassSprite, GodPortrait, Hint, HeroVitals, ItemName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
 import { PARTY_BEHAVIORS } from '../../game/tactics/behaviors';
 import type { PartyBehavior } from '../../game/types';
@@ -179,11 +179,32 @@ function EquipSelect({ game, item }: { game: GameState; item: ItemInstance }) {
   );
 }
 
-/** display names for personality traits, from the banter dictionary */
-function personalityLine(traitIds: string[], raceId?: string): string {
-  const racial = raceId ? (RACES[raceId]?.racialTraits ?? []).map((t) => t.name) : [];
-  const personality = traitIds.map((id) => BANTER.traits.find((t) => t.id === id)?.name ?? id);
-  return [...racial, ...personality].join(' · ');
+/** a hero's traits (racial + personality) with their plain-language descriptions */
+function traitInfos(traitIds: string[], raceId?: string): { name: string; desc: string }[] {
+  const racial = raceId
+    ? (RACES[raceId]?.racialTraits ?? []).map((t) => ({ name: t.name, desc: t.effect }))
+    : [];
+  const personality = traitIds.map((id) => {
+    const t = BANTER.traits.find((x) => x.id === id);
+    return { name: t?.name ?? id, desc: t?.blurb ?? '' };
+  });
+  return [...racial, ...personality];
+}
+
+/** the personality line: each trait is hoverable for a styled explanation */
+function TraitChips({ traitIds, raceId }: { traitIds: string[]; raceId?: string }) {
+  const infos = traitInfos(traitIds, raceId);
+  return (
+    <div className="small personality">
+      ☘{' '}
+      {infos.map((t, i) => (
+        <span key={`${t.name}-${i}`}>
+          {i > 0 ? ' · ' : ''}
+          <Hint label={t.name} text={t.desc} />
+        </span>
+      ))}
+    </div>
+  );
 }
 
 /** race attribute deltas, for previewing a recruit before they're a real Hero */
@@ -649,7 +670,7 @@ export function TavernView({ game }: { game: GameState }) {
                     {attrs.int + raceAttrDelta(r.raceId).int} · VIT {attrs.vit + raceAttrDelta(r.raceId).vit} ·{' '}
                     {heroMaxHp(cls.baseHp, attrs.vit)} HP · {heroMaxMp(cls.baseMp, attrs.int)} MP
                   </div>
-                  <div className="small personality">☘ {personalityLine(r.traits, r.raceId)}</div>
+                  <TraitChips traitIds={r.traits} raceId={r.raceId} />
                 </div>
               </div>
               <div className="small" style={{ margin: '6px 0' }}>
@@ -998,15 +1019,15 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
         carry: {d.carryUsed.toFixed(1)} / {d.carryMax.toFixed(1)} kg
         {d.moveTicks > 4 ? <span className="muted"> · heavy gear slows movement</span> : null}
       </div>
-      <div className="small personality">☘ {personalityLine(hero.traits, hero.raceId)}</div>
+      <TraitChips traitIds={hero.traits} raceId={hero.raceId} />
       <FaithRow hero={hero} />
       {hero.perks.length > 0 && (
         <div className="small">
           {hero.perks.map((pid) => {
             const perk = PERKS[pid];
             return (
-              <span key={pid} className={`tag tag-perk-${perk?.polarity}`} title={perk?.flavor}>
-                {perk?.name ?? pid}
+              <span key={pid}>
+                <Hint className={`tag tag-perk-${perk?.polarity}`} label={perk?.name ?? pid} text={perk?.flavor} />{' '}
               </span>
             );
           })}
@@ -1102,8 +1123,8 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
       {hero.injuries.length > 0 && (
         <div className="small">
           {hero.injuries.map((iid) => (
-            <span key={iid} className="tag tag-bad" title={INJURIES[iid]?.flavor}>
-              {INJURIES[iid]?.name}
+            <span key={iid}>
+              <Hint className="tag tag-bad" label={INJURIES[iid]?.name ?? iid} text={INJURIES[iid]?.flavor} />{' '}
             </span>
           ))}
           <span className="muted small"> → hospital</span>
@@ -1199,12 +1220,12 @@ function GateHeroCard({
         dmg {d.weaponDmg} · armor {d.armor} · speed {(40 / d.moveTicks).toFixed(1)} · carry{' '}
         {d.carryUsed.toFixed(1)}/{d.carryMax.toFixed(1)} kg
       </div>
-      <div className="small personality">☘ {personalityLine(hero.traits, hero.raceId)}</div>
+      <TraitChips traitIds={hero.traits} raceId={hero.raceId} />
       {hero.injuries.length > 0 && (
         <div className="small">
           {hero.injuries.map((iid) => (
-            <span key={iid} className="tag tag-bad" title={INJURIES[iid]?.flavor}>
-              {INJURIES[iid]?.name}
+            <span key={iid}>
+              <Hint className="tag tag-bad" label={INJURIES[iid]?.name ?? iid} text={INJURIES[iid]?.flavor} />{' '}
             </span>
           ))}
         </div>

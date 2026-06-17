@@ -205,6 +205,17 @@ body {
 /* roomier two-across cards (Guild Hall) */
 .building-cols.cols-wide {
   grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+  align-items: stretch; /* cards in a row share a height instead of sizing to content */
+}
+
+/* a stretched hero card lays its contents top-to-bottom and pins the action
+   row to the bottom, so equal-height cards don't leave an awkward gap */
+.cols-wide .hero-card {
+  display: flex;
+  flex-direction: column;
+}
+.cols-wide .hero-card > .row:last-of-type {
+  margin-top: auto;
 }
 
 /* the chore select must shrink so the dismiss button never clips */
@@ -863,6 +874,50 @@ input[type='number'] {
   background: var(--gold);
   color: #1b1426;
   font-weight: bold;
+}
+
+/* ---------- hover hint (trait / perk / quirk explainer) ---------- */
+.hint {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--muted);
+}
+.tag.hint {
+  border-bottom: none; /* perk tags already read as interactive chips */
+}
+.hint-pop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  z-index: 70;
+  width: max-content;
+  max-width: 240px;
+  padding: 6px 8px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 2px solid var(--border);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+}
+/* a little pixel arrow pointing up at the label */
+.hint-pop::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border: 5px solid transparent;
+  border-bottom-color: var(--border);
+}
+.hint:hover .hint-pop,
+.hint:focus .hint-pop,
+.hint:focus-visible .hint-pop {
+  display: block;
 }
 
 .rules {
