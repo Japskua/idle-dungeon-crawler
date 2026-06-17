@@ -1,0 +1,18 @@
+{
+  "name": "Idle Dungeon Crawler",
+  "short_name": "Idle Dungeon",
+  "description": "An idle RPG: command a party of pixel-art heroes and watch them auto-crawl an endless procedural dungeon.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "en",
+  "categories": ["games", "entertainment"],
+  "background_color": "#0d0a0f",
+  "theme_color": "#0d0a0f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
