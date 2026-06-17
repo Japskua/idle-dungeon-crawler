@@ -6,7 +6,7 @@ import type { Command, GameEvent, GameState, ItemInstance } from './types';
 import { startRun, chronicle } from './run/lifecycle';
 import { resolveEvent } from './run/runtime';
 import { applyFavor } from './hero/faith';
-import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE,
+import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE, SWITCH_FAITH_FAVOR, FAVOR_MIN, FAVOR_MAX,
 } from './balance';
 import { CHORES, COVE_GAMES, INJURIES, RELIGIONS, SKILLS, classDef, itemDef } from './content';
 import { derive } from './hero/derive';
@@ -32,8 +32,19 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.mode !== 'village') return;
       const hero = state.roster[cmd.heroId];
       if (!hero) return;
-      if (cmd.religionId === null) hero.faith = null;
-      else if (RELIGIONS[cmd.religionId]) hero.faith = { religionId: cmd.religionId, favor: 0 };
+      // Faith is a lifelong commitment, enforced here (not just in the UI): there is
+      // no free "renounce" path. A null target is ignored — otherwise a hero could
+      // drop to faithless and re-dedicate at favor 0, dodging the switch penalty.
+      if (cmd.religionId === null || !RELIGIONS[cmd.religionId]) return;
+      const prev = hero.faith;
+      if (!prev) {
+        hero.faith = { religionId: cmd.religionId, favor: 0 }; // genuine first dedication is free
+      } else if (prev.religionId !== cmd.religionId) {
+        // apostasy: abandoning one god for another wipes favor and brands the hero
+        // Forsaken with the new god — they must tithe/devote a long way back.
+        hero.faith = { religionId: cmd.religionId, favor: Math.max(FAVOR_MIN, Math.min(FAVOR_MAX, SWITCH_FAITH_FAVOR)) };
+      }
+      // re-selecting the same god is a no-op (favor is preserved)
       return;
     }
     case 'TITHE': {

@@ -117,6 +117,12 @@ export function favorTier(favor: number): FavorTier {
 export function resurrectP(base: number, favor: number): number {
   return base + (Math.max(61, favor) - 61) / 39 * 0.08;
 }
+/** Abandoning one god for another is meant to HURT. The first dedication is free
+ *  (favor 0), but switching wipes all favor and starts the new faith this deep in
+ *  the red — well past the −61 Forsaken line — so the apostate suffers the new
+ *  god's wrath (damage penalty + possible punishment) and must tithe/devote a long
+ *  way back before seeing any boon. */
+export const SWITCH_FAITH_FAVOR = -70;
 
 // ---------- rare divine manifestations (the angry-god / blessing moments) ----------
 // These are meant to be RARE and memorable. They only roll for a believer who has

@@ -804,6 +804,67 @@ input[type='number'] {
   width: min(1000px, 96vw);
 }
 
+/* ---------- deity picker ---------- */
+.modal.deity-picker {
+  width: min(960px, 96vw);
+}
+.deity-intro {
+  margin: 2px 0 10px;
+}
+.deity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.deity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel2);
+}
+.deity-card.current {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+.deity-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.god-portrait {
+  image-rendering: pixelated;
+  border-radius: 5px;
+  flex: none;
+}
+.deity-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+.deity-domain {
+  font-style: italic;
+}
+.deity-desc {
+  color: var(--muted);
+  font-style: italic;
+}
+.deity-action {
+  margin-top: auto;
+  padding-top: 4px;
+}
+.deity-action .btn {
+  width: 100%;
+}
+.tag-current {
+  background: var(--gold);
+  color: #1b1426;
+  font-weight: bold;
+}
+
 .rules {
   margin: 8px 0;
 }

@@ -1,8 +1,45 @@
 import { useEffect, useRef } from 'react';
 import type { Hero, ItemInstance } from '../game/types';
-import { ITEMS } from '../game/content';
+import { ITEMS, PALETTE } from '../game/content';
+import { GOD_PORTRAITS } from '../game/content/godPortraits';
 import { derive } from '../game/hero/derive';
 import { atlasDraw, getAtlas } from '../render/spriteCompiler';
+
+/** A static 32×32 pixel portrait of a god, drawn from its palette-char grid.
+ *  Pass `label` for an accessible name; without one it's hidden from screen
+ *  readers (the god's name is rendered beside it in the picker). */
+export function GodPortrait({ religionId, scale = 3, label }: { religionId: string; scale?: number; label?: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const rows = GOD_PORTRAITS[religionId];
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas || !rows) return;
+    const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const pal = PALETTE as Record<string, string>;
+    for (let y = 0; y < rows.length; y++) {
+      const row = rows[y];
+      if (!row) continue;
+      for (let x = 0; x < row.length; x++) {
+        const hex = pal[row[x]!];
+        if (!hex) continue; // '.' / unknown -> transparent
+        ctx.fillStyle = hex;
+        ctx.fillRect(x * scale, y * scale, scale, scale);
+      }
+    }
+  }, [religionId, scale, rows]);
+  const n = 32;
+  return (
+    <canvas
+      ref={ref}
+      width={n * scale}
+      height={n * scale}
+      className="god-portrait"
+      {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
+    />
+  );
+}
 
 /** An animated pixel portrait of a class (idle bob, faces right). */
 export function ClassSprite({ classId, scale = 4 }: { classId: string; scale?: number }) {
