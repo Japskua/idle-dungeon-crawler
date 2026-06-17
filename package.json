@@ -5,7 +5,7 @@
   "scripts": {
     "gen": "bun run tools/gen-content.ts",
     "dev": "bun run gen && bun ./index.html",
-    "build": "bun run gen && bun build ./index.html --outdir=dist --minify",
+    "build": "bun run gen && bun build ./index.html --outdir=dist --minify && cp docs/brand/og-cover.png dist/og-cover.png",
     "test": "bun run gen && bun test",
     "typecheck": "bun run gen && tsc --noEmit",
     "balance": "bun run gen && bun run tools/balance-harness.ts",

@@ -937,3 +937,16 @@ input[type='number'] {
 /* summoner menagerie / frenzy */
 .menagerie { color: var(--muted, #8a87a8); }
 .menagerie.frenzy { color: var(--red, #d13b3b); font-weight: bold; }
+
+/* ---------- about / credits ---------- */
+.about-btn { line-height: 1; padding: 1px 6px; }
+.modal.about { max-width: 440px; text-align: left; }
+.modal.about p { line-height: 1.5; }
+.modal.about a { color: var(--gold, #f2c94c); text-decoration: none; }
+.modal.about a:hover { text-decoration: underline; }
+.about-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.about-links .btn { text-decoration: none; }
+.about-section { margin-top: 12px; border-top: 1px dotted var(--border, #2b213a); padding-top: 10px; }
+.about-h { font-weight: bold; margin-bottom: 4px; }
+.about-libs { margin: 0; padding-left: 18px; line-height: 1.7; }
+.about-libs li { margin: 0; }

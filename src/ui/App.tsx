@@ -183,6 +183,75 @@ function WelcomeModal() {
   );
 }
 
+const ABOUT_LINKS = {
+  site: 'https://www.janneparkkila.com',
+  linkedin: 'https://www.linkedin.com/in/janneparkkila/',
+  github: 'https://github.com/Japskua/idle-dungeon-crawler',
+};
+
+/** about / credits — author, links, and the open-source libraries used */
+function AboutModal() {
+  const open = useUi((s) => s.about);
+  if (!open) return null;
+  const close = () => useUi.setState({ about: false });
+  return (
+    <div className="modal-overlay" onClick={close}>
+      <div className="modal panel about" onClick={(e) => e.stopPropagation()}>
+        <div className="debrief-title">ⓘ About</div>
+        <p>
+          <b>Idle Dungeon Crawler</b> — an idle RPG: you command a party of pixel-art heroes, and they
+          crawl an endless procedurally generated dungeon on their own.
+        </p>
+        <p className="muted">
+          Made by{' '}
+          <a href={ABOUT_LINKS.site} target="_blank" rel="noreferrer noopener">
+            Janne Parkkila
+          </a>
+          .
+        </p>
+        <div className="about-links">
+          <a className="btn btn-small" href={ABOUT_LINKS.site} target="_blank" rel="noreferrer noopener">
+            🌐 janneparkkila.com
+          </a>
+          <a className="btn btn-small" href={ABOUT_LINKS.linkedin} target="_blank" rel="noreferrer noopener">
+            💼 LinkedIn
+          </a>
+          <a className="btn btn-small" href={ABOUT_LINKS.github} target="_blank" rel="noreferrer noopener">
+            ⌨ GitHub
+          </a>
+        </div>
+        <div className="about-section">
+          <div className="about-h">Built with</div>
+          <ul className="about-libs">
+            <li>
+              React 19 <span className="muted small">— UI · MIT</span>
+            </li>
+            <li>
+              Zustand <span className="muted small">— state · MIT</span>
+            </li>
+            <li>
+              Bun <span className="muted small">— runtime, bundler &amp; test runner · MIT</span>
+            </li>
+            <li>
+              TypeScript <span className="muted small">— Apache-2.0</span>
+            </li>
+            <li>Canvas 2D + hand-authored pixel art</li>
+            <li>
+              Cloudflare Pages <span className="muted small">— hosting (+ D1 for anonymous stats)</span>
+            </li>
+          </ul>
+        </div>
+        <p className="muted small">All code, content and pixel art are original. © 2026 Janne Parkkila.</p>
+        <div className="row modal-footer">
+          <button className="btn btn-primary" onClick={close}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** one-time heads-up that anonymous stats are collected (opt-out right there) */
 function TelemetryNotice() {
   const [seen, setSeen] = useState(telemetryNoticeSeen());
@@ -317,6 +386,14 @@ export function App() {
     <div className="app">
       <header className="topbar">
         <span className="title">IDLE DUNGEON CRAWLER</span>
+        <button
+          className="btn btn-tiny about-btn"
+          title="About, credits & links"
+          aria-label="About"
+          onClick={() => useUi.setState({ about: true })}
+        >
+          ⓘ
+        </button>
         <span className="gold">⛀ {game.village.gold}g</span>
         {(() => {
           const purse = game.rosterOrder.reduce((sum, id) => sum + (game.roster[id]?.gold ?? 0), 0);
@@ -333,6 +410,7 @@ export function App() {
       <DebriefModal />
       <WelcomeModal />
       <EventModal />
+      <AboutModal />
       <TelemetryNotice />
     </div>
   );
