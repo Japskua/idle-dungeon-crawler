@@ -38,6 +38,8 @@ interface UiState {
   debrief: DebriefReport | null;
   /** first-steps explainer, shown when a brand-new game starts */
   welcome: boolean;
+  /** about / credits panel */
+  about: boolean;
 }
 
 export const useUi = create<UiState>(() => ({
@@ -49,6 +51,7 @@ export const useUi = create<UiState>(() => ({
   villageView: 'scene',
   debrief: null,
   welcome: false,
+  about: false,
 }));
 
 export function showDebrief(report: DebriefReport) {
