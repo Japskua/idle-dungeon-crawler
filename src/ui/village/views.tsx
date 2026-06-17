@@ -2,7 +2,7 @@
  * One focused screen per village building. Each view gets the full width —
  * no more everything-crammed-into-one-screen.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { app } from '../../app/loop';
 import { epitaphFor, loadGraveyard } from '../../app/graveyard';
 import {
@@ -22,8 +22,8 @@ import { favorTier } from '../../game/balance';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
-import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef } from '../../game/types';
-import { ClassSprite, HeroVitals, ItemName, describeItem } from '../components';
+import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef, StatMod } from '../../game/types';
+import { ClassSprite, GodPortrait, HeroVitals, ItemName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
 import { PARTY_BEHAVIORS } from '../../game/tactics/behaviors';
 import type { PartyBehavior } from '../../game/types';
@@ -819,10 +819,124 @@ function StoryBlock({ hero }: { hero: Hero }) {
   );
 }
 
-/** per-hero faith management — convert to a god, tithe gold for favor (Guild Hall) */
+/** format a god's signature StatMods as a short human string ("+10% dmg · +1 dex") */
+function fmtBonus(mods: StatMod[]): string {
+  const parts = mods
+    .map((m) => {
+      if (m.kind === 'mult') {
+        const pct = Math.round((m.mul - 1) * 100);
+        return pct === 0 ? null : `${pct > 0 ? '+' : ''}${pct}% ${m.what}`;
+      }
+      if (m.kind === 'attr') return `${m.add > 0 ? '+' : ''}${m.add} ${m.attr}`;
+      return null;
+    })
+    .filter(Boolean);
+  return parts.length ? parts.join(' · ') : '—';
+}
+
+/** the deity-selection popup: every god with portrait, lore and signature boon;
+ *  dedication is a clear choice, switching is gated behind a heavy-penalty confirm */
+function DeitySelectModal({ hero, onClose }: { hero: Hero; onClose: () => void }) {
+  const currentId = hero.faith?.religionId ?? null;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const choose = (id: string) => {
+    if (id === currentId) return;
+    if (currentId) {
+      const from = RELIGIONS[currentId];
+      const to = RELIGIONS[id];
+      const ok = confirm(
+        `Forsake ${from?.name} and turn ${hero.name} to ${to?.name}?\n\n` +
+          `⚠ ENORMOUS PENALTY — all of ${hero.name}'s accumulated favor is wiped, and they ` +
+          `begin FORSAKEN: ${to?.deity} suffers the turncoat with reduced damage and the threat ` +
+          `of divine wrath until ${hero.name} tithes and devotes a long way back into favor.\n\n` +
+          `This is not easily undone. Switch anyway?`,
+      );
+      if (!ok) return;
+    }
+    app.dispatch({ t: 'SET_HERO_FAITH', heroId: hero.id, religionId: id });
+    onClose();
+  };
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal panel deity-picker"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Choose ${hero.name}'s deity`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="debrief-title">🛐 Choose {hero.name}&rsquo;s Deity</div>
+        <p className="muted small deity-intro">
+          {currentId ? (
+            <>
+              {hero.name} is devoted to <b>{RELIGIONS[currentId]?.name}</b>. Dedication is for life —{' '}
+              <b>switching gods wipes all favor and begins Forsaken</b> under the new deity&rsquo;s wrath. Choose carefully.
+            </>
+          ) : (
+            <>
+              Dedication is free, and favor grows through devotion and tithing. But once chosen, a hero&rsquo;s faith is
+              meant to last — <b>switching gods later carries an enormous penalty</b>.
+            </>
+          )}
+        </p>
+        <div className="deity-grid">
+          {Object.values(RELIGIONS).map((r) => {
+            const isCurrent = r.id === currentId;
+            return (
+              <div key={r.id} className={`deity-card${isCurrent ? ' current' : ''}`}>
+                <div className="deity-head">
+                  <GodPortrait religionId={r.id} scale={3} label={`${r.name} portrait`} />
+                  <div className="deity-titles">
+                    <b>{r.name}</b>
+                    <span className="muted small">{r.deity}</span>
+                    <span className="muted small deity-domain">{r.domain}</span>
+                  </div>
+                </div>
+                <div className="small deity-desc">{r.description}</div>
+                <div className="small">
+                  <span className="muted">Faithful boon:</span> {fmtBonus(r.bonus)}
+                </div>
+                <div className="small">
+                  <span className="muted">Blessing:</span> {r.blessing}
+                </div>
+                <div className="deity-action">
+                  {isCurrent ? (
+                    <span className="tag tag-current">✓ current faith</span>
+                  ) : currentId ? (
+                    <button className="btn btn-small btn-danger" onClick={() => choose(r.id)}>
+                      ⚠ switch — favor wiped, begin Forsaken
+                    </button>
+                  ) : (
+                    <button className="btn btn-small btn-primary" onClick={() => choose(r.id)}>
+                      dedicate
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="row modal-footer">
+          <button className="btn" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** per-hero faith management — choose a god (popup), tithe gold for favor (Guild Hall) */
 function FaithRow({ hero }: { hero: Hero }) {
   const rel = hero.faith ? RELIGIONS[hero.faith.religionId] : undefined;
   const tier = hero.faith ? favorTier(hero.faith.favor) : null;
+  const [picking, setPicking] = useState(false);
   return (
     <div className="row small faith-row">
       <span title={rel?.description}>
@@ -839,18 +953,9 @@ function FaithRow({ hero }: { hero: Hero }) {
         )}
       </span>
       <span className="row-buttons">
-        <select
-          value={hero.faith?.religionId ?? ''}
-          title="convert (favor resets to 0)"
-          onChange={(e) => app.dispatch({ t: 'SET_HERO_FAITH', heroId: hero.id, religionId: e.target.value || null })}
-        >
-          <option value="">Faithless</option>
-          {Object.values(RELIGIONS).map((r) => (
-            <option key={r.id} value={r.id} title={r.description}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        <button className="btn btn-tiny" onClick={() => setPicking(true)}>
+          {hero.faith ? 'change deity' : 'choose deity'}
+        </button>
         {hero.faith && (
           <button
             className="btn btn-tiny"
@@ -862,6 +967,7 @@ function FaithRow({ hero }: { hero: Hero }) {
           </button>
         )}
       </span>
+      {picking && <DeitySelectModal hero={hero} onClose={() => setPicking(false)} />}
     </div>
   );
 }
