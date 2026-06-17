@@ -23,7 +23,7 @@ import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
 import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
 import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef, StatMod } from '../../game/types';
-import { ClassSprite, GodPortrait, Hint, HeroVitals, ItemName, describeItem } from '../components';
+import { BehaviorSelectModal, ClassName, ClassSprite, GodPortrait, Hint, HeroVitals, ItemName, RaceName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
 import { PARTY_BEHAVIORS } from '../../game/tactics/behaviors';
 import type { PartyBehavior } from '../../game/types';
@@ -574,7 +574,7 @@ export function GuildView({ game }: { game: GameState }) {
           </div>
 
           <div className="panel">
-            <div className="panel-title">Class training — {CLASSES[hero.classId]?.name}</div>
+            <div className="panel-title">Class training — <ClassName classId={hero.classId} /></div>
             {CLASSES[hero.classId]!.skillUnlocks.map((u) => {
               const skill = SKILLS[u.skillId];
               const known = hero.skills.includes(u.skillId);
@@ -661,7 +661,7 @@ export function TavernView({ game }: { game: GameState }) {
                   <div className="panel-title">
                     {r.name}{' '}
                     <span className="muted">
-                      L{r.level} {RACES[r.raceId]?.name} {cls.name}
+                      L{r.level} <RaceName raceId={r.raceId} /> <ClassName classId={r.classId} />
                     </span>
                   </div>
                   <div className="muted small">{cls.description}</div>
@@ -678,8 +678,8 @@ export function TavernView({ game }: { game: GameState }) {
                 {r.perks.map((pid) => {
                   const perk = PERKS[pid];
                   return (
-                    <div key={pid} title={perk?.flavor}>
-                      <span className={`tag tag-perk-${perk?.polarity}`}>{perk?.name}</span>{' '}
+                    <div key={pid}>
+                      <Hint className={`tag tag-perk-${perk?.polarity}`} label={perk?.name ?? pid} text={perk?.flavor} />{' '}
                       <span className="muted small">{perk?.flavor}</span>
                     </div>
                   );
@@ -725,7 +725,7 @@ export function HospitalView({ game }: { game: GameState }) {
               <div className="panel-title">
                 {hero.name}{' '}
                 <span className="muted">
-                  L{hero.level} {RACES[hero.raceId]?.name} {CLASSES[hero.classId]?.name}
+                  L{hero.level} <RaceName raceId={hero.raceId} /> <ClassName classId={hero.classId} />
                 </span>
                 <span className={`tag tag-${hero.activity}`}>{hero.activity}</span>
               </div>
@@ -792,7 +792,7 @@ export function GraveyardView({ game }: { game: GameState }) {
             <div>
               <div className="panel-title">{grave.name}</div>
               <div className="muted small">
-                L{grave.level} {CLASSES[grave.classId]?.name ?? grave.classId} — fell at depth {grave.depth}
+                L{grave.level} <ClassName classId={grave.classId} /> — fell at depth {grave.depth}
               </div>
               <div className="small">{grave.cause ?? 'the dungeon keeps its secrets'}</div>
               <div className="small epitaph">“{epitaphFor(grave)}”</div>
@@ -960,11 +960,11 @@ function FaithRow({ hero }: { hero: Hero }) {
   const [picking, setPicking] = useState(false);
   return (
     <div className="row small faith-row">
-      <span title={rel?.description}>
+      <span>
         🛐{' '}
         {rel ? (
           <>
-            <b>{rel.name}</b>{' '}
+            <Hint label={<b>{rel.name}</b>} text={`${rel.deity} — ${rel.description}`} />{' '}
             <span className={`favor favor-${tier}`}>
               {tier} ({hero.faith!.favor >= 0 ? '+' : ''}{hero.faith!.favor})
             </span>
@@ -1004,7 +1004,7 @@ function HallHeroCard({ game, hero }: { game: GameState; hero: Hero }) {
           <div className="panel-title">
             {hero.name}{' '}
             <span className="muted">
-              — L{hero.level} {RACES[hero.raceId]?.name} {CLASSES[hero.classId]?.name}
+              — L{hero.level} <RaceName raceId={hero.raceId} /> <ClassName classId={hero.classId} />
             </span>
             <span className={`tag tag-${hero.activity}`}>{hero.activity}</span>
           </div>
@@ -1210,7 +1210,7 @@ function GateHeroCard({
           <div className="panel-title">
             {hero.name}{' '}
             <span className="muted">
-              — L{hero.level} {RACES[hero.raceId]?.name} {CLASSES[hero.classId]?.name}
+              — L{hero.level} <RaceName raceId={hero.raceId} /> <ClassName classId={hero.classId} />
             </span>
           </div>
           <HeroVitals hero={hero} />
@@ -1348,6 +1348,7 @@ export function GateView({ game }: { game: GameState }) {
   const [selected, setSelected] = useState<Id[]>([]);
   const [depth, setDepth] = useState(1);
   const [behavior, setBehavior] = useState<PartyBehavior>('balanced');
+  const [behaviorPicking, setBehaviorPicking] = useState(false);
   const candidates = game.rosterOrder
     .map((id) => game.roster[id]!)
     .filter((h) => h && h.activity !== 'party' && h.hp > 0);
@@ -1374,17 +1375,12 @@ export function GateView({ game }: { game: GameState }) {
           </span>
           <span className="row-buttons">
             <span className="muted">behavior</span>
-            <select
-              value={behavior}
-              title={PARTY_BEHAVIORS.find((b) => b.id === behavior)?.blurb}
-              onChange={(e) => setBehavior(e.target.value as PartyBehavior)}
-            >
-              {PARTY_BEHAVIORS.map((b) => (
-                <option key={b.id} value={b.id} title={b.blurb}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            <button className="btn btn-small" onClick={() => setBehaviorPicking(true)}>
+              {PARTY_BEHAVIORS.find((b) => b.id === behavior)?.name ?? behavior} ⏷
+            </button>
+            {behaviorPicking && (
+              <BehaviorSelectModal value={behavior} onPick={setBehavior} onClose={() => setBehaviorPicking(false)} />
+            )}
             <span className="muted">start at depth</span>
             <select value={depth} onChange={(e) => setDepth(Number(e.target.value))}>
               {depths.map((dd) => (

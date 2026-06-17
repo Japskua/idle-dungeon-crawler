@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
-import type { Hero, ItemInstance } from '../game/types';
-import { ITEMS, PALETTE } from '../game/content';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import type { Hero, ItemInstance, PartyBehavior } from '../game/types';
+import { CLASSES, ITEMS, PALETTE, RACES } from '../game/content';
 import { GOD_PORTRAITS } from '../game/content/godPortraits';
+import { PARTY_BEHAVIORS } from '../game/tactics/behaviors';
 import { derive } from '../game/hero/derive';
 import { atlasDraw, getAtlas } from '../render/spriteCompiler';
 
@@ -44,9 +45,24 @@ export function GodPortrait({ religionId, scale = 3, label }: { religionId: stri
 /** A label that reveals a styled pixel-box explanation on hover/focus — used for
  *  traits, perks and other quirks so the player learns what e.g. "Lone Wolf" means.
  *  On reveal it nudges itself left so a right-edge chip's popup stays on-screen. */
-export function Hint({ label, text, className }: { label: string; text?: string; className?: string }) {
+export function Hint({
+  label,
+  text,
+  className,
+  style,
+}: {
+  label: ReactNode;
+  text?: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
   const popRef = useRef<HTMLSpanElement>(null);
-  if (!text) return <span className={className}>{label}</span>;
+  if (!text)
+    return (
+      <span className={className} style={style}>
+        {label}
+      </span>
+    );
   const clamp = () => {
     const pop = popRef.current;
     if (!pop) return;
@@ -55,12 +71,90 @@ export function Hint({ label, text, className }: { label: string; text?: string;
     if (overflow > 0) pop.style.left = `${-overflow}px`;
   };
   return (
-    <span className={`hint${className ? ' ' + className : ''}`} tabIndex={0} onMouseEnter={clamp} onFocus={clamp}>
+    <span className={`hint${className ? ' ' + className : ''}`} style={style} tabIndex={0} onMouseEnter={clamp} onFocus={clamp}>
       {label}
       <span ref={popRef} className="hint-pop" role="tooltip">
         {text}
       </span>
     </span>
+  );
+}
+
+/** A class name that explains the class on hover. */
+export function ClassName({ classId }: { classId: string }) {
+  const c = CLASSES[classId];
+  return <Hint label={c?.name ?? classId} text={c?.description} />;
+}
+
+/** A race name that explains the race on hover. */
+export function RaceName({ raceId }: { raceId: string }) {
+  const r = RACES[raceId];
+  return <Hint label={r?.name ?? raceId} text={r?.description} />;
+}
+
+/** Party-behavior picker dialog — mirrors the deity selector. */
+export function BehaviorSelectModal({
+  value,
+  onPick,
+  onClose,
+}: {
+  value: PartyBehavior;
+  onPick: (b: PartyBehavior) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal panel deity-picker"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose party behavior"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="debrief-title">⚔ Party Behavior</div>
+        <p className="muted small deity-intro">
+          How the party fights its way through each floor — switch any time, even mid-run.
+        </p>
+        <div className="deity-grid">
+          {PARTY_BEHAVIORS.map((b) => {
+            const current = b.id === value;
+            return (
+              <div key={b.id} className={`deity-card${current ? ' current' : ''}`}>
+                <b>{b.name}</b>
+                <div className="small deity-desc">{b.blurb}</div>
+                <div className="deity-action">
+                  {current ? (
+                    <span className="tag tag-current">✓ current</span>
+                  ) : (
+                    <button
+                      className="btn btn-small btn-primary"
+                      onClick={() => {
+                        onPick(b.id);
+                        onClose();
+                      }}
+                    >
+                      choose
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="row modal-footer">
+          <button className="btn" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -147,10 +241,17 @@ export function ItemName({ item }: { item: ItemInstance }) {
   if (def?.weight) stats.push(`${def.weight}kg`);
   const title = [def?.flavor, stats.join(', ')].filter(Boolean).join(' — ');
   return (
-    <span className="item-name" style={{ color: rarityColor[item.rarity] }} title={title}>
-      {itemLabel(item)}
-      {stats.length > 0 && <span className="item-stats"> ({stats.join(', ')})</span>}
-    </span>
+    <Hint
+      className="item-name"
+      style={{ color: rarityColor[item.rarity] }}
+      text={title}
+      label={
+        <>
+          {itemLabel(item)}
+          {stats.length > 0 && <span className="item-stats"> ({stats.join(', ')})</span>}
+        </>
+      }
+    />
   );
 }
 

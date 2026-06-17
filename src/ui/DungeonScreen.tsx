@@ -8,7 +8,7 @@ import { moraleBand } from '../game/balance';
 import type { GameState, Hero, PartyBehavior } from '../game/types';
 import { MAX_PIXEL_SCALE, MIN_VIEW_H, MIN_VIEW_W, VIEW_H, VIEW_W } from '../render/renderer';
 import { CombatLog } from './CombatLog';
-import { HeroVitals } from './components';
+import { BehaviorSelectModal, ClassName, HeroVitals } from './components';
 import { TacticsEditor } from './TacticsEditor';
 import { useUi } from './store';
 
@@ -102,6 +102,7 @@ export function DungeonScreen() {
   useUi((s) => s.rev);
   const game = useUi((s) => s.game);
   const run = game?.run;
+  const [behaviorPicking, setBehaviorPicking] = useState(false);
   if (!game || !run) return null;
   const party = run.party;
 
@@ -122,7 +123,7 @@ export function DungeonScreen() {
                   <b>{hero.name}</b>
                   <span className="muted">
                     {' '}
-                    L{hero.level} {CLASSES[hero.classId]?.name}
+                    L{hero.level} <ClassName classId={hero.classId} />
                   </span>
                   {downed && <span className="tag tag-bad"> DOWN</span>}
                   {carrying && <span className="tag"> carrying {game.roster[carrying]?.name}</span>}
@@ -206,17 +207,16 @@ export function DungeonScreen() {
           </div>
           <div className="row" style={{ marginTop: 6 }}>
             <span className="muted small">party behavior</span>
-            <select
-              value={run.behavior}
-              title={PARTY_BEHAVIORS.find((b) => b.id === run.behavior)?.blurb}
-              onChange={(e) => app.dispatch({ t: 'SET_PARTY_BEHAVIOR', behavior: e.target.value as PartyBehavior })}
-            >
-              {PARTY_BEHAVIORS.map((b) => (
-                <option key={b.id} value={b.id} title={b.blurb}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            <button className="btn btn-small" onClick={() => setBehaviorPicking(true)}>
+              {PARTY_BEHAVIORS.find((b) => b.id === run.behavior)?.name ?? run.behavior} ⏷
+            </button>
+            {behaviorPicking && (
+              <BehaviorSelectModal
+                value={run.behavior}
+                onPick={(b) => app.dispatch({ t: 'SET_PARTY_BEHAVIOR', behavior: b })}
+                onClose={() => setBehaviorPicking(false)}
+              />
+            )}
           </div>
           <button
             className="btn btn-warn wide"
