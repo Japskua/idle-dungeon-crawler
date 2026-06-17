@@ -6,8 +6,8 @@ crisp, scalable SVG. Open `gallery.html` locally to preview all four together.
 
 | File | Use | Native px | Renders at |
 |------|-----|-----------|-----------|
-| `logo.svg` | wordmark / site header | 150×44 | 1200×352 |
-| `box-art.svg` | game "box cover" (portrait) | 132×180 | 660×900 |
+| `logo.svg` | wordmark / site header | 160×44 | 1280×352 |
+| `box-art.svg` | game "box cover" (portrait) | 150×192 | 750×960 |
 | `blog-cover.svg` | blog post cover (≈1.9:1) | 240×126 | 1200×630 |
 | `project-cover.svg` | project page cover (≈1.9:1) | 240×126 | 1200×630 |
 
