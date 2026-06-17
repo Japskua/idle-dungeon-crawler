@@ -185,6 +185,7 @@ function WelcomeModal() {
 
 const ABOUT_LINKS = {
   site: 'https://www.janneparkkila.com',
+  x: 'https://x.com/Japskua',
   linkedin: 'https://www.linkedin.com/in/janneparkkila/',
   github: 'https://github.com/Japskua/idle-dungeon-crawler',
 };
@@ -212,6 +213,9 @@ function AboutModal() {
         <div className="about-links">
           <a className="btn btn-small" href={ABOUT_LINKS.site} target="_blank" rel="noreferrer noopener">
             🌐 janneparkkila.com
+          </a>
+          <a className="btn btn-small" href={ABOUT_LINKS.x} target="_blank" rel="noreferrer noopener">
+            𝕏 @Japskua
           </a>
           <a className="btn btn-small" href={ABOUT_LINKS.linkedin} target="_blank" rel="noreferrer noopener">
             💼 LinkedIn
