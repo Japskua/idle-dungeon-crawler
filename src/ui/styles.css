@@ -882,8 +882,9 @@ input[type='number'] {
   cursor: help;
   border-bottom: 1px dotted var(--muted);
 }
-.tag.hint {
-  border-bottom: none; /* perk tags already read as interactive chips */
+.tag.hint,
+.item-name.hint {
+  border-bottom: none; /* tags & item names already read as interactive */
 }
 .hint-pop {
   display: none;
