@@ -1,0 +1,19 @@
+# Cloudflare Pages — https://developers.cloudflare.com/pages/configuration/headers/
+
+# The HTML shell must always revalidate, so a new deploy shows up immediately
+# instead of a stale cached page pointing at an old bundle.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# JS/CSS filenames are content-hashed, so they never change under a given name.
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# Safe defaults everywhere (does not affect the /api/* Pages Function).
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

@@ -1,0 +1,6 @@
+# Idle Dungeon Crawler — https://idledungeon.janneparkkila.com
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://idledungeon.janneparkkila.com/sitemap.xml
