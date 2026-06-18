@@ -681,7 +681,10 @@ body {
 }
 
 .tag {
+  display: inline-block;
+  vertical-align: middle;
   font-size: 13px;
+  line-height: 1.5;
   padding: 0 4px;
   border: 1px solid var(--border);
   margin-left: 4px;
