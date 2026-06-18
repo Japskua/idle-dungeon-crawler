@@ -2336,6 +2336,8 @@ export function resolveEvent(state: GameState, run: DungeonRun, choiceKey: strin
     ev.choices.find((c) => c.key === choiceKey) ?? ev.choices.find((c) => c.default) ?? ev.choices[ev.choices.length - 1]!;
   const outcome = pickWeighted(state.rng.combat, choice.outcomes, (o) => o.weight);
   for (const eff of outcome.effects) applyEventEffect(state, run, eff, events);
+  // surface the outcome in a dialog (the app loop stays frozen until acknowledged).
+  run.eventResult = { eventId: ev.id, choiceLabel: choice.label, text: outcome.text };
   events.push({ t: 'eventResolved', eventId: ev.id, choiceKey: choice.key, resultText: outcome.text });
 }
 

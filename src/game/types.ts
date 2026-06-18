@@ -673,6 +673,9 @@ export interface DungeonRun {
   behavior: PartyBehavior;
   /** an interactive event awaiting the player's choice (pauses exploration) */
   pendingEvent?: PendingEvent;
+  /** the outcome of the last resolved event, awaiting the player's acknowledgement;
+   *  the app loop keeps the world frozen while this (or pendingEvent) is set */
+  eventResult?: { eventId: string; choiceLabel: string; text: string };
   /** party morale (0-100, starts 50) — scaffolding nudged by events */
   morale: number;
   /** divine favor (starts 0) — scaffolding nudged by events */
@@ -752,6 +755,7 @@ export type Command =
   | { t: 'TITHE'; heroId: Id; amount: number }
   | { t: 'GAMBLE'; gameId: string; stake: number }
   | { t: 'EVENT_CHOICE'; eventId: string; choiceKey: string }
+  | { t: 'ACK_EVENT_RESULT' }
   | { t: 'SET_TACTICS'; heroId: Id; sets: TacticSet[]; activeSetId: Id }
   | { t: 'BUY_STOCK_ITEM'; stockKey: string }
   | { t: 'BUY_POTION'; potion: PotionKind; qty: number }
