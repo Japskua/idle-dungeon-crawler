@@ -108,7 +108,31 @@ function DebriefModal() {
 function EventModal() {
   useUi((s) => s.rev);
   const game = useUi((s) => s.game);
-  const pending = game?.run?.pendingEvent;
+  const run = game?.run;
+  const pending = run?.pendingEvent;
+  const result = run?.eventResult;
+
+  // the outcome dialog takes precedence — the world stays frozen until acknowledged
+  if (result) {
+    const rev = DUNGEON_EVENTS[result.eventId];
+    return (
+      <div className="modal-overlay">
+        <div className="modal panel event-modal">
+          <div className="debrief-title">✦ {rev?.name ?? 'Outcome'}</div>
+          <p className="muted small">
+            You chose: <b>{result.choiceLabel}</b>
+          </p>
+          <p className="event-prompt">{result.text}</p>
+          <div className="row modal-footer">
+            <button className="btn btn-primary wide" onClick={() => app.dispatch({ t: 'ACK_EVENT_RESULT' })}>
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!pending) return null;
   const ev = DUNGEON_EVENTS[pending.eventId];
   if (!ev) return null;
@@ -129,7 +153,7 @@ function EventModal() {
             </button>
           ))}
         </div>
-        <p className="muted small">If you don’t choose, the party takes the cautious option on its own.</p>
+        <p className="muted small">The dungeon is paused while you decide.</p>
       </div>
     </div>
   );

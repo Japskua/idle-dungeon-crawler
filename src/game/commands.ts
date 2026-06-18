@@ -68,6 +68,11 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       }
       return;
     }
+    case 'ACK_EVENT_RESULT': {
+      // player has read the outcome dialog — clear it so the world unpauses
+      if (state.run) state.run.eventResult = undefined;
+      return;
+    }
     case 'GAMBLE': {
       // a single explicit wager at the Cove — one rng.village draw, village bank
       if (state.mode !== 'village') return;

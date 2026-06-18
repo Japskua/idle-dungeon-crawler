@@ -175,6 +175,8 @@ function reconcileContent(state: GameState) {
     state.run.corpses = state.run.corpses.filter((c) => MONSTERS[c.defId] || NEUTRALS[c.defId]);
     const pe = state.run.pendingEvent;
     if (pe && !DUNGEON_EVENTS[pe.eventId]) state.run.pendingEvent = undefined;
+    const er = state.run.eventResult;
+    if (er && !DUNGEON_EVENTS[er.eventId]) state.run.eventResult = undefined;
   }
 }
 

@@ -6,6 +6,7 @@
 import type { Command, GameEvent, GameState } from '../game/types';
 import { TICK_MS } from '../game/balance';
 import { advanceTick } from '../game/run/runtime';
+import { applyCommand } from '../game/commands';
 import { Renderer } from '../render/renderer';
 import { publish, pushBanter, setUiSpeed, showDebrief } from '../ui/store';
 import { saveGame } from './saveManager';
@@ -89,17 +90,29 @@ class GameApp {
     }
     this.lastNow = now;
 
-    if (this.speed > 0) this.acc += dt * this.speed;
+    // While a dungeon event awaits the player (choosing, or acknowledging the
+    // outcome) the whole world freezes — no ticks, no accrual — and only the
+    // player's event commands land. (The sim's own deadline auto-resolve still
+    // exists for headless runs, but never fires here because we stop ticking.)
+    const r = this.state.run;
+    const awaitingInput = !!(r && (r.pendingEvent || r.eventResult));
     let steps = 0;
-    while (this.acc >= TICK_MS && steps < MAX_STEPS_PER_FRAME) {
-      advanceTick(this.state, this.queue.splice(0, this.queue.length), now, events);
-      this.acc -= TICK_MS;
-      steps++;
-    }
-    if (steps >= MAX_STEPS_PER_FRAME) this.acc = 0; // drop backlog after jank
-    // paused (or village idle): commands still need to land
-    if (this.queue.length > 0 && steps === 0) {
-      advanceTick(this.state, this.queue.splice(0, this.queue.length), now, events);
+    if (awaitingInput) {
+      this.acc = 0;
+      this.state.village.lastChoreAccrualMs = now; // no chore/recovery accrual during the pause
+      for (const cmd of this.queue.splice(0, this.queue.length)) applyCommand(this.state, cmd, now, events);
+    } else {
+      if (this.speed > 0) this.acc += dt * this.speed;
+      while (this.acc >= TICK_MS && steps < MAX_STEPS_PER_FRAME) {
+        advanceTick(this.state, this.queue.splice(0, this.queue.length), now, events);
+        this.acc -= TICK_MS;
+        steps++;
+      }
+      if (steps >= MAX_STEPS_PER_FRAME) this.acc = 0; // drop backlog after jank
+      // paused (or village idle): commands still need to land
+      if (this.queue.length > 0 && steps === 0) {
+        advanceTick(this.state, this.queue.splice(0, this.queue.length), now, events);
+      }
     }
 
     if (events.length > 0) {
@@ -108,7 +121,7 @@ class GameApp {
       const debrief = this.chronicler.consume(this.state, events);
       if (debrief) showDebrief(debrief);
     }
-    if (this.speed > 0) {
+    if (!awaitingInput && this.speed > 0) {
       for (const u of this.banter.consume(this.state, events, now)) {
         this.renderer.say(u.heroId, u.text, 2_600 + u.text.length * 45);
         pushBanter(this.state, u.heroId, u.text);
