@@ -13,7 +13,7 @@ import { derive } from './hero/derive';
 import { canEquip } from './hero/equipment';
 import { makeItem } from './items/factory';
 import { makeHero } from './hero/create';
-import { effectiveHireCost, shopStock, tavernRecruits } from './village/shop';
+import { effectiveHireCost, shopStock, spendGold, tavernRecruits } from './village/shop';
 import { chance, pickWeighted } from './core/rng';
 
 export function applyCommand(state: GameState, cmd: Command, nowMs: number, events: GameEvent[]) {
@@ -160,8 +160,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
     }
     case 'BUY_POTION': {
       const price = POTION_PRICES[cmd.potion] * cmd.qty;
-      if (cmd.qty > 0 && state.village.gold >= price) {
-        state.village.gold -= price;
+      if (cmd.qty > 0 && spendGold(state, price)) {
         state.village.potions[cmd.potion] += cmd.qty;
         events.push({ t: 'purchase', what: `${cmd.qty}x ${cmd.potion} potion`, cost: price, category: 'potion' });
       }
@@ -170,8 +169,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
     case 'BUY_STOCK_ITEM': {
       const entry = shopStock(state).find((e) => e.key === cmd.stockKey);
       if (!entry || state.village.purchasedToday.includes(cmd.stockKey)) return;
-      if (state.village.gold < entry.price) return;
-      state.village.gold -= entry.price;
+      if (!spendGold(state, entry.price)) return;
       state.village.purchasedToday.push(cmd.stockKey);
       state.village.inventory.push(makeItem(state, entry.defId, Math.max(1, state.progress.maxDepthReached)));
       events.push({ t: 'purchase', what: itemDef(entry.defId).name, cost: entry.price, category: 'gear', refId: entry.defId });
@@ -315,8 +313,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       if (state.mode !== 'village') return;
       const qty = Math.max(1, Math.floor(cmd.qty));
       const cost = BOMB_PRICE * qty;
-      if (state.village.gold < cost) return;
-      state.village.gold -= cost;
+      if (!spendGold(state, cost)) return;
       state.village.bombs += qty;
       events.push({ t: 'purchase', what: `${qty}x bomb`, cost });
       return;
@@ -360,8 +357,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const recruit = tavernRecruits(state).find((r) => r.key === cmd.recruitKey);
       if (!recruit || state.village.hiredToday.includes(cmd.recruitKey)) return;
       const cost = effectiveHireCost(state, recruit);
-      if (state.village.gold < cost) return;
-      state.village.gold -= cost;
+      if (!spendGold(state, cost)) return;
       state.village.hiredToday.push(cmd.recruitKey);
       const hero = makeHero(state, recruit.classId, recruit.name, recruit.level, recruit.perks, recruit.traits, recruit.raceId);
       state.roster[hero.id] = hero;
@@ -400,8 +396,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const injury = INJURIES[cmd.injuryId];
       if (!injury) return;
       const cost = healInjuryCost(injury.healCostBase, injury.severity, hero.level);
-      if (state.village.gold < cost) return;
-      state.village.gold -= cost;
+      if (!spendGold(state, cost)) return;
       hero.injuries = hero.injuries.filter((i) => i !== cmd.injuryId);
       events.push({ t: 'purchase', what: `Treated: ${injury.name} (${hero.name})`, cost, category: 'healing', refId: injury.id });
       return;
@@ -426,8 +421,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       } else {
         return; // monster moves and other classes' techniques are not for sale
       }
-      if (state.village.gold < cost) return;
-      state.village.gold -= cost;
+      if (!spendGold(state, cost)) return;
       hero.skills.push(cmd.skillId);
       events.push({ t: 'purchase', what: `${hero.name} learned ${skill.name}`, cost, category: 'training', refId: skill.id });
       chronicle(state, nowMs, `${hero.name} studied at the Magician's Guild and learned ${skill.name}.`);
@@ -439,8 +433,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
       const d = derive(hero);
       const missing = Math.max(0, d.maxHp - hero.hp);
       const cost = instantHealCost(missing);
-      if (missing <= 0 || state.village.gold < cost) return;
-      state.village.gold -= cost;
+      if (missing <= 0 || !spendGold(state, cost)) return;
       hero.hp = d.maxHp;
       hero.mp = d.maxMp;
       if (hero.activity === 'recovering') hero.activity = 'idle';
