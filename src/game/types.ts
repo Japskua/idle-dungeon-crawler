@@ -421,6 +421,21 @@ export interface HeroStats {
   carriedOut: number;
   /** times they carried a downed friend to safety */
   rescues: number;
+  /** lifetime kills tallied by monster def id (for "most-slain nemesis") */
+  killsByDef?: Record<string, number>;
+}
+
+/** a fallen hero's lifetime stats, snapshotted at death for the graveyard */
+export interface HeroLifetimeSnapshot {
+  kills: number;
+  dmgDealt: number;
+  runs: number;
+  downs: number;
+  rescues: number;
+  gold: number;
+  biggestHitTaken: number;
+  biggestHitFrom?: string;
+  nemesis?: { name: string; count: number };
 }
 
 export interface EntityAction {
@@ -801,7 +816,17 @@ export type GameEvent =
   | { t: 'chestOpened'; gold: number; items: ItemDefId[]; pos: Vec2 }
   | { t: 'heroDowned'; heroId: Id; pos: Vec2 }
   | { t: 'heroCarried'; carrier: Id; carried: Id }
-  | { t: 'heroDied'; heroId: Id; name: string; classId: ClassId; level: number; depth: number; cause: string }
+  | {
+      t: 'heroDied';
+      heroId: Id;
+      name: string;
+      classId: ClassId;
+      level: number;
+      depth: number;
+      cause: string;
+      /** a snapshot of the fallen hero's lifetime stats, for the graveyard */
+      lifetime: HeroLifetimeSnapshot;
+    }
   | { t: 'injury'; heroId: Id; injuryId: InjuryId }
   | { t: 'levelUp'; heroId: Id; level: number }
   | { t: 'xpGain'; heroId: Id; amount: number }

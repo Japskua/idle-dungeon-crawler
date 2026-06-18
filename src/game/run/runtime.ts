@@ -1810,7 +1810,11 @@ function processDeaths(state: GameState, run: DungeonRun, nowMs: number, events:
         goldTaker.gold += gold;
         goldTaker.stats.runGold += gold;
       }
-      if (killer) killer.stats.kills++;
+      if (killer) {
+        killer.stats.kills++;
+        const tally = (killer.stats.killsByDef ??= {});
+        tally[m.defId] = (tally[m.defId] ?? 0) + 1;
+      }
       // a grave robber pries something valuable off every fresh corpse
       if (killer) gainGreed(killer);
       // morale: the slayer is heartened (more for elites/bosses), the party cheered

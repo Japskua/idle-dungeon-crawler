@@ -785,21 +785,45 @@ export function GraveyardView({ game }: { game: GameState }) {
           </span>
         </div>
       </div>
-      <div className="building-cols">
-        {graves.map((grave, i) => (
-          <div key={i} className="panel grave">
-            <div className="grave-stone">🪦</div>
-            <div>
-              <div className="panel-title">{grave.name}</div>
-              <div className="muted small">
-                L{grave.level} <ClassName classId={grave.classId} /> — fell at depth {grave.depth}
+      <div className="building-cols graves-grid">
+        {graves.map((grave, i) => {
+          const lt = grave.lifetime;
+          return (
+            <div key={i} className="panel grave">
+              <div className="grave-stone">🪦</div>
+              <div className="grave-body">
+                <div className="panel-title">{grave.name}</div>
+                <div className="muted small">
+                  L{grave.level} <ClassName classId={grave.classId} /> — fell at depth {grave.depth}
+                </div>
+                <div className="small">{grave.cause ?? 'the dungeon keeps its secrets'}</div>
+                {lt && (
+                  <div className="small grave-stats">
+                    <span>⚔️ {lt.kills.toLocaleString()} slain</span>
+                    <span>🩸 {lt.dmgDealt.toLocaleString()} damage dealt</span>
+                    <span>🗺️ braved {lt.runs} {lt.runs === 1 ? 'crawl' : 'crawls'}</span>
+                    <span>⛀ {lt.gold.toLocaleString()}g to their name</span>
+                    {lt.nemesis ? (
+                      <span>💀 nemesis: {lt.nemesis.name} ×{lt.nemesis.count}</span>
+                    ) : null}
+                    {lt.downs > 0 ? <span>↯ downed {lt.downs}×</span> : null}
+                    {lt.rescues > 0 ? (
+                      <span>🤝 saved {lt.rescues} {lt.rescues === 1 ? 'friend' : 'friends'}</span>
+                    ) : null}
+                    {lt.biggestHitTaken > 0 ? (
+                      <span>
+                        💥 worst hit: {lt.biggestHitTaken}
+                        {lt.biggestHitFrom ? ` (${lt.biggestHitFrom})` : ''}
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+                <div className="small epitaph">“{epitaphFor(grave)}”</div>
+                <div className="muted small grave-date">{new Date(grave.diedAtMs).toLocaleDateString()}</div>
               </div>
-              <div className="small">{grave.cause ?? 'the dungeon keeps its secrets'}</div>
-              <div className="small epitaph">“{epitaphFor(grave)}”</div>
-              <div className="muted small">{new Date(grave.diedAtMs).toLocaleDateString()}</div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </BuildingShell>
   );

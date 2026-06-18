@@ -2,7 +2,7 @@
  * The graveyard remembers every fallen hero FOREVER — it lives in its own
  * localStorage key, outside the save file, so it survives wipes and new games.
  */
-import type { GameEvent } from '../game/types';
+import type { GameEvent, HeroLifetimeSnapshot } from '../game/types';
 
 export interface GraveRecord {
   name: string;
@@ -12,6 +12,8 @@ export interface GraveRecord {
   diedAtMs: number;
   /** how it happened and who did it */
   cause?: string;
+  /** lifetime stats snapshot captured at death (graves from before this update lack it) */
+  lifetime?: HeroLifetimeSnapshot;
 }
 
 const KEY = 'idc:graveyard';
@@ -34,7 +36,7 @@ export function recordFallen(events: GameEvent[], nowMs: number): boolean {
   const graves = loadGraveyard();
   for (const e of deaths) {
     if (e.t !== 'heroDied') continue;
-    graves.push({ name: e.name, classId: e.classId, level: e.level, depth: e.depth, diedAtMs: nowMs, cause: e.cause });
+    graves.push({ name: e.name, classId: e.classId, level: e.level, depth: e.depth, diedAtMs: nowMs, cause: e.cause, lifetime: e.lifetime });
   }
   try {
     localStorage.setItem(KEY, JSON.stringify(graves.slice(-MAX_GRAVES)));

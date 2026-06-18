@@ -229,10 +229,40 @@ body {
   min-width: 0;
 }
 
+/* graves in a row share a height instead of sizing to their (varying) stats */
+.graves-grid {
+  align-items: stretch;
+}
+
 .grave {
   display: flex;
   gap: 10px;
-  align-items: flex-start;
+  align-items: stretch;
+}
+
+.grave-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* the lifetime stats of the fallen */
+.grave-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 12px;
+  margin: 4px 0;
+  color: var(--muted);
+}
+.grave-stats span {
+  white-space: nowrap;
+}
+
+/* pin the date to the bottom so equal-height cards don't look empty */
+.grave-date {
+  margin-top: auto;
+  padding-top: 4px;
 }
 
 .grave-stone {
