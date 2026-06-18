@@ -78,3 +78,36 @@ export function tavernRecruits(state: GameState): Recruit[] {
 export function effectiveHireCost(state: GameState, recruit: Recruit): number {
   return state.rosterOrder.length === 0 ? 0 : recruit.cost;
 }
+
+/** every coin the player can spend on village services: the treasury plus each
+ *  non-greedy hero's purse (greedy hoarders refuse to chip in for the commune). */
+export function spendableGold(state: GameState): number {
+  let total = state.village.gold;
+  for (const id of state.rosterOrder) {
+    const h = state.roster[id];
+    if (h && !h.ownership?.greedy) total += h.gold;
+  }
+  return total;
+}
+
+/** spend `amount` on a purchase — drawn from the treasury first, then from each
+ *  non-greedy hero's purse in roster order. Returns false and changes nothing if
+ *  the party can't afford it (so callers can early-return as before). */
+export function spendGold(state: GameState, amount: number): boolean {
+  const cost = Math.max(0, Math.floor(amount));
+  if (cost === 0) return true;
+  if (spendableGold(state) < cost) return false;
+  let remaining = cost;
+  const fromTreasury = Math.min(state.village.gold, remaining);
+  state.village.gold -= fromTreasury;
+  remaining -= fromTreasury;
+  for (const id of state.rosterOrder) {
+    if (remaining <= 0) break;
+    const h = state.roster[id];
+    if (!h || h.ownership?.greedy) continue;
+    const take = Math.min(h.gold, remaining);
+    h.gold -= take;
+    remaining -= take;
+  }
+  return true;
+}

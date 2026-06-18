@@ -21,7 +21,7 @@ import { BANTER, CHORES, CLASSES, COVE_GAMES, INJURIES, ITEMS, PERKS, RACES, REL
 import { favorTier } from '../../game/balance';
 import { derive } from '../../game/hero/derive';
 import { canEquip } from '../../game/hero/equipment';
-import { effectiveHireCost, shopStock, tavernRecruits } from '../../game/village/shop';
+import { effectiveHireCost, shopStock, spendableGold, tavernRecruits } from '../../game/village/shop';
 import type { EquipSlot, GameState, Hero, Id, ItemInstance, SkillDef, StatMod } from '../../game/types';
 import { BehaviorSelectModal, ClassName, ClassSprite, GodPortrait, Hint, HeroVitals, ItemName, RaceName, describeItem } from '../components';
 import { TacticsEditor } from '../TacticsEditor';
@@ -253,7 +253,7 @@ export function ArmorerView({ game }: { game: GameState }) {
                   </span>
                   <button
                     className="btn btn-small"
-                    disabled={bought || game.village.gold < entry.price}
+                    disabled={bought || spendableGold(game) < entry.price}
                     onClick={() => app.dispatch({ t: 'BUY_STOCK_ITEM', stockKey: entry.key })}
                   >
                     {bought ? 'sold' : `buy ${entry.price}g`}
@@ -361,7 +361,7 @@ export function StoreView({ game }: { game: GameState }) {
                     <button
                       key={qty}
                       className="btn btn-small"
-                      disabled={game.village.gold < POTION_PRICES[kind] * qty}
+                      disabled={spendableGold(game) < POTION_PRICES[kind] * qty}
                       onClick={() => app.dispatch({ t: 'BUY_POTION', potion: kind, qty })}
                     >
                       buy ×{qty} ({POTION_PRICES[kind] * qty}g)
@@ -386,7 +386,7 @@ export function StoreView({ game }: { game: GameState }) {
                   <button
                     key={qty}
                     className="btn btn-small"
-                    disabled={game.village.gold < BOMB_PRICE * qty}
+                    disabled={spendableGold(game) < BOMB_PRICE * qty}
                     onClick={() => app.dispatch({ t: 'BUY_BOMB', qty })}
                   >
                     buy ×{qty} ({BOMB_PRICE * qty}g)
@@ -472,7 +472,7 @@ function SpellCard({ game, hero, skill }: { game: GameState; hero: Hero; skill: 
   const req = skill.guild!;
   const levelOk = hero.level >= req.minLevel;
   const intOk = d.attrs.int >= req.minInt;
-  const goldOk = game.village.gold >= req.cost;
+  const goldOk = spendableGold(game) >= req.cost;
   const estimate = spellEstimate(skill, d.attrs.int);
   const kind = SPELL_KINDS.find((k) => k.id === skill.kind);
   return (
@@ -595,7 +595,7 @@ export function GuildView({ game }: { game: GameState }) {
                   ) : (
                     <button
                       className="btn btn-small"
-                      disabled={game.village.gold < cost}
+                      disabled={spendableGold(game) < cost}
                       onClick={() => app.dispatch({ t: 'LEARN_SKILL', heroId: hero.id, skillId: u.skillId })}
                     >
                       learn early {cost}g
@@ -687,7 +687,7 @@ export function TavernView({ game }: { game: GameState }) {
               </div>
               <button
                 className="btn btn-primary"
-                disabled={hired || game.village.gold < cost}
+                disabled={hired || spendableGold(game) < cost}
                 onClick={() => app.dispatch({ t: 'HIRE', recruitKey: r.key })}
               >
                 {hired ? 'already hired' : cost === 0 ? 'Hire (free — the village insists)' : `Hire for ${cost}g`}
@@ -733,7 +733,7 @@ export function HospitalView({ game }: { game: GameState }) {
               {missing > 0 && (
                 <button
                   className="btn btn-small"
-                  disabled={game.village.gold < restCost}
+                  disabled={spendableGold(game) < restCost}
                   onClick={() => app.dispatch({ t: 'REST_HERO', heroId: hero.id })}
                 >
                   Patch up fully ({restCost}g)
@@ -751,7 +751,7 @@ export function HospitalView({ game }: { game: GameState }) {
                     </span>
                     <button
                       className="btn btn-small"
-                      disabled={game.village.gold < cost}
+                      disabled={spendableGold(game) < cost}
                       onClick={() => app.dispatch({ t: 'HEAL_INJURY', heroId: hero.id, injuryId: iid })}
                     >
                       treat {cost}g

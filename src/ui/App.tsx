@@ -10,6 +10,7 @@ import {
 } from '../app/telemetry';
 import { exportSave, importSave } from '../game/save/serialize';
 import { newGame } from '../game/newGame';
+import { spendableGold } from '../game/village/shop';
 import { DUNGEON_EVENTS, INJURIES } from '../game/content';
 import { DungeonScreen } from './DungeonScreen';
 import { VillageScreen } from './VillageScreen';
@@ -422,10 +423,21 @@ export function App() {
         >
           ⓘ
         </button>
-        <span className="gold">⛀ {game.village.gold}g</span>
         {(() => {
-          const purse = game.rosterOrder.reduce((sum, id) => sum + (game.roster[id]?.gold ?? 0), 0);
-          return purse > 0 ? <span className="muted small">+ {purse}g in purses</span> : null;
+          const spendable = spendableGold(game);
+          const fromPurses = spendable - game.village.gold;
+          return (
+            <>
+              <span className="gold" title="Spendable on gear, potions, hiring & healing — the village treasury plus the party's purses (greedy heroes keep their own coin)">
+                ⛀ {spendable}g
+              </span>
+              {fromPurses > 0 ? (
+                <span className="muted small">
+                  ({game.village.gold}g treasury + {fromPurses}g purses)
+                </span>
+              ) : null}
+            </>
+          );
         })()}
         <span className="muted">
           depth best: {game.progress.maxDepthReached} · heroes: {game.rosterOrder.length}
