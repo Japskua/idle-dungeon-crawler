@@ -4,7 +4,7 @@
  * carried-out heroes always survive (+1 injury), abandoned/wiped heroes roll
  * permadeath, the run's carried gold is lost on a wipe, XP/items never are.
  */
-import type { DungeonRun, GameEvent, GameState, Hero, Id } from '../types';
+import type { DungeonRun, GameEvent, GameState, Hero, HeroLifetimeSnapshot, Id } from '../types';
 import { generateFloor } from '../dungeon/generate';
 import { isPassable, DIRS } from '../dungeon/pathfind';
 import { chance, pickWeighted, rand } from '../core/rng';
@@ -14,7 +14,7 @@ import {
   PERMADEATH_ON_ABANDON,
   permadeathChanceOnWipe,
 } from '../balance';
-import { INJURIES, classDef } from '../content';
+import { INJURIES, classDef, creatureDef } from '../content';
 import { derive } from '../hero/derive';
 import { applyMorale } from '../hero/morale';
 import { MORALE_RECOVERING_FLOOR, LUCK_COINS_START, DEVOTION_START } from '../balance';
@@ -22,6 +22,40 @@ import { MORALE_RECOVERING_FLOOR, LUCK_COINS_START, DEVOTION_START } from '../ba
 export function chronicle(state: GameState, nowMs: number, text: string, depth?: number) {
   state.chronicle.push({ atMs: nowMs, depth, text });
   if (state.chronicle.length > 100) state.chronicle.splice(0, state.chronicle.length - 100);
+}
+
+/** snapshot a hero's lifetime stats at the moment of death, for the graveyard */
+export function heroLifetimeSnapshot(hero: Hero): HeroLifetimeSnapshot {
+  const st = hero.stats;
+  let topDef: string | undefined;
+  let topCount = 0;
+  for (const [defId, count] of Object.entries(st.killsByDef ?? {})) {
+    if (count > topCount) {
+      topDef = defId;
+      topCount = count;
+    }
+  }
+  let nemesis: { name: string; count: number } | undefined;
+  if (topDef) {
+    let name = topDef;
+    try {
+      name = creatureDef(topDef).name;
+    } catch {
+      /* content removed since the kill: keep the id */
+    }
+    nemesis = { name, count: topCount };
+  }
+  return {
+    kills: st.kills,
+    dmgDealt: st.dmgDealt,
+    runs: st.runs,
+    downs: st.downs,
+    rescues: st.rescues,
+    gold: hero.gold,
+    biggestHitTaken: st.biggestHitTaken,
+    biggestHitFrom: st.biggestHitFrom,
+    nemesis,
+  };
 }
 
 export function startRun(
@@ -180,7 +214,16 @@ function killHero(state: GameState, hero: Hero, depth: number, nowMs: number, ev
   delete state.roster[hero.id];
   state.rosterOrder = state.rosterOrder.filter((id) => id !== hero.id);
   state.progress.totalPermadeaths++;
-  events.push({ t: 'heroDied', heroId: hero.id, name: hero.name, classId: hero.classId, level: hero.level, depth, cause });
+  events.push({
+    t: 'heroDied',
+    heroId: hero.id,
+    name: hero.name,
+    classId: hero.classId,
+    level: hero.level,
+    depth,
+    cause,
+    lifetime: heroLifetimeSnapshot(hero),
+  });
   chronicle(
     state,
     nowMs,

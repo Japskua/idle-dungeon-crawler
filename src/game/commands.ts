@@ -3,7 +3,7 @@
  * boundaries. Village commands may use wall-clock time; dungeon ones never do.
  */
 import type { Command, GameEvent, GameState, ItemInstance } from './types';
-import { startRun, chronicle } from './run/lifecycle';
+import { startRun, chronicle, heroLifetimeSnapshot } from './run/lifecycle';
 import { resolveEvent } from './run/runtime';
 import { applyFavor } from './hero/faith';
 import { POTION_PRICES, SELL_VALUE_FRACTION, healInjuryCost, instantHealCost, learnSkillCost, PERMADEATH_ON_ABANDON, INJURIES_ON_WIPE, BOMB_PRICE, SWITCH_FAITH_FAVOR, FAVOR_MIN, FAVOR_MAX,
@@ -121,6 +121,7 @@ export function applyCommand(state: GameState, cmd: Command, nowMs: number, even
           level: hero.level,
           depth: run.depth,
           cause: 'abandoned by the party, on purpose, by name',
+          lifetime: heroLifetimeSnapshot(hero),
         });
         chronicle(state, nowMs, `${hero.name} was abandoned at depth ${run.depth} and never seen again.`, run.depth);
       } else {

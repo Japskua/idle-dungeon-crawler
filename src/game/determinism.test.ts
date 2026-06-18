@@ -43,7 +43,8 @@ function fnv1a(text: string): string {
 
 // Re-baseline deliberately when sim/balance/content changes: bun test --rerun
 // prints the new value in the failure message.
-const GOLDEN_STATE_HASH = '51273b81';
+// state hash re-baselined when heroes began tallying kills-by-monster (graveyard nemesis)
+const GOLDEN_STATE_HASH = 'd431d7a2';
 const GOLDEN_EVENT_HASH = 'cb0b13c4';
 
 describe('determinism', () => {
