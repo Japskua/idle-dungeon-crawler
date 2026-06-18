@@ -64,26 +64,37 @@ export class Renderer {
 
   private viewW = VIEW_W;
   private viewH = VIEW_H;
+  /** integer pixel scale (world stays nearest-neighbor) × device pixel ratio. The
+   *  backing store is sized to real device pixels and every draw runs under this
+   *  transform, so sprites stay crisp AND text rasterizes sharp at full resolution
+   *  instead of being drawn small and muddily upscaled. */
+  private scale = 1;
+
+  private sizeBackingStore() {
+    if (!this.canvas) return;
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    this.dpr = dpr;
+    this.canvas.width = Math.round(this.viewW * this.scale * dpr);
+    this.canvas.height = Math.round(this.viewH * this.scale * dpr);
+    if (this.ctx) this.ctx.imageSmoothingEnabled = false;
+  }
+  private dpr = 1;
 
   attach(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    canvas.width = this.viewW;
-    canvas.height = this.viewH;
     this.ctx = canvas.getContext('2d');
-    if (this.ctx) this.ctx.imageSmoothingEnabled = false;
+    this.sizeBackingStore();
     if (!this.atlas) this.atlas = getAtlas();
     this.camSnapped = false;
   }
 
-  /** internal resolution follows the window so nothing letterboxes */
-  resize(w: number, h: number) {
+  /** internal resolution follows the window so nothing letterboxes; `scale` is the
+   *  chunky integer pixel scale chosen by the view */
+  resize(w: number, h: number, scale = this.scale) {
     this.viewW = Math.max(MIN_VIEW_W, Math.floor(w));
     this.viewH = Math.max(MIN_VIEW_H, Math.floor(h));
-    if (this.canvas) {
-      this.canvas.width = this.viewW;
-      this.canvas.height = this.viewH;
-      if (this.ctx) this.ctx.imageSmoothingEnabled = false;
-    }
+    this.scale = Math.max(1, Math.floor(scale));
+    this.sizeBackingStore();
   }
 
   detach() {
@@ -208,6 +219,13 @@ export class Renderer {
     const nowMs = performance.now();
     const dtMs = this.lastDrawMs ? Math.min(100, nowMs - this.lastDrawMs) : 16;
     this.lastDrawMs = nowMs;
+
+    // everything is drawn in internal coordinates; this transform blows it up to
+    // real device pixels — sprites stay nearest-neighbor crisp (smoothing off) and
+    // fonts rasterize sharp at full resolution instead of being muddily upscaled.
+    const s = this.scale * this.dpr;
+    ctx.setTransform(s, 0, 0, s, 0, 0);
+    ctx.imageSmoothingEnabled = false;
 
     ctx.fillStyle = '#0d0a0f';
     ctx.fillRect(0, 0, this.viewW, this.viewH);

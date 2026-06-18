@@ -87,12 +87,13 @@ interface SceneDims {
   ih: number;
   ox: number;
   oy: number;
+  dpr: number;
 }
 
 export function VillageScene() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [dims, setDims] = useState<SceneDims>({ scale: 2, iw: W, ih: H, ox: 0, oy: 0 });
+  const [dims, setDims] = useState<SceneDims>({ scale: 2, iw: W, ih: H, ox: 0, oy: 0, dpr: 1 });
   const dimsRef = useRef(dims);
   dimsRef.current = dims;
   const hoverRef = useRef<string | null>(null);
@@ -109,7 +110,8 @@ export function VillageScene() {
       // ...then grow the canvas itself to swallow the leftover space with grass
       const iw = Math.max(W, Math.ceil(cw / scale));
       const ih = Math.max(H, Math.ceil(ch / scale));
-      setDims({ scale, iw, ih, ox: Math.floor((iw - W) / 2), oy: Math.floor((ih - H) / 2) });
+      const dpr = window.devicePixelRatio || 1;
+      setDims({ scale, iw, ih, ox: Math.floor((iw - W) / 2), oy: Math.floor((ih - H) / 2), dpr });
     };
     update();
     const obs = new ResizeObserver(update);
@@ -125,8 +127,11 @@ export function VillageScene() {
 
     const draw = (nowMs: number) => {
       const ctx = canvas.getContext('2d')!;
+      const { iw, ih, ox, oy, scale, dpr } = dimsRef.current;
+      // draw in internal coords, scaled up to real device pixels: pixel art stays
+      // crisp (smoothing off) and label fonts rasterize sharp instead of muddy.
+      ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
-      const { iw, ih, ox, oy } = dimsRef.current;
       const game = useUi.getState().game;
       const t = nowMs / 1000;
 
@@ -267,8 +272,8 @@ export function VillageScene() {
     <div className="village-scene-wrap" ref={wrapRef}>
       <canvas
         ref={canvasRef}
-        width={dims.iw}
-        height={dims.ih}
+        width={Math.round(dims.iw * dims.scale * dims.dpr)}
+        height={Math.round(dims.ih * dims.scale * dims.dpr)}
         className="game-canvas"
         style={{ width: dims.iw * dims.scale, height: dims.ih * dims.scale }}
         onMouseMove={(e) => {

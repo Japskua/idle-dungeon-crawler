@@ -79,7 +79,7 @@ function CanvasView() {
       // ...then grow the internal canvas so the window is filled edge to edge
       const w = Math.ceil(cw / scale);
       const h = Math.ceil(ch / scale);
-      app.renderer.resize(w, h);
+      app.renderer.resize(w, h, scale);
       setDims({ w: Math.max(MIN_VIEW_W, w), h: Math.max(MIN_VIEW_H, h), scale });
     };
     update();
